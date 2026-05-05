@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Sakura blossom falling onto a dog">
+  <rect width="64" height="64" rx="14" fill="#fff7f8"/>
+  <path d="M18 42c1-8 7-13 16-13 8 0 14 5 15 13l3 9H15l3-9z" fill="#2f3437"/>
+  <path d="M17 36c-4-1-6-4-5-8 5 0 8 3 9 7l-4 1zM47 36c4-1 6-4 5-8-5 0-8 3-9 7l4 1z" fill="#2f3437"/>
+  <ellipse cx="32" cy="39" rx="13" ry="12" fill="#3e4548"/>
+  <ellipse cx="27" cy="39" rx="2" ry="2.4" fill="#fff"/>
+  <ellipse cx="37" cy="39" rx="2" ry="2.4" fill="#fff"/>
+  <circle cx="27" cy="40" r="1" fill="#1f2426"/>
+  <circle cx="37" cy="40" r="1" fill="#1f2426"/>
+  <path d="M31 43c1-1 3-1 4 0-1 2-3 2-4 0z" fill="#1f2426"/>
+  <path d="M29 47c2 2 5 2 7 0" fill="none" stroke="#fff7f8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M31 17c-4-3-4-7 1-10 4 3 4 7-1 10z" fill="#f4a4b8"/>
+  <path d="M31 17c-5 0-8-3-7-8 5-1 8 2 7 8z" fill="#e86f93"/>
+  <path d="M31 17c0-5 3-8 8-7 1 5-3 8-8 7z" fill="#f087a5"/>
+  <path d="M31 17c4 3 4 7-1 10-4-3-4-7 1-10z" fill="#f5b3c2"/>
+  <path d="M31 17c5 0 8 3 7 8-5 1-8-2-7-8z" fill="#e66f8e"/>
+  <circle cx="31" cy="17" r="3" fill="#ffd66b"/>
+  <path d="M43 7c-5 6-7 12-8 19" fill="none" stroke="#cf6b7c" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 5"/>
+  <circle cx="22" cy="20" r="2" fill="#f5b3c2"/>
+  <circle cx="47" cy="19" r="1.8" fill="#e86f93"/>
+</svg>
