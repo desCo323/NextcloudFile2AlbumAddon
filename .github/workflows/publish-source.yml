@@ -1,13 +1,7 @@
-# Publishes the checked SakuraAlbum source tree from the release artifact.
+# Publishes the checked SakuraAlbum source tree from a release artifact when manually dispatched.
 name: Publish SakuraAlbum source tree
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - releases/sakuraalbum-0.1.1.tar.gz.base64
-      - .github/workflows/publish-source.yml
   workflow_dispatch:
 
 permissions:
@@ -26,6 +20,7 @@ jobs:
         run: |
           set -euo pipefail
           tmp_dir="$(mktemp -d)"
+          test -f releases/sakuraalbum-0.1.1.tar.gz.base64
           base64 -d releases/sakuraalbum-0.1.1.tar.gz.base64 > "$tmp_dir/sakuraalbum.tar.gz"
           tar -xzf "$tmp_dir/sakuraalbum.tar.gz" -C "$tmp_dir"
 
