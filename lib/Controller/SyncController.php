@@ -44,7 +44,7 @@ class SyncController extends Controller {
 		try {
 			return new JSONResponse($this->albumSyncService->write(
 				$this->userId,
-				(string)$this->request->getParam('confirmation', ''),
+				$this->stringParam('confirmation'),
 			));
 		} catch (SyncSafetyException $e) {
 			return $this->safetyResponse($e);
@@ -57,9 +57,8 @@ class SyncController extends Controller {
 
 	#[NoAdminRequired]
 	public function runs(): JSONResponse {
-		$limit = (int)$this->request->getParam('limit', 10);
 		return new JSONResponse([
-			'runs' => $this->albumSyncService->recentRuns($this->userId, $limit),
+			'runs' => $this->albumSyncService->recentRuns($this->userId, $this->intParam('limit', 10, 1, 100)),
 		]);
 	}
 
@@ -69,5 +68,16 @@ class SyncController extends Controller {
 			'message' => $e->getMessage(),
 			'details' => $e->getDetails(),
 		], $e->getHttpStatus());
+	}
+
+	private function stringParam(string $key): string {
+		$value = $this->request->getParam($key, '');
+		return is_scalar($value) ? (string)$value : '';
+	}
+
+	private function intParam(string $key, int $default, int $min, int $max): int {
+		$value = $this->request->getParam($key, $default);
+		$value = is_numeric($value) ? (int)$value : $default;
+		return max($min, min($max, $value));
 	}
 }
