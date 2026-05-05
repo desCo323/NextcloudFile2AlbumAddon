@@ -1,0 +1,1 @@
+# NextcloudFile2AlbumAddon
