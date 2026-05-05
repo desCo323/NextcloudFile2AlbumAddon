@@ -13,5 +13,8 @@ return [
 		['name' => 'sync#dryRun', 'url' => '/api/v1/sync/dry-run', 'verb' => 'POST'],
 		['name' => 'sync#write', 'url' => '/api/v1/sync/write', 'verb' => 'POST'],
 		['name' => 'sync#runs', 'url' => '/api/v1/sync/runs', 'verb' => 'GET'],
+		['name' => 'managedAlbum#index', 'url' => '/api/v1/albums/managed', 'verb' => 'GET'],
+		['name' => 'managedAlbum#dryRunDelete', 'url' => '/api/v1/albums/delete/dry-run', 'verb' => 'POST'],
+		['name' => 'managedAlbum#delete', 'url' => '/api/v1/albums/delete', 'verb' => 'POST'],
 	],
 ];
