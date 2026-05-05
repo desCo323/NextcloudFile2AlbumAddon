@@ -2,13 +2,15 @@
 
 SakuraAlbum is a Nextcloud app for creating managed Photos albums from existing folder structures.
 
-The current development version focuses on safe configuration and preview planning. It does not need to write to production Photos albums until a controlled test window is prepared.
+The current development version focuses on safe configuration, preview planning, and a guarded dry-run/write path. It must not be enabled against production Photos albums until a controlled backup test window is prepared.
 
 ## Current scope
 
 - Admin settings for global enablement, default folders, scan limits, job limits, and video policy.
 - Personal settings for opt-in, folders, exclusions, naming template, separator, depth, and media type.
 - Preview API that scans only the current user folder and returns planned albums without writing album data.
+- Dry-run API that checks generated album names against real Photos albums without writing.
+- Confirmed write API that can create/link albums only when admin and user settings are both enabled.
 - App-owned tables for future tracking of generated albums and sync runs.
 - App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
 - Admin debug mode with stricter diagnostic logging and a log viewer.
@@ -20,7 +22,9 @@ The current development version focuses on safe configuration and preview planni
 - Bulk deletion must only operate on app-tracked generated albums.
 - Preview has strict folder/file limits from admin settings.
 - Debug logs redact common secret keys before storing context.
-- Background writing jobs are intentionally not part of the first safe source drop.
+- Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, and refuse unsafe plans.
+- Existing Photos albums are not modified unless SakuraAlbum already tracks them as managed albums.
+- Background cron execution is still a later feature; the current write path is a bounded on-demand job.
 
 ## Local checks
 
@@ -31,10 +35,6 @@ Run from the app directory:
 ```
 
 The check runs PHP syntax checks, JavaScript syntax checks, XML metadata validation, pure naming smoke tests, and a basic secret-pattern scan.
-
-## Snapshot
-
-The first safe source snapshot is stored as `releases/sakuraalbum-0.1.0.tar.gz.base64` with checksum in `releases/sakuraalbum-0.1.0.sha256`.
 
 ## Production test rule
 
