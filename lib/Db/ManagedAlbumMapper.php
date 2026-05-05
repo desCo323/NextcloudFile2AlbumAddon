@@ -21,12 +21,69 @@ class ManagedAlbumMapper extends QBMapper {
 	/**
 	 * @return ManagedAlbum[]
 	 */
-	public function findForUser(string $userId): array {
+	public function findForUser(string $userId, int $limit = 0): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->tableName)
 			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
 			->orderBy('album_name', 'ASC');
+
+		if ($limit > 0) {
+			$qb->setMaxResults($limit);
+		}
+
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * @return ManagedAlbum[]
+	 */
+	public function findActiveForUser(string $userId, int $limit = 0): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->neq('status', $qb->createNamedParameter('deleted')))
+			->orderBy('updated_at', 'DESC')
+			->addOrderBy('album_name', 'ASC');
+
+		if ($limit > 0) {
+			$qb->setMaxResults($limit);
+		}
+
+		return $this->findEntities($qb);
+	}
+
+	public function countActiveForUser(string $userId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*'))
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->neq('status', $qb->createNamedParameter('deleted')));
+
+		return (int)$qb->executeQuery()->fetchOne();
+	}
+
+	/**
+	 * @return ManagedAlbum[]
+	 */
+	public function findActiveForUserAndIds(string $userId, array $ids, int $limit = 0): array {
+		$ids = $this->normalizeIds($ids);
+		if ($ids === []) {
+			return [];
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->neq('status', $qb->createNamedParameter('deleted')))
+			->andWhere($qb->expr()->in('id', $qb->createNamedParameter($ids, IQueryBuilder::PARAM_INT_ARRAY)))
+			->orderBy('album_name', 'ASC');
+
+		if ($limit > 0) {
+			$qb->setMaxResults($limit);
+		}
 
 		return $this->findEntities($qb);
 	}
@@ -63,7 +120,7 @@ class ManagedAlbumMapper extends QBMapper {
 	}
 
 	public function deleteForUserAndIds(string $userId, array $ids): int {
-		$ids = array_values(array_filter($ids, static fn (mixed $id): bool => is_numeric($id)));
+		$ids = $this->normalizeIds($ids);
 		if ($ids === []) {
 			return 0;
 		}
@@ -74,5 +131,34 @@ class ManagedAlbumMapper extends QBMapper {
 			->andWhere($qb->expr()->in('id', $qb->createNamedParameter($ids, IQueryBuilder::PARAM_INT_ARRAY)));
 
 		return $qb->executeStatement();
+	}
+
+	public function markDeleted(ManagedAlbum $album): ManagedAlbum {
+		$now = time();
+		$album->setPhotosAlbumId(null);
+		$album->setStatus('deleted');
+		$album->setUpdatedAt($now);
+		$album->setLastSyncAt($now);
+
+		return $this->update($album);
+	}
+
+	/**
+	 * @return int[]
+	 */
+	private function normalizeIds(array $ids): array {
+		$normalized = [];
+		foreach ($ids as $id) {
+			if (!is_numeric($id)) {
+				continue;
+			}
+			$id = (int)$id;
+			if ($id <= 0) {
+				continue;
+			}
+			$normalized[] = $id;
+		}
+
+		return array_values(array_unique($normalized));
 	}
 }
