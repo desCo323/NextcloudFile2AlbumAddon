@@ -50,4 +50,27 @@ class SyncRunMapper extends QBMapper {
 
 		return $this->findEntities($qb);
 	}
+
+	/**
+	 * @return SyncRun[]
+	 */
+	public function findRecentFinishedForUserAndType(
+		string $userId,
+		string $runType,
+		string $status,
+		int $since,
+		int $limit = 20,
+	): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->eq('run_type', $qb->createNamedParameter($runType)))
+			->andWhere($qb->expr()->eq('status', $qb->createNamedParameter($status)))
+			->andWhere($qb->expr()->gte('finished_at', $qb->createNamedParameter($since)))
+			->orderBy('finished_at', 'DESC')
+			->setMaxResults(max(1, min(50, $limit)));
+
+		return $this->findEntities($qb);
+	}
 }

@@ -10,9 +10,9 @@ The current development version focuses on safe configuration, preview planning,
 - Personal settings for opt-in, folders, exclusions, naming template, separator, depth, and media type.
 - Preview API that scans only the current user folder and returns planned albums without writing album data.
 - Dry-run API that checks generated album names against real Photos albums without writing.
-- Confirmed write API that can create/link albums only when admin and user settings are both enabled and the request matches the latest dry-run fingerprint.
+- Confirmed write API that can create/link albums only when admin and user settings are both enabled and the request matches a recent server-recorded dry-run fingerprint.
 - Managed-album list and delete dry-run APIs for albums tracked in SakuraAlbum's own database.
-- Confirmed delete API that can delete only Photos albums still matching a SakuraAlbum managed record and the latest delete-preview fingerprint.
+- Confirmed delete API that can delete only Photos albums still matching a SakuraAlbum managed record and a recent server-recorded delete-preview fingerprint.
 - App-owned tables for future tracking of generated albums and sync runs.
 - App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
 - Admin debug mode with stricter diagnostic logging and a log viewer.
@@ -23,13 +23,13 @@ The current development version focuses on safe configuration, preview planning,
 - Generated albums are intended to be tracked in `sakuraalbum_albums`.
 - Bulk deletion must only operate on app-tracked generated albums.
 - Deletion requires the exact confirmation text `DELETE_MANAGED_ALBUMS`.
-- Deletion requires a matching plan fingerprint from a fresh delete dry-run.
+- Deletion requires a matching plan fingerprint from a recent successful delete dry-run stored by the server.
 - Deletion re-checks the Photos album id, owner, and current name immediately before deleting.
 - Renamed or owner-mismatched Photos albums are blocked instead of deleted.
 - Preview has strict folder/file limits from admin settings.
 - Debug logs redact common secret keys before storing context.
 - Debug exception traces intentionally omit function arguments.
-- Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, require a matching dry-run plan fingerprint, and refuse unsafe plans.
+- Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, require a matching recent dry-run plan fingerprint stored by the server, and refuse unsafe plans.
 - Existing Photos albums are not modified unless SakuraAlbum already tracks them as managed albums.
 - Background cron execution is still a later feature; the current write path is a bounded on-demand job.
 

@@ -12,6 +12,7 @@ use OCA\SakuraAlbum\Db\SyncRunMapper;
 
 class AlbumSyncService {
 	public const WRITE_CONFIRMATION = 'CREATE_ALBUMS';
+	private const PLAN_FINGERPRINT_TTL_SECONDS = 900;
 
 	private const BLOCKING_WARNING_CODES = [
 		'no_include_paths',
@@ -81,38 +82,41 @@ class AlbumSyncService {
 			$settings = $this->settingsService->getEffectiveUserSettings($userId, $settingsOverride);
 			$limits = $this->settingsService->getJobLimits();
 			$configHash = $this->configHash($settings);
-				$plan = $this->albumPlanService->buildExecutionPlan($userId, $settings, $limits);
-				$this->applyAlbumLimit($plan, $limits);
-				$plan = $this->inspectExistingAlbums($userId, $plan, $configHash);
-				$issues = $this->writeSafetyIssues($settings, $plan, $limits);
-				$plan['summary']['safetyIssueCount'] = count($issues);
-				$currentPlanFingerprint = $this->planFingerprint($plan, $configHash);
+			$plan = $this->albumPlanService->buildExecutionPlan($userId, $settings, $limits);
+			$this->applyAlbumLimit($plan, $limits);
+			$plan = $this->inspectExistingAlbums($userId, $plan, $configHash);
+			$issues = $this->writeSafetyIssues($settings, $plan, $limits);
+			$plan['summary']['safetyIssueCount'] = count($issues);
+			$currentPlanFingerprint = $this->planFingerprint($plan, $configHash);
 
-				if ($write && $issues !== []) {
-					throw new SyncSafetyException(
+			if ($write && $issues !== []) {
+				throw new SyncSafetyException(
 					'write_plan_not_safe',
 					'Album creation is blocked because the current plan is not safe to write.',
 					409,
-						['issues' => $issues],
-					);
-				}
-				if ($write && $planFingerprint === '') {
-					throw new SyncSafetyException(
-						'write_plan_fingerprint_required',
-						'Run a fresh dry-run before starting an album write job.',
-						400,
-					);
-				}
-				if ($write && !hash_equals($currentPlanFingerprint, $planFingerprint)) {
-					throw new SyncSafetyException(
-						'write_plan_changed',
-						'The album write plan changed after the dry-run. Run the dry-run again before writing.',
-						409,
-					);
-				}
+					['issues' => $issues],
+				);
+			}
+			if ($write && $planFingerprint === '') {
+				throw new SyncSafetyException(
+					'write_plan_fingerprint_required',
+					'Run a fresh dry-run before starting an album write job.',
+					400,
+				);
+			}
+			if ($write && !hash_equals($currentPlanFingerprint, $planFingerprint)) {
+				throw new SyncSafetyException(
+					'write_plan_changed',
+					'The album write plan changed after the dry-run. Run the dry-run again before writing.',
+					409,
+				);
+			}
+			if ($write) {
+				$this->assertRecentDryRunFingerprint($userId, $planFingerprint);
+			}
 
-				$status = 'dry_run_completed';
-				if ($write) {
+			$status = 'dry_run_completed';
+			if ($write) {
 				$writeSummary = $this->writePlan($userId, $plan, $settings, $configHash, $runId);
 				$plan['summary'] = array_merge($plan['summary'], $writeSummary);
 				$status = ($writeSummary['albumErrors'] ?? 0) > 0 || ($writeSummary['fileErrors'] ?? 0) > 0
@@ -121,6 +125,7 @@ class AlbumSyncService {
 			}
 
 			$summary = $this->runSummary($plan['summary'], $started, $issues);
+			$summary['planFingerprint'] = $currentPlanFingerprint;
 			$this->syncRunMapper->finish($run, $status, $summary);
 			$this->logService->success($write ? 'write_completed' : 'dry_run_completed', $userId, [
 				'durationMs' => $summary['durationMs'],
@@ -133,12 +138,12 @@ class AlbumSyncService {
 				'mode' => $runType,
 				'status' => $status,
 				'canWrite' => $issues === [],
-					'writeBlockedReasons' => $issues,
-					'confirmationText' => self::WRITE_CONFIRMATION,
-					'planFingerprint' => $currentPlanFingerprint,
-					'summary' => $summary,
-					'warnings' => $plan['warnings'] ?? [],
-					'albums' => $this->publicAlbums($plan['albums'] ?? []),
+				'writeBlockedReasons' => $issues,
+				'confirmationText' => self::WRITE_CONFIRMATION,
+				'planFingerprint' => $currentPlanFingerprint,
+				'summary' => $summary,
+				'warnings' => $plan['warnings'] ?? [],
+				'albums' => $this->publicAlbums($plan['albums'] ?? []),
 			];
 		} catch (SyncSafetyException $e) {
 			$summary = [
@@ -162,6 +167,32 @@ class AlbumSyncService {
 			], $runId);
 			throw $e;
 		}
+	}
+
+	private function assertRecentDryRunFingerprint(string $userId, string $planFingerprint): void {
+		$since = time() - self::PLAN_FINGERPRINT_TTL_SECONDS;
+		$runs = $this->syncRunMapper->findRecentFinishedForUserAndType($userId, 'dry_run', 'dry_run_completed', $since, 20);
+		foreach ($runs as $run) {
+			$summaryJson = $run->getSummaryJson();
+			if ($summaryJson === null) {
+				continue;
+			}
+
+			$summary = json_decode($summaryJson, true);
+			if (!is_array($summary)) {
+				continue;
+			}
+
+			if (hash_equals((string)($summary['planFingerprint'] ?? ''), $planFingerprint)) {
+				return;
+			}
+		}
+
+		throw new SyncSafetyException(
+			'write_plan_fingerprint_not_recent',
+			'Run a fresh dry-run before starting an album write job.',
+			409,
+		);
 	}
 
 	private function inspectExistingAlbums(string $userId, array $plan, string $configHash): array {

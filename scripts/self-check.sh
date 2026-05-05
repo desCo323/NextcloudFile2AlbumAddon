@@ -32,6 +32,16 @@ if rg -n "NoCSRFRequired" lib/Controller appinfo >/dev/null; then
 	exit 1
 fi
 
+echo "Checking write/delete fingerprint freshness guards"
+if ! rg -n "assertRecentDryRunFingerprint" lib/Service/AlbumSyncService.php >/dev/null; then
+	echo "Album write service must verify a recent server-recorded dry-run fingerprint" >&2
+	exit 1
+fi
+if ! rg -n "assertRecentDeleteDryRunFingerprint" lib/Service/ManagedAlbumDeletionService.php >/dev/null; then
+	echo "Managed delete service must verify a recent server-recorded delete dry-run fingerprint" >&2
+	exit 1
+fi
+
 echo "Scanning for stale app identifiers"
 legacy_namespace="$(printf 'OCA\\%s' 'File2Album')"
 legacy_app_id="file2album"

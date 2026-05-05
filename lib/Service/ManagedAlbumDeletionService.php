@@ -10,6 +10,7 @@ use OCA\SakuraAlbum\Db\SyncRunMapper;
 
 class ManagedAlbumDeletionService {
 	public const DELETE_CONFIRMATION = 'DELETE_MANAGED_ALBUMS';
+	private const PLAN_FINGERPRINT_TTL_SECONDS = 900;
 
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -66,38 +67,41 @@ class ManagedAlbumDeletionService {
 					400,
 					['requiredConfirmation' => self::DELETE_CONFIRMATION],
 				);
-				}
+			}
 
-				$plan = $this->buildDeletePlan($userId, $albumIds, $deleteAll);
-				$issues = $this->deleteSafetyIssues($plan);
-				$plan['summary']['safetyIssueCount'] = count($issues);
-				$currentPlanFingerprint = $this->planFingerprint($plan);
+			$plan = $this->buildDeletePlan($userId, $albumIds, $deleteAll);
+			$issues = $this->deleteSafetyIssues($plan);
+			$plan['summary']['safetyIssueCount'] = count($issues);
+			$currentPlanFingerprint = $this->planFingerprint($plan);
 
-				if ($write && $issues !== []) {
-					throw new SyncSafetyException(
+			if ($write && $issues !== []) {
+				throw new SyncSafetyException(
 					'delete_plan_not_safe',
 					'Managed album deletion is blocked because the current plan is not safe to write.',
 					409,
-						['issues' => $issues],
-					);
-				}
-				if ($write && $planFingerprint === '') {
-					throw new SyncSafetyException(
-						'delete_plan_fingerprint_required',
-						'Run a fresh delete dry-run before deleting managed albums.',
-						400,
-					);
-				}
-				if ($write && !hash_equals($currentPlanFingerprint, $planFingerprint)) {
-					throw new SyncSafetyException(
-						'delete_plan_changed',
-						'The managed-album delete plan changed after the dry-run. Run the delete dry-run again before deleting.',
-						409,
-					);
-				}
+					['issues' => $issues],
+				);
+			}
+			if ($write && $planFingerprint === '') {
+				throw new SyncSafetyException(
+					'delete_plan_fingerprint_required',
+					'Run a fresh delete dry-run before deleting managed albums.',
+					400,
+				);
+			}
+			if ($write && !hash_equals($currentPlanFingerprint, $planFingerprint)) {
+				throw new SyncSafetyException(
+					'delete_plan_changed',
+					'The managed-album delete plan changed after the dry-run. Run the delete dry-run again before deleting.',
+					409,
+				);
+			}
+			if ($write) {
+				$this->assertRecentDeleteDryRunFingerprint($userId, $planFingerprint);
+			}
 
-				$status = 'delete_dry_run_completed';
-				if ($write) {
+			$status = 'delete_dry_run_completed';
+			if ($write) {
 				$deleteSummary = $this->deletePlan($userId, $plan, $runId);
 				$plan['summary'] = array_merge($plan['summary'], $deleteSummary);
 				$status = ($deleteSummary['deleteErrors'] ?? 0) > 0
@@ -106,6 +110,7 @@ class ManagedAlbumDeletionService {
 			}
 
 			$summary = $this->runSummary($plan['summary'], $started, $issues);
+			$summary['planFingerprint'] = $currentPlanFingerprint;
 			$this->syncRunMapper->finish($run, $status, $summary);
 			$this->logService->success($write ? 'managed_delete_completed' : 'managed_delete_dry_run_completed', $userId, [
 				'durationMs' => $summary['durationMs'],
@@ -116,13 +121,13 @@ class ManagedAlbumDeletionService {
 				'runId' => $runId,
 				'mode' => $write ? 'delete_write' : 'delete_dry_run',
 				'status' => $status,
-					'canDelete' => $issues === [],
-					'deleteBlockedReasons' => $issues,
-					'confirmationText' => self::DELETE_CONFIRMATION,
-					'planFingerprint' => $currentPlanFingerprint,
-					'summary' => $summary,
-					'albums' => $this->publicDeleteAlbums($plan['albums']),
-				];
+				'canDelete' => $issues === [],
+				'deleteBlockedReasons' => $issues,
+				'confirmationText' => self::DELETE_CONFIRMATION,
+				'planFingerprint' => $currentPlanFingerprint,
+				'summary' => $summary,
+				'albums' => $this->publicDeleteAlbums($plan['albums']),
+			];
 		} catch (SyncSafetyException $e) {
 			$summary = [
 				'durationMs' => (int)((microtime(true) - $started) * 1000),
@@ -145,6 +150,32 @@ class ManagedAlbumDeletionService {
 			], $runId);
 			throw $e;
 		}
+	}
+
+	private function assertRecentDeleteDryRunFingerprint(string $userId, string $planFingerprint): void {
+		$since = time() - self::PLAN_FINGERPRINT_TTL_SECONDS;
+		$runs = $this->syncRunMapper->findRecentFinishedForUserAndType($userId, 'delete_dry_run', 'delete_dry_run_completed', $since, 20);
+		foreach ($runs as $run) {
+			$summaryJson = $run->getSummaryJson();
+			if ($summaryJson === null) {
+				continue;
+			}
+
+			$summary = json_decode($summaryJson, true);
+			if (!is_array($summary)) {
+				continue;
+			}
+
+			if (hash_equals((string)($summary['planFingerprint'] ?? ''), $planFingerprint)) {
+				return;
+			}
+		}
+
+		throw new SyncSafetyException(
+			'delete_plan_fingerprint_not_recent',
+			'Run a fresh delete dry-run before deleting managed albums.',
+			409,
+		);
 	}
 
 	private function buildDeletePlan(string $userId, array $albumIds, bool $deleteAll): array {

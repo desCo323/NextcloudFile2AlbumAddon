@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- Added server-side freshness checks for write and managed-delete plan fingerprints.
+- Stored successful dry-run fingerprints in sync-run summaries so write/delete jobs must follow a recent matching dry-run by the same user.
+- Cleaned the guarded write/delete service formatting for easier security review.
+
 ## 0.1.3
 
 - Added a reproducible artifact build script that packages the app under a `sakuraalbum/` root directory.
