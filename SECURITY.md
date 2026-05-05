@@ -12,11 +12,11 @@ Open a private report with the repository owner for security-sensitive issues. D
 - Personal API routes operate on the authenticated user only.
 - Admin settings routes require an authorized admin setting.
 - Stored generated-album metadata is separate from user-created Photos albums.
-- Album creation requires exact confirmation text and rejects unsafe dry-run findings.
-- Managed deletion requires exact confirmation text and only targets active app-owned records for the current user.
+- Album creation requires exact confirmation text, a matching dry-run plan fingerprint, and rejects unsafe dry-run findings.
+- Managed deletion requires exact confirmation text, a matching delete dry-run plan fingerprint, and only targets active app-owned records for the current user.
 - Managed deletion re-checks Photos album id, owner, and current name before deleting.
 - Controllers keep the framework default CSRF protection enabled.
-- Debug context is sanitized for common secrets before it is stored.
+- Debug context is sanitized for common secrets before it is stored, and debug stack traces do not include function arguments.
 
 ## Not yet implemented
 

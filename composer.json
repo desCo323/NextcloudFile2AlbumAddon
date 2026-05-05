@@ -12,6 +12,7 @@
     "php": ">=8.3"
   },
   "scripts": {
-    "check": "scripts/self-check.sh"
+    "check": "scripts/self-check.sh",
+    "build:artifact": "scripts/build-artifact.sh"
   }
 }

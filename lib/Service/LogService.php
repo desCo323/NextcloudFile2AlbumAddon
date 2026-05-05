@@ -27,6 +27,13 @@ class LogService {
 		'cookies',
 	];
 
+	private const SENSITIVE_STRING_PATTERNS = [
+		'/ghp_[A-Za-z0-9_]{20,}/' => '[redacted-github-token]',
+		'/github_pat_[A-Za-z0-9_]{20,}/' => '[redacted-github-token]',
+		'/Bearer\s+[A-Za-z0-9._~+\/=-]{16,}/i' => 'Bearer [redacted]',
+		'/Basic\s+[A-Za-z0-9+\/=]{16,}/i' => 'Basic [redacted]',
+	];
+
 	public function __construct(
 		private readonly AppLogMapper $logMapper,
 		private readonly IAppConfig $appConfig,
@@ -63,11 +70,11 @@ class LogService {
 			'code' => $e->getCode(),
 			'message' => $e->getMessage(),
 		];
-		if ($this->isDebugMode()) {
-			$context['exception']['file'] = $e->getFile();
-			$context['exception']['line'] = $e->getLine();
-			$context['exception']['trace'] = array_slice($e->getTrace(), 0, 12);
-		}
+			if ($this->isDebugMode()) {
+				$context['exception']['file'] = $e->getFile();
+				$context['exception']['line'] = $e->getLine();
+				$context['exception']['trace'] = $this->safeTrace($e);
+			}
 
 		$this->error($event, $userId, $context, $e->getMessage(), $runId);
 	}
@@ -95,7 +102,7 @@ class LogService {
 		$debug = $this->isDebugMode();
 		$level = $this->normalizeLevel($level);
 		$event = mb_substr(preg_replace('/[^a-zA-Z0-9_.:-]+/', '_', $event) ?? 'unknown', 0, 96);
-		$message = mb_substr($message, 0, 512);
+		$message = mb_substr($this->sanitizeString($message), 0, 512);
 		$context = $this->sanitizeContext($context, 0);
 
 		if (!$debug && in_array($level, ['success', 'info'], true)) {
@@ -174,7 +181,7 @@ class LogService {
 			];
 		}
 		if (is_string($value)) {
-			return mb_substr(str_replace("\0", '', $value), 0, 2000);
+			return mb_substr($this->sanitizeString($value), 0, 2000);
 		}
 		if (is_scalar($value) || $value === null) {
 			return $value;
@@ -197,5 +204,27 @@ class LogService {
 		}
 
 		return false;
+	}
+
+	private function sanitizeString(string $value): string {
+		$value = str_replace("\0", '', $value);
+		foreach (self::SENSITIVE_STRING_PATTERNS as $pattern => $replacement) {
+			$value = preg_replace($pattern, $replacement, $value) ?? $value;
+		}
+
+		return $value;
+	}
+
+	private function safeTrace(\Throwable $e): array {
+		return array_map(
+			static fn (array $frame): array => array_filter([
+				'file' => isset($frame['file']) && is_string($frame['file']) ? $frame['file'] : null,
+				'line' => isset($frame['line']) && is_int($frame['line']) ? $frame['line'] : null,
+				'class' => isset($frame['class']) && is_string($frame['class']) ? $frame['class'] : null,
+				'type' => isset($frame['type']) && is_string($frame['type']) ? $frame['type'] : null,
+				'function' => isset($frame['function']) && is_string($frame['function']) ? $frame['function'] : null,
+			], static fn (mixed $value): bool => $value !== null),
+			array_slice($e->getTrace(), 0, 12),
+		);
 	}
 }

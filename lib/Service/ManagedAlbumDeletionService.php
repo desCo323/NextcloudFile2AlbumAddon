@@ -6,7 +6,6 @@ namespace OCA\SakuraAlbum\Service;
 
 use OCA\SakuraAlbum\Db\ManagedAlbum;
 use OCA\SakuraAlbum\Db\ManagedAlbumMapper;
-use OCA\SakuraAlbum\Db\SyncRun;
 use OCA\SakuraAlbum\Db\SyncRunMapper;
 
 class ManagedAlbumDeletionService {
@@ -40,14 +39,14 @@ class ManagedAlbumDeletionService {
 	}
 
 	public function dryRunDelete(string $userId, array $albumIds = [], bool $deleteAll = false): array {
-		return $this->executeDelete($userId, $albumIds, $deleteAll, '', false);
+		return $this->executeDelete($userId, $albumIds, $deleteAll, '', '', false);
 	}
 
-	public function delete(string $userId, array $albumIds, bool $deleteAll, string $confirmation): array {
-		return $this->executeDelete($userId, $albumIds, $deleteAll, $confirmation, true);
+	public function delete(string $userId, array $albumIds, bool $deleteAll, string $confirmation, string $planFingerprint): array {
+		return $this->executeDelete($userId, $albumIds, $deleteAll, $confirmation, $planFingerprint, true);
 	}
 
-	private function executeDelete(string $userId, array $albumIds, bool $deleteAll, string $confirmation, bool $write): array {
+	private function executeDelete(string $userId, array $albumIds, bool $deleteAll, string $confirmation, string $planFingerprint, bool $write): array {
 		$run = $this->syncRunMapper->start($userId, $write ? 'delete_write' : 'delete_dry_run');
 		$runId = (int)$run->getId();
 		$started = microtime(true);
@@ -67,23 +66,38 @@ class ManagedAlbumDeletionService {
 					400,
 					['requiredConfirmation' => self::DELETE_CONFIRMATION],
 				);
-			}
+				}
 
-			$plan = $this->buildDeletePlan($userId, $albumIds, $deleteAll);
-			$issues = $this->deleteSafetyIssues($plan);
-			$plan['summary']['safetyIssueCount'] = count($issues);
+				$plan = $this->buildDeletePlan($userId, $albumIds, $deleteAll);
+				$issues = $this->deleteSafetyIssues($plan);
+				$plan['summary']['safetyIssueCount'] = count($issues);
+				$currentPlanFingerprint = $this->planFingerprint($plan);
 
-			if ($write && $issues !== []) {
-				throw new SyncSafetyException(
+				if ($write && $issues !== []) {
+					throw new SyncSafetyException(
 					'delete_plan_not_safe',
 					'Managed album deletion is blocked because the current plan is not safe to write.',
 					409,
-					['issues' => $issues],
-				);
-			}
+						['issues' => $issues],
+					);
+				}
+				if ($write && $planFingerprint === '') {
+					throw new SyncSafetyException(
+						'delete_plan_fingerprint_required',
+						'Run a fresh delete dry-run before deleting managed albums.',
+						400,
+					);
+				}
+				if ($write && !hash_equals($currentPlanFingerprint, $planFingerprint)) {
+					throw new SyncSafetyException(
+						'delete_plan_changed',
+						'The managed-album delete plan changed after the dry-run. Run the delete dry-run again before deleting.',
+						409,
+					);
+				}
 
-			$status = 'delete_dry_run_completed';
-			if ($write) {
+				$status = 'delete_dry_run_completed';
+				if ($write) {
 				$deleteSummary = $this->deletePlan($userId, $plan, $runId);
 				$plan['summary'] = array_merge($plan['summary'], $deleteSummary);
 				$status = ($deleteSummary['deleteErrors'] ?? 0) > 0
@@ -102,12 +116,13 @@ class ManagedAlbumDeletionService {
 				'runId' => $runId,
 				'mode' => $write ? 'delete_write' : 'delete_dry_run',
 				'status' => $status,
-				'canDelete' => $issues === [],
-				'deleteBlockedReasons' => $issues,
-				'confirmationText' => self::DELETE_CONFIRMATION,
-				'summary' => $summary,
-				'albums' => $this->publicDeleteAlbums($plan['albums']),
-			];
+					'canDelete' => $issues === [],
+					'deleteBlockedReasons' => $issues,
+					'confirmationText' => self::DELETE_CONFIRMATION,
+					'planFingerprint' => $currentPlanFingerprint,
+					'summary' => $summary,
+					'albums' => $this->publicDeleteAlbums($plan['albums']),
+				];
 		} catch (SyncSafetyException $e) {
 			$summary = [
 				'durationMs' => (int)((microtime(true) - $started) * 1000),
@@ -135,6 +150,17 @@ class ManagedAlbumDeletionService {
 	private function buildDeletePlan(string $userId, array $albumIds, bool $deleteAll): array {
 		$limits = $this->settingsService->getJobLimits();
 		$maxAlbums = max(1, (int)$limits['maxAlbums']);
+		if (!$deleteAll && count($albumIds) > $maxAlbums) {
+			throw new SyncSafetyException(
+				'delete_selection_limit_exceeded',
+				'The selected managed album count exceeds the configured per-run album limit.',
+				413,
+				[
+					'selectedAlbums' => count($albumIds),
+					'maxAlbums' => $maxAlbums,
+				],
+			);
+		}
 		$selectedIds = $this->normalizeIds($albumIds);
 		$totalActive = $this->managedAlbumMapper->countActiveForUser($userId);
 
@@ -355,6 +381,38 @@ class ManagedAlbumDeletionService {
 		$summary['durationMs'] = (int)((microtime(true) - $started) * 1000);
 		$summary['deleteBlocked'] = $issues !== [];
 		return $summary;
+	}
+
+	private function planFingerprint(array $plan): string {
+		$albums = array_map(
+			static fn (array $album): array => [
+				'managedId' => (int)($album['managedId'] ?? 0),
+				'albumName' => (string)($album['albumName'] ?? ''),
+				'targetPath' => (string)($album['targetPath'] ?? ''),
+				'mediaCount' => (int)($album['mediaCount'] ?? 0),
+				'photosAlbumPresent' => (bool)($album['photosAlbumPresent'] ?? false),
+				'deleteAction' => (string)($album['deleteAction'] ?? ''),
+				'blockReason' => (string)($album['blockReason'] ?? ''),
+			],
+			$plan['albums'] ?? [],
+		);
+
+		return hash('sha256', json_encode([
+			'version' => 1,
+			'missingIds' => array_map('intval', $plan['missingIds'] ?? []),
+			'summary' => [
+				'deleteAll' => (bool)($plan['summary']['deleteAll'] ?? false),
+				'totalActiveManagedAlbums' => (int)($plan['summary']['totalActiveManagedAlbums'] ?? 0),
+				'plannedAlbums' => (int)($plan['summary']['plannedAlbums'] ?? 0),
+				'wouldDeletePhotosAlbums' => (int)($plan['summary']['wouldDeletePhotosAlbums'] ?? 0),
+				'wouldCleanupTrackingRecords' => (int)($plan['summary']['wouldCleanupTrackingRecords'] ?? 0),
+				'blockedAlbums' => (int)($plan['summary']['blockedAlbums'] ?? 0),
+				'missingSelections' => (int)($plan['summary']['missingSelections'] ?? 0),
+				'truncated' => (bool)($plan['summary']['truncated'] ?? false),
+				'safetyIssueCount' => (int)($plan['summary']['safetyIssueCount'] ?? 0),
+			],
+			'albums' => $albums,
+		], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
 	}
 
 	private function publicManagedAlbum(ManagedAlbum $album): array {

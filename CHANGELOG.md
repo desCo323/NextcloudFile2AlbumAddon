@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.3
+
+- Added a reproducible artifact build script that packages the app under a `sakuraalbum/` root directory.
+- Added artifact hygiene checks to block development-only files such as `node_modules`, caches, `.git`, `vendor`, logs, and nested archives.
+
+## 0.1.2
+
+- Added plan fingerprints for write and managed-delete jobs so a fresh dry-run/delete preview must match the write request.
+- Hardened debug exception logging by removing stack-trace arguments and redacting common token strings in messages/context.
+- Kept destructive delete confirmation mandatory in admin settings.
+- Improved settings UI tooltips, focus states, mobile spacing, and escaped numeric values.
+
 ## 0.1.1
 
 - Added guarded managed-album deletion APIs.

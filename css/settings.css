@@ -1,187 +1,240 @@
 .sakuraalbum-settings {
-	max-width: 980px;
-	color: var(--color-main-text);
+  max-width: 980px;
+  color: var(--color-main-text);
+  line-height: 1.45;
 }
 
 .sakuraalbum-header {
-	display: flex;
-	align-items: center;
-	gap: 14px;
-	margin: 4px 0 18px;
-	padding-bottom: 14px;
-	border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .sakuraalbum-header h2 {
-	margin: 0;
-	font-size: 26px;
-	font-weight: 700;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
 }
 
 .sakuraalbum-mark {
-	width: 52px;
-	height: 52px;
-	border-radius: 12px;
-	box-shadow: 0 10px 24px rgba(80, 40, 55, 0.16);
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(80, 40, 55, 0.16);
 }
 
 .sakuraalbum-panel {
-	padding: 18px;
-	border: 1px solid var(--color-border);
-	border-left: 4px solid #d94f70;
-	border-radius: 8px;
-	background: color-mix(in srgb, var(--color-main-background) 94%, #fff0f4);
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid #d94f70;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-main-background) 96%, #fff0f4);
 }
 
 .sakuraalbum-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-	gap: 16px;
-	margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
 }
 
 .sakuraalbum-field {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .sakuraalbum-field label,
 .sakuraalbum-toggle {
-	font-weight: 600;
+  font-weight: 600;
 }
 
 .sakuraalbum-field input,
 .sakuraalbum-field select,
 .sakuraalbum-field textarea {
-	width: 100%;
-	max-width: 100%;
-	border-radius: 6px;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+.sakuraalbum-field input:focus-visible,
+.sakuraalbum-field select:focus-visible,
+.sakuraalbum-field textarea:focus-visible,
+.sakuraalbum-actions button:focus-visible {
+  outline: 2px solid #d94f70;
+  outline-offset: 2px;
 }
 
 .sakuraalbum-field textarea {
-	min-height: 96px;
-	resize: vertical;
+  min-height: 96px;
+  resize: vertical;
 }
 
 .sakuraalbum-toggle-row {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 18px;
-	margin: 12px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 12px 0;
 }
 
 .sakuraalbum-toggle {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 10px;
-	border: 1px solid var(--color-border);
-	border-radius: 8px;
-	background: var(--color-main-background);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-main-background);
 }
 
 .sakuraalbum-actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
-	margin: 18px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
 }
 
 .sakuraalbum-actions-danger {
-	padding-top: 12px;
-	border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
 }
 
 .sakuraalbum-button-danger {
-	border-color: var(--color-error) !important;
-	color: var(--color-error) !important;
+  border-color: var(--color-error) !important;
+  color: var(--color-error) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-main-background) 94%,
+    var(--color-error)
+  ) !important;
 }
 
 .sakuraalbum-status {
-	min-height: 24px;
-	margin: 8px 0;
+  min-height: 24px;
+  margin: 8px 0;
 }
 
 .sakuraalbum-summary {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-	gap: 8px;
-	margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 16px 0;
 }
 
 .sakuraalbum-summary div {
-	border: 1px solid var(--color-border);
-	border-radius: 6px;
-	padding: 10px;
-	background: color-mix(in srgb, var(--color-main-background) 92%, #f4a4b8);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid #d94f70;
+  border-radius: 6px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--color-main-background) 96%, #f4a4b8);
+  min-width: 0;
+}
+
+.sakuraalbum-summary div:nth-child(3n + 2) {
+  border-top-color: #2f7d72;
+}
+
+.sakuraalbum-summary div:nth-child(3n) {
+  border-top-color: #7357c8;
 }
 
 .sakuraalbum-preview-table {
-	width: 100%;
-	border-collapse: collapse;
-	margin-top: 12px;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
 }
 
 .sakuraalbum-table-wrap {
-	overflow-x: auto;
+  overflow-x: auto;
 }
 
 .sakuraalbum-preview-table th,
 .sakuraalbum-preview-table td {
-	border-bottom: 1px solid var(--color-border);
-	padding: 8px;
-	text-align: left;
-	vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
 }
 
 .sakuraalbum-log-table pre {
-	max-width: 520px;
-	max-height: 220px;
-	overflow: auto;
-	margin: 8px 0 0;
-	padding: 8px;
-	border-radius: 6px;
-	background: var(--color-background-dark);
-	white-space: pre-wrap;
+  max-width: 520px;
+  max-height: 220px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--color-background-dark);
+  white-space: pre-wrap;
 }
 
 .sakuraalbum-level {
-	display: inline-block;
-	min-width: 62px;
-	padding: 2px 6px;
-	border-radius: 999px;
-	text-align: center;
-	font-weight: 700;
-	background: var(--color-background-darker);
+  display: inline-block;
+  min-width: 62px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+  background: var(--color-background-darker);
 }
 
 .sakuraalbum-level-error {
-	color: var(--color-error);
+  color: var(--color-error);
 }
 
 .sakuraalbum-level-warning {
-	color: #9a5d00;
+  color: #9a5d00;
 }
 
 .sakuraalbum-level-success {
-	color: var(--color-success);
+  color: var(--color-success);
 }
 
 .sakuraalbum-action {
-	display: inline-block;
-	padding: 2px 6px;
-	border-radius: 6px;
-	background: var(--color-background-darker);
-	font-weight: 600;
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--color-background-darker);
+  font-weight: 600;
 }
 
 .sakuraalbum-empty {
-	padding: 14px;
-	border: 1px solid var(--color-border);
-	border-radius: 8px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
 }
 
 .sakuraalbum-warning {
-	color: var(--color-error);
+  color: var(--color-error);
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-error);
+  border-radius: 6px;
+  background: color-mix(
+    in srgb,
+    var(--color-main-background) 94%,
+    var(--color-error)
+  );
+}
+
+@media (max-width: 680px) {
+  .sakuraalbum-mark {
+    width: 44px;
+    height: 44px;
+  }
+
+  .sakuraalbum-header h2 {
+    font-size: 22px;
+  }
+
+  .sakuraalbum-panel {
+    padding: 14px;
+  }
+
+  .sakuraalbum-summary {
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  }
 }

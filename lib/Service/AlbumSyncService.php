@@ -38,8 +38,8 @@ class AlbumSyncService {
 		return $this->execute($userId, 'dry_run', false, '', $settingsOverride);
 	}
 
-	public function write(string $userId, string $confirmation): array {
-		return $this->execute($userId, 'write', true, $confirmation, null);
+	public function write(string $userId, string $confirmation, string $planFingerprint): array {
+		return $this->execute($userId, 'write', true, $confirmation, null, $planFingerprint);
 	}
 
 	public function recentRuns(string $userId, int $limit = 10): array {
@@ -57,7 +57,7 @@ class AlbumSyncService {
 		);
 	}
 
-	private function execute(string $userId, string $runType, bool $write, string $confirmation, ?array $settingsOverride): array {
+	private function execute(string $userId, string $runType, bool $write, string $confirmation, ?array $settingsOverride, string $planFingerprint = ''): array {
 		$run = $this->syncRunMapper->start($userId, $runType);
 		$runId = (int)$run->getId();
 		$started = microtime(true);
@@ -81,23 +81,38 @@ class AlbumSyncService {
 			$settings = $this->settingsService->getEffectiveUserSettings($userId, $settingsOverride);
 			$limits = $this->settingsService->getJobLimits();
 			$configHash = $this->configHash($settings);
-			$plan = $this->albumPlanService->buildExecutionPlan($userId, $settings, $limits);
-			$this->applyAlbumLimit($plan, $limits);
-			$plan = $this->inspectExistingAlbums($userId, $plan, $configHash);
-			$issues = $this->writeSafetyIssues($settings, $plan, $limits);
-			$plan['summary']['safetyIssueCount'] = count($issues);
+				$plan = $this->albumPlanService->buildExecutionPlan($userId, $settings, $limits);
+				$this->applyAlbumLimit($plan, $limits);
+				$plan = $this->inspectExistingAlbums($userId, $plan, $configHash);
+				$issues = $this->writeSafetyIssues($settings, $plan, $limits);
+				$plan['summary']['safetyIssueCount'] = count($issues);
+				$currentPlanFingerprint = $this->planFingerprint($plan, $configHash);
 
-			if ($write && $issues !== []) {
-				throw new SyncSafetyException(
+				if ($write && $issues !== []) {
+					throw new SyncSafetyException(
 					'write_plan_not_safe',
 					'Album creation is blocked because the current plan is not safe to write.',
 					409,
-					['issues' => $issues],
-				);
-			}
+						['issues' => $issues],
+					);
+				}
+				if ($write && $planFingerprint === '') {
+					throw new SyncSafetyException(
+						'write_plan_fingerprint_required',
+						'Run a fresh dry-run before starting an album write job.',
+						400,
+					);
+				}
+				if ($write && !hash_equals($currentPlanFingerprint, $planFingerprint)) {
+					throw new SyncSafetyException(
+						'write_plan_changed',
+						'The album write plan changed after the dry-run. Run the dry-run again before writing.',
+						409,
+					);
+				}
 
-			$status = 'dry_run_completed';
-			if ($write) {
+				$status = 'dry_run_completed';
+				if ($write) {
 				$writeSummary = $this->writePlan($userId, $plan, $settings, $configHash, $runId);
 				$plan['summary'] = array_merge($plan['summary'], $writeSummary);
 				$status = ($writeSummary['albumErrors'] ?? 0) > 0 || ($writeSummary['fileErrors'] ?? 0) > 0
@@ -118,11 +133,12 @@ class AlbumSyncService {
 				'mode' => $runType,
 				'status' => $status,
 				'canWrite' => $issues === [],
-				'writeBlockedReasons' => $issues,
-				'confirmationText' => self::WRITE_CONFIRMATION,
-				'summary' => $summary,
-				'warnings' => $plan['warnings'] ?? [],
-				'albums' => $this->publicAlbums($plan['albums'] ?? []),
+					'writeBlockedReasons' => $issues,
+					'confirmationText' => self::WRITE_CONFIRMATION,
+					'planFingerprint' => $currentPlanFingerprint,
+					'summary' => $summary,
+					'warnings' => $plan['warnings'] ?? [],
+					'albums' => $this->publicAlbums($plan['albums'] ?? []),
 			];
 		} catch (SyncSafetyException $e) {
 			$summary = [
@@ -407,6 +423,35 @@ class AlbumSyncService {
 			'albumDepth' => $settings['albumDepth'] ?? 0,
 			'includeImages' => $settings['includeImages'] ?? true,
 			'includeVideos' => $settings['includeVideos'] ?? false,
+			], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+	}
+
+	private function planFingerprint(array $plan, string $configHash): string {
+		$albums = array_map(
+			static fn (array $album): array => [
+				'sourceRoot' => (string)($album['sourceRoot'] ?? ''),
+				'targetPath' => (string)($album['targetPath'] ?? ''),
+				'albumName' => (string)($album['albumName'] ?? ''),
+				'mediaCount' => (int)($album['mediaCount'] ?? 0),
+				'collision' => (bool)($album['collision'] ?? false),
+				'writeAction' => (string)($album['writeAction'] ?? ''),
+				'existingAlbum' => (bool)($album['existingAlbum'] ?? false),
+				'managed' => (bool)($album['managed'] ?? false),
+			],
+			$plan['albums'] ?? [],
+		);
+
+		return hash('sha256', json_encode([
+			'version' => 1,
+			'configHash' => $configHash,
+			'summary' => [
+				'plannedAlbums' => (int)($plan['summary']['plannedAlbums'] ?? 0),
+				'plannedLinks' => (int)($plan['summary']['plannedLinks'] ?? 0),
+				'collisions' => (int)($plan['summary']['collisions'] ?? 0),
+				'truncated' => (bool)($plan['summary']['truncated'] ?? false),
+				'safetyIssueCount' => (int)($plan['summary']['safetyIssueCount'] ?? 0),
+			],
+			'albums' => $albums,
 		], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
 	}
 

@@ -45,6 +45,7 @@ class SyncController extends Controller {
 			return new JSONResponse($this->albumSyncService->write(
 				$this->userId,
 				$this->stringParam('confirmation'),
+				$this->stringParam('planFingerprint'),
 			));
 		} catch (SyncSafetyException $e) {
 			return $this->safetyResponse($e);

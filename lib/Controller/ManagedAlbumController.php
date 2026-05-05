@@ -55,6 +55,7 @@ class ManagedAlbumController extends Controller {
 				$this->albumIdsFromRequest(),
 				$this->deleteAllFromRequest(),
 				$this->stringParam('confirmation'),
+				$this->stringParam('planFingerprint'),
 			));
 		} catch (SyncSafetyException $e) {
 			return $this->safetyResponse($e);
