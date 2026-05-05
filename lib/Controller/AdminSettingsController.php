@@ -61,7 +61,7 @@ class AdminSettingsController extends Controller {
 
 	#[AuthorizedAdminSetting(settings: Admin::class)]
 	public function logs(): JSONResponse {
-		$limit = (int)$this->request->getParam('limit', 100);
+		$limit = $this->intParam('limit', 100, 1, 500);
 		$level = $this->request->getParam('level', null);
 		$userId = $this->request->getParam('userId', null);
 		$logs = $this->logService->recentLogs($limit, is_string($level) ? $level : null, is_string($userId) ? $userId : null);
@@ -75,5 +75,11 @@ class AdminSettingsController extends Controller {
 		return new JSONResponse([
 			'logs' => $logs,
 		]);
+	}
+
+	private function intParam(string $key, int $default, int $min, int $max): int {
+		$value = $this->request->getParam($key, $default);
+		$value = is_numeric($value) ? (int)$value : $default;
+		return max($min, min($max, $value));
 	}
 }
