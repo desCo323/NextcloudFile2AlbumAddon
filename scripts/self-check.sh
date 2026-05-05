@@ -26,6 +26,12 @@ if rg -n "${token_prefix}_[A-Za-z0-9_]{20,}" . >/dev/null; then
 	exit 1
 fi
 
+echo "Checking controller CSRF posture"
+if rg -n "NoCSRFRequired" lib/Controller appinfo >/dev/null; then
+	echo "Controllers must not disable CSRF protection" >&2
+	exit 1
+fi
+
 echo "Scanning for stale app identifiers"
 legacy_namespace="$(printf 'OCA\\%s' 'File2Album')"
 legacy_app_id="file2album"
