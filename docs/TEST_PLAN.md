@@ -40,6 +40,14 @@ Expected result: `Self-check passed`.
 - Write endpoint rejects without exact confirmation text `CREATE_ALBUMS`.
 - Write endpoint rejects while global admin setting or personal user setting is disabled.
 - In the controlled write test, only use files owned by `albentest`.
+- Managed album list shows only SakuraAlbum-tracked albums for `albentest`.
+- Delete dry-run works for selected managed albums and reports:
+  - Photos albums that would be deleted
+  - stale tracking records that would be cleaned
+  - blocked albums such as renamed Photos albums
+- Delete endpoint rejects without exact confirmation text `DELETE_MANAGED_ALBUMS`.
+- Delete endpoint rejects truncated delete-all plans and any owner/name mismatch.
+- A controlled delete test may delete only albums created by SakuraAlbum during the same test window.
 - Admin log viewer shows:
   - `admin_settings_updated`
   - `user_settings_updated`
@@ -49,6 +57,10 @@ Expected result: `Self-check passed`.
   - `dry_run_completed` or `dry_run_failed`
   - `write_started`
   - `write_completed`, `write_completed_with_errors`, or `write_failed`
+  - `managed_delete_dry_run_started`
+  - `managed_delete_dry_run_completed` or `managed_delete_dry_run_failed`
+  - `managed_delete_started`
+  - `managed_delete_completed` or `managed_delete_failed`
 - Confirm log context has no raw password, request token, authorization header, or app password.
 
 ## Restore requirement
