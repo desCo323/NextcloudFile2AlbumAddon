@@ -1,3 +1,4 @@
+# Publishes the checked SakuraAlbum source tree from the release artifact.
 name: Publish SakuraAlbum source tree
 
 on:
