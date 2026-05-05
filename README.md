@@ -2,7 +2,7 @@
 
 SakuraAlbum is a Nextcloud app for creating managed Photos albums from existing folder structures.
 
-The current development version focuses on safe configuration, preview planning, and a guarded dry-run/write path. It must not be enabled against production Photos albums until a controlled backup test window is prepared.
+The current development version focuses on safe configuration, preview planning, guarded dry-run/write paths, and guarded deletion of generated albums. It must not be enabled against production Photos albums until a controlled backup test window is prepared.
 
 ## Current scope
 
@@ -11,6 +11,8 @@ The current development version focuses on safe configuration, preview planning,
 - Preview API that scans only the current user folder and returns planned albums without writing album data.
 - Dry-run API that checks generated album names against real Photos albums without writing.
 - Confirmed write API that can create/link albums only when admin and user settings are both enabled.
+- Managed-album list and delete dry-run APIs for albums tracked in SakuraAlbum's own database.
+- Confirmed delete API that can delete only Photos albums still matching a SakuraAlbum managed record.
 - App-owned tables for future tracking of generated albums and sync runs.
 - App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
 - Admin debug mode with stricter diagnostic logging and a log viewer.
@@ -20,6 +22,9 @@ The current development version focuses on safe configuration, preview planning,
 
 - Generated albums are intended to be tracked in `sakuraalbum_albums`.
 - Bulk deletion must only operate on app-tracked generated albums.
+- Deletion requires the exact confirmation text `DELETE_MANAGED_ALBUMS`.
+- Deletion re-checks the Photos album id, owner, and current name immediately before deleting.
+- Renamed or owner-mismatched Photos albums are blocked instead of deleted.
 - Preview has strict folder/file limits from admin settings.
 - Debug logs redact common secret keys before storing context.
 - Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, and refuse unsafe plans.
