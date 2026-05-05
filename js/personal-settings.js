@@ -7,6 +7,8 @@
 	}
 
 	let settings = JSON.parse(root.dataset.settings || '{}');
+	let managedAlbums = [];
+	let lastDeleteRequest = null;
 	const mount = root.querySelector('.sakuraalbum-settings');
 
 	function lines(value) {
@@ -76,6 +78,11 @@
 				<button id="ska-runs" type="button">Letzte Laeufe</button>
 				<button id="ska-save" class="primary" type="button">Speichern</button>
 			</div>
+			<div class="sakuraalbum-actions sakuraalbum-actions-danger">
+				<button id="ska-managed" type="button">Verwaltete Alben</button>
+				<button id="ska-delete-preview" type="button">Loeschvorschau</button>
+				<button id="ska-delete-all-preview" class="sakuraalbum-button-danger" type="button">Alle verwalteten pruefen</button>
+			</div>
 			<div id="ska-status" class="sakuraalbum-status"></div>
 			<div id="ska-preview-output"></div>
 		`;
@@ -84,6 +91,9 @@
 		document.getElementById('ska-dry-run').addEventListener('click', dryRun);
 		document.getElementById('ska-write').addEventListener('click', writeAlbums);
 		document.getElementById('ska-runs').addEventListener('click', loadRuns);
+		document.getElementById('ska-managed').addEventListener('click', loadManagedAlbums);
+		document.getElementById('ska-delete-preview').addEventListener('click', deleteDryRunSelected);
+		document.getElementById('ska-delete-all-preview').addEventListener('click', deleteDryRunAll);
 	}
 
 	function collect() {
@@ -176,6 +186,100 @@
 		}
 	}
 
+	async function loadManagedAlbums() {
+		const status = document.getElementById('ska-status');
+		const output = document.getElementById('ska-preview-output');
+		status.textContent = 'Lade verwaltete Alben...';
+		output.innerHTML = '';
+		lastDeleteRequest = null;
+		try {
+			const response = await request('/apps/sakuraalbum/api/v1/albums/managed?limit=200', 'GET');
+			managedAlbums = response.albums || [];
+			renderManagedAlbums(response);
+			status.textContent = response.truncated
+				? `${managedAlbums.length} von ${response.total || managedAlbums.length} verwalteten Alben geladen.`
+				: `${managedAlbums.length} verwaltete Alben geladen.`;
+		} catch (error) {
+			status.textContent = `Fehler: ${error.message}`;
+		}
+	}
+
+	async function deleteDryRunSelected() {
+		const ids = selectedManagedIds();
+		if (ids.length === 0) {
+			document.getElementById('ska-status').textContent = 'Bitte zuerst verwaltete Alben auswaehlen.';
+			return;
+		}
+		await deleteDryRun(ids, false);
+	}
+
+	async function deleteDryRunAll() {
+		await deleteDryRun([], true);
+	}
+
+	async function deleteDryRun(albumIds, deleteAll) {
+		const status = document.getElementById('ska-status');
+		const output = document.getElementById('ska-preview-output');
+		status.textContent = 'Pruefe Loeschaktion...';
+		output.innerHTML = '';
+		lastDeleteRequest = null;
+		try {
+			const response = await request('/apps/sakuraalbum/api/v1/albums/delete/dry-run', 'POST', {
+				albumIds,
+				deleteAll,
+			});
+			lastDeleteRequest = {
+				albumIds,
+				deleteAll,
+				canDelete: response.canDelete === true,
+				confirmationText: response.confirmationText || 'DELETE_MANAGED_ALBUMS',
+			};
+			status.textContent = response.canDelete
+				? 'Loeschvorschau bereit.'
+				: 'Loeschvorschau bereit. Loeschen ist aktuell blockiert.';
+			renderDeleteResult(response);
+		} catch (error) {
+			status.textContent = `Loeschvorschau blockiert: ${error.message}`;
+		}
+	}
+
+	async function deleteManagedAlbums() {
+		const status = document.getElementById('ska-status');
+		const output = document.getElementById('ska-preview-output');
+		if (!lastDeleteRequest || !lastDeleteRequest.canDelete) {
+			status.textContent = 'Bitte zuerst eine sichere Loeschvorschau erstellen.';
+			return;
+		}
+
+		const confirmation = window.prompt(`Gib ${lastDeleteRequest.confirmationText} ein, um nur diese SakuraAlbum-verwalteten Alben zu loeschen.`);
+		if (confirmation === null) {
+			return;
+		}
+
+		status.textContent = 'Starte Loeschjob...';
+		output.innerHTML = '';
+		try {
+			const response = await request('/apps/sakuraalbum/api/v1/albums/delete', 'POST', {
+				albumIds: lastDeleteRequest.albumIds,
+				deleteAll: lastDeleteRequest.deleteAll,
+				confirmation,
+			});
+			lastDeleteRequest = null;
+			status.textContent = response.status === 'delete_completed'
+				? 'Loeschjob abgeschlossen.'
+				: 'Loeschjob abgeschlossen, bitte Ergebnis pruefen.';
+			renderDeleteResult(response);
+		} catch (error) {
+			status.textContent = `Loeschjob blockiert: ${error.message}`;
+		}
+	}
+
+	function selectedManagedIds() {
+		return Array.from(document.querySelectorAll('.ska-managed-check:checked'))
+			.map((input) => Number.parseInt(input.value, 10))
+			.filter(Number.isFinite);
+	}
+
 	async function request(url, method, body) {
 		const options = {
 			method,
@@ -201,6 +305,98 @@
 		return response.json();
 	}
 
+	function renderManagedAlbums(response) {
+		const output = document.getElementById('ska-preview-output');
+		const albums = response.albums || [];
+		if (albums.length === 0) {
+			output.innerHTML = '<div class="sakuraalbum-empty">Keine von SakuraAlbum verwalteten Alben vorhanden.</div>';
+			return;
+		}
+
+		output.innerHTML = `
+			<div class="sakuraalbum-summary">
+				<div><strong>${escapeText(response.total || albums.length)}</strong><br>Verwaltet</div>
+				<div><strong>${escapeText(response.limit || albums.length)}</strong><br>Anzeige-Limit</div>
+				<div><strong>${response.truncated ? 'Ja' : 'Nein'}</strong><br>Gekuerzt</div>
+			</div>
+			<div class="sakuraalbum-table-wrap">
+				<table class="sakuraalbum-preview-table">
+					<thead>
+						<tr>
+							<th>Auswahl</th>
+							<th>Album</th>
+							<th>Zielpfad</th>
+							<th>Medien</th>
+							<th>Status</th>
+							<th>Letzter Lauf</th>
+						</tr>
+					</thead>
+					<tbody>
+						${albums.map((album) => `
+							<tr>
+								<td><input class="ska-managed-check" type="checkbox" value="${escapeAttr(album.managedId)}"></td>
+								<td>${escapeText(album.albumName)}</td>
+								<td>${escapeText(album.targetPath)}</td>
+								<td>${escapeText(album.mediaCount)}</td>
+								<td>${escapeText(album.status)}</td>
+								<td>${escapeText(formatTime(album.lastSyncAt))}</td>
+							</tr>
+						`).join('')}
+					</tbody>
+				</table>
+			</div>
+		`;
+	}
+
+	function renderDeleteResult(result) {
+		const output = document.getElementById('ska-preview-output');
+		const summary = result.summary || {};
+		const issues = result.deleteBlockedReasons || [];
+		const albums = result.albums || [];
+
+		output.innerHTML = `
+			<div class="sakuraalbum-summary">
+				<div><strong>${escapeText(summary.plannedAlbums || 0)}</strong><br>Geprueft</div>
+				<div><strong>${escapeText(summary.wouldDeletePhotosAlbums || 0)}</strong><br>Photos-Alben</div>
+				<div><strong>${escapeText(summary.wouldCleanupTrackingRecords || 0)}</strong><br>Tracking</div>
+				<div><strong>${escapeText(summary.blockedAlbums || 0)}</strong><br>Blockiert</div>
+				<div><strong>${escapeText(summary.deletedPhotosAlbums || 0)}</strong><br>Geloescht</div>
+				<div><strong>${escapeText(summary.cleanedTrackingRecords || 0)}</strong><br>Bereinigt</div>
+			</div>
+			${issues.map((issue) => `<div class="sakuraalbum-warning">${escapeText(issue.code || 'blockiert')} ${escapeText(issue.message || issue.count || '')}</div>`).join('')}
+			${result.canDelete ? '<div class="sakuraalbum-actions"><button id="ska-delete-confirm" class="sakuraalbum-button-danger" type="button">Verwaltete Alben loeschen</button></div>' : ''}
+			<div class="sakuraalbum-table-wrap">
+				<table class="sakuraalbum-preview-table">
+					<thead>
+						<tr>
+							<th>Album</th>
+							<th>Zielpfad</th>
+							<th>Medien</th>
+							<th>Aktion</th>
+							<th>Grund</th>
+						</tr>
+					</thead>
+					<tbody>
+						${albums.map((album) => `
+							<tr>
+								<td>${escapeText(album.albumName)}</td>
+								<td>${escapeText(album.targetPath)}</td>
+								<td>${escapeText(album.mediaCount)}</td>
+								<td><span class="sakuraalbum-action">${escapeText(deleteActionLabel(album.deleteAction))}</span></td>
+								<td>${escapeText(blockReasonLabel(album.blockReason))}</td>
+							</tr>
+						`).join('')}
+					</tbody>
+				</table>
+			</div>
+		`;
+
+		const deleteConfirm = document.getElementById('ska-delete-confirm');
+		if (deleteConfirm) {
+			deleteConfirm.addEventListener('click', deleteManagedAlbums);
+		}
+	}
+
 	function renderPreview(preview) {
 		const output = document.getElementById('ska-preview-output');
 		const summary = preview.summary || {};
@@ -215,26 +411,28 @@
 				<div><strong>${summary.collisions || 0}</strong><br>Konflikte</div>
 			</div>
 			${warnings.map((warning) => `<div class="sakuraalbum-warning">${escapeText(warning.code || 'warning')} ${escapeText(warning.path || warning.message || '')}</div>`).join('')}
-			<table class="sakuraalbum-preview-table">
-				<thead>
-					<tr>
-						<th>Album</th>
-						<th>Zielpfad</th>
-						<th>Medien</th>
-						<th>Status</th>
-					</tr>
-				</thead>
-				<tbody>
-					${albums.map((album) => `
+			<div class="sakuraalbum-table-wrap">
+				<table class="sakuraalbum-preview-table">
+					<thead>
 						<tr>
-							<td>${escapeText(album.albumName)}</td>
-							<td>${escapeText(album.targetPath)}</td>
-							<td>${album.mediaCount}</td>
-							<td>${album.collision ? '<span class="sakuraalbum-warning">Konflikt</span>' : (album.aggregated ? 'Aggregiert' : 'OK')}</td>
+							<th>Album</th>
+							<th>Zielpfad</th>
+							<th>Medien</th>
+							<th>Status</th>
 						</tr>
-					`).join('')}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						${albums.map((album) => `
+							<tr>
+								<td>${escapeText(album.albumName)}</td>
+								<td>${escapeText(album.targetPath)}</td>
+								<td>${escapeText(album.mediaCount)}</td>
+								<td>${album.collision ? '<span class="sakuraalbum-warning">Konflikt</span>' : (album.aggregated ? 'Aggregiert' : 'OK')}</td>
+							</tr>
+						`).join('')}
+					</tbody>
+				</table>
+			</div>
 		`;
 	}
 
@@ -256,26 +454,28 @@
 			</div>
 			${issues.map((issue) => `<div class="sakuraalbum-warning">${escapeText(issue.code || 'blockiert')} ${escapeText(issue.warningCode || issue.message || '')}</div>`).join('')}
 			${warnings.map((warning) => `<div class="sakuraalbum-warning">${escapeText(warning.code || 'warning')} ${escapeText(warning.path || warning.message || '')}</div>`).join('')}
-			<table class="sakuraalbum-preview-table">
-				<thead>
-					<tr>
-						<th>Album</th>
-						<th>Zielpfad</th>
-						<th>Medien</th>
-						<th>Aktion</th>
-					</tr>
-				</thead>
-				<tbody>
-					${albums.map((album) => `
+			<div class="sakuraalbum-table-wrap">
+				<table class="sakuraalbum-preview-table">
+					<thead>
 						<tr>
-							<td>${escapeText(album.albumName)}</td>
-							<td>${escapeText(album.targetPath)}</td>
-							<td>${album.mediaCount}</td>
-							<td><span class="sakuraalbum-action">${escapeText(actionLabel(album.writeAction))}</span></td>
+							<th>Album</th>
+							<th>Zielpfad</th>
+							<th>Medien</th>
+							<th>Aktion</th>
 						</tr>
-					`).join('')}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						${albums.map((album) => `
+							<tr>
+								<td>${escapeText(album.albumName)}</td>
+								<td>${escapeText(album.targetPath)}</td>
+								<td>${escapeText(album.mediaCount)}</td>
+								<td><span class="sakuraalbum-action">${escapeText(actionLabel(album.writeAction))}</span></td>
+							</tr>
+						`).join('')}
+					</tbody>
+				</table>
+			</div>
 		`;
 	}
 
@@ -287,6 +487,7 @@
 		}
 
 		output.innerHTML = `
+			<div class="sakuraalbum-table-wrap">
 			<table class="sakuraalbum-preview-table">
 				<thead>
 					<tr>
@@ -295,6 +496,7 @@
 						<th>Status</th>
 						<th>Alben</th>
 						<th>Links</th>
+						<th>Geloescht</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -305,10 +507,12 @@
 							<td>${escapeText(run.status)}</td>
 							<td>${escapeText((run.summary && run.summary.plannedAlbums) || 0)}</td>
 							<td>${escapeText((run.summary && run.summary.plannedLinks) || 0)}</td>
+							<td>${escapeText((run.summary && run.summary.deletedPhotosAlbums) || 0)}</td>
 						</tr>
 					`).join('')}
 				</tbody>
 			</table>
+			</div>
 		`;
 	}
 
@@ -320,6 +524,25 @@
 			blocked_collision: 'Blockiert: Namenskonflikt',
 		};
 		return labels[action] || 'Pruefen';
+	}
+
+	function deleteActionLabel(action) {
+		const labels = {
+			delete_photos_album: 'Photos-Album loeschen',
+			cleanup_tracking_only: 'Tracking bereinigen',
+			blocked: 'Blockiert',
+		};
+		return labels[action] || 'Pruefen';
+	}
+
+	function blockReasonLabel(reason) {
+		const labels = {
+			no_photos_album_id: 'Keine Photos-ID gespeichert',
+			photos_album_missing: 'Photos-Album nicht mehr vorhanden',
+			photos_album_owner_mismatch: 'Eigentuemer passt nicht',
+			photos_album_name_mismatch: 'Album wurde umbenannt',
+		};
+		return labels[reason] || '';
 	}
 
 	function formatTime(timestamp) {
