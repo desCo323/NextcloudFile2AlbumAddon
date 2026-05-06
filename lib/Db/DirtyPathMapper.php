@@ -251,6 +251,14 @@ class DirtyPathMapper extends QBMapper {
 		return $qb->executeStatement();
 	}
 
+	public function deleteForUser(string $userId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)));
+
+		return $qb->executeStatement();
+	}
+
 	public function markUserFailed(string $userId, string $error, int $now): int {
 		$qb = $this->db->getQueryBuilder();
 		$qb->update($this->tableName)

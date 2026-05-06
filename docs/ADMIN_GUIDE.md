@@ -77,3 +77,5 @@ Use `--json` for machine-readable output in automated test logs.
 ## Cleanup
 
 SakuraAlbum tracks generated albums in its own database. Bulk deletion and missing-album cleanup are limited to active SakuraAlbum-managed records and re-check the Photos album id, owner, and name before deletion. Missing managed album cleanup is disabled by default.
+
+Users can also run a personal SakuraAlbum account reset. It is still guarded by the managed-album delete preview, requires `RESET_SAKURAALBUM`, clears only SakuraAlbum queue/cursor state and personal SakuraAlbum settings, and intentionally keeps diagnostic logs for support.

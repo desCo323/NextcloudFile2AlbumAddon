@@ -35,6 +35,8 @@ Administrators may also set low-load time windows and per-user quotas. If a quot
 
 Each listed managed album has a `ZIP` action. SakuraAlbum first checks that the album is still clearly managed by your account and that it fits the administrator's direct-download limits. If the check passes, the browser receives a ZIP stream of that one album. If the album is too large, the download is blocked before the server starts streaming.
 
+`Konto-Reset pruefen` is the safest way to start from zero. The preview shows which SakuraAlbum-managed albums would be deleted and which tracking records would be cleaned. The final reset needs the exact text `RESET_SAKURAALBUM`; it resets your SakuraAlbum settings, clears SakuraAlbum's background queue/cursor state for your account, and leaves diagnostic logs available for troubleshooting.
+
 ## Error reports
 
 `Fehlerbericht vorbereiten` creates a redacted diagnostic report with your SakuraAlbum settings, recent runs, queue state, managed-album summary, and recent app logs. Direct mail sending is planned for a later release and is currently disabled.

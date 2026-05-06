@@ -176,6 +176,22 @@ if ! rg -n "maxDownloadFiles|maxDownloadBytes" lib/Service/SettingsService.php j
 	echo "Managed album download admin limits are missing" >&2
 	exit 1
 fi
+if ! rg -n "AccountResetService" lib/Service/AccountResetService.php lib/Controller/AccountResetController.php >/dev/null; then
+	echo "Account reset service/controller is missing" >&2
+	exit 1
+fi
+if ! rg -n "account/reset" appinfo/routes.php js/personal-settings.js >/dev/null; then
+	echo "Account reset API/UI is missing" >&2
+	exit 1
+fi
+if ! rg -n "RESET_SAKURAALBUM|RESET_CONFIRMATION" lib/Service/AccountResetService.php js/personal-settings.js >/dev/null; then
+	echo "Account reset must require exact confirmation" >&2
+	exit 1
+fi
+if ! rg -n "deleteForUser" lib/Db/DirtyPathMapper.php lib/Db/SyncCursorMapper.php lib/Service/AccountResetService.php >/dev/null; then
+	echo "Account reset queue/cursor cleanup is missing" >&2
+	exit 1
+fi
 if ! rg -n "overlapping_source_paths" lib/Service/AlbumPlanService.php lib/Service/AlbumSyncService.php js/personal-settings.js >/dev/null; then
 	echo "Overlapping source folder safety guard is missing" >&2
 	exit 1

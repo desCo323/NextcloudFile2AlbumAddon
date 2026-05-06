@@ -36,6 +36,8 @@ return [
 		['name' => 'sync#runs', 'url' => '/api/v1/sync/runs', 'verb' => 'GET'],
 		['name' => 'sync#status', 'url' => '/api/v1/sync/status', 'verb' => 'GET'],
 		['name' => 'sync#queueUpdate', 'url' => '/api/v1/sync/queue-update', 'verb' => 'POST'],
+		['name' => 'accountReset#dryRun', 'url' => '/api/v1/account/reset/dry-run', 'verb' => 'POST'],
+		['name' => 'accountReset#reset', 'url' => '/api/v1/account/reset', 'verb' => 'POST'],
 		['name' => 'managedAlbum#index', 'url' => '/api/v1/albums/managed', 'verb' => 'GET'],
 		['name' => 'managedAlbum#prepareDownload', 'url' => '/api/v1/albums/managed/download/prepare', 'verb' => 'POST'],
 		['name' => 'managedAlbum#download', 'url' => '/api/v1/albums/managed/download', 'verb' => 'GET'],

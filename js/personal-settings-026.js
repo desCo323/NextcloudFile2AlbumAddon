@@ -21,6 +21,7 @@
   let syncStatus = null;
   let lastWriteRequest = null;
   let lastDeleteRequest = null;
+  let lastResetRequest = null;
   let statusInterval = null;
   const mount = root.querySelector(".sakuraalbum-settings");
 
@@ -113,6 +114,7 @@
 					<button id="ska-folder-open" type="button" title="Ordner aus deinem Dateienbereich auswaehlen.">Ordner hinzufuegen</button>
 				</div>
 				${renderSourceWarnings()}
+				${renderSourceRuleGuide()}
 				${renderSourceTable()}
 				${folderBrowserOpen ? renderFolderBrowser() : ""}
 			</div>
@@ -136,6 +138,7 @@
 				<button id="ska-managed" type="button" title="Listet nur Alben, die SakuraAlbum selbst verwaltet.">Verwaltete Alben</button>
 				<button id="ska-delete-preview" type="button" title="Prueft die markierten verwalteten Alben vor dem Loeschen.">Loeschvorschau</button>
 				<button id="ska-delete-all-preview" class="sakuraalbum-button-danger" type="button" title="Prueft alle von SakuraAlbum verwalteten Alben innerhalb des Admin-Limits.">Alle verwalteten pruefen</button>
+				<button id="ska-reset-preview" class="sakuraalbum-button-danger" type="button" title="Prueft einen vollstaendigen SakuraAlbum-Reset fuer dein Konto.">Konto-Reset pruefen</button>
 			</div>
 			<div id="ska-status" class="sakuraalbum-status"></div>
 			<div id="ska-preview-output"></div>
@@ -327,6 +330,25 @@
       .join("");
   }
 
+  function renderSourceRuleGuide() {
+    return `
+			<div class="sakuraalbum-rule-guide">
+				<div>
+					<strong>Standard</strong>
+					<span>Uebernimmt Album-Tiefe, Namensschema und Trenner aus dem Bereich darueber.</span>
+				</div>
+				<div>
+					<strong>Eigene Tiefe</strong>
+					<span>Nur dieser Quellordner bekommt eine eigene Tiefe; andere Regeln bleiben Standard, wenn leer.</span>
+				</div>
+				<div>
+					<strong>Alles in ein Album</strong>
+					<span>Alle Medien aus diesem Ordner und allen Unterordnern werden in einem Album gesammelt.</span>
+				</div>
+			</div>
+		`;
+  }
+
   function renderSourceTable() {
     if (!sourceFolders.length) {
       return '<div class="sakuraalbum-empty">Noch keine Quellordner ausgewaehlt. Ohne Auswahl nutzt SakuraAlbum die Admin-Vorgabe.</div>';
@@ -363,10 +385,11 @@
 				<td><strong>${escapeText(source.path)}</strong>${source.usesDefaultRules ? '<br><span class="sakuraalbum-field-help">Standardregeln</span>' : ""}</td>
 				<td>
 					<select class="ska-source-mode" title="Ordnerregel fuer diesen Quellordner.">
-						<option value="default" ${mode === "default" ? "selected" : ""}>Standard</option>
-						<option value="depth" ${mode === "depth" ? "selected" : ""}>Eigene Tiefe</option>
+						<option value="default" ${mode === "default" ? "selected" : ""}>Standard verwenden</option>
+						<option value="depth" ${mode === "depth" ? "selected" : ""}>Eigene Tiefe setzen</option>
 						<option value="single_album" ${mode === "single_album" ? "selected" : ""}>Alles in ein Album</option>
 					</select>
+					<br><span class="sakuraalbum-field-help">${escapeText(sourceModeHelp(mode))}</span>
 				</td>
 				<td><input class="ska-source-depth" type="number" min="0" max="${escapeAttr(adminSettings.maxScanDepth || 20)}" value="${escapeAttr(numberValue(source.albumDepth, 1))}" ${customDepth ? "" : "disabled"} title="Eigene Tiefe nur fuer diesen Ordner."></td>
 				<td>
@@ -431,6 +454,7 @@
     document.getElementById("ska-managed").addEventListener("click", loadManagedAlbums);
     document.getElementById("ska-delete-preview").addEventListener("click", deleteDryRunSelected);
     document.getElementById("ska-delete-all-preview").addEventListener("click", deleteDryRunAll);
+    document.getElementById("ska-reset-preview").addEventListener("click", resetDryRun);
     document.getElementById("ska-folder-open").addEventListener("click", () => {
       syncSourcesFromDom();
       folderBrowserOpen = true;
@@ -469,6 +493,7 @@
         sourceFolders = sourceFolders.filter((source) => source.id !== id);
         lastWriteRequest = null;
         lastDeleteRequest = null;
+        lastResetRequest = null;
         render();
       });
     });
@@ -503,6 +528,7 @@
     );
     lastWriteRequest = null;
     lastDeleteRequest = null;
+    lastResetRequest = null;
   }
 
   function syncSourcesFromDom() {
@@ -549,6 +575,7 @@
       sourceFolders = normalizeSourceFolders(settings.sourceFolders, settings.includePaths, effectiveSettings.sourceFolders);
       lastWriteRequest = null;
       lastDeleteRequest = null;
+      lastResetRequest = null;
       render();
       document.getElementById("ska-status").textContent = saveStatusText(response.queuedRefresh);
       await loadStatus(true);
@@ -752,6 +779,7 @@
     }
     lastWriteRequest = null;
     lastDeleteRequest = null;
+    lastResetRequest = null;
     render();
     document.getElementById("ska-status").textContent = exists
       ? "Dieser Quellordner ist bereits in der Liste."
@@ -764,6 +792,7 @@
     status.textContent = "Lade verwaltete Alben...";
     output.innerHTML = "";
     lastDeleteRequest = null;
+    lastResetRequest = null;
     try {
       const response = await request("/apps/sakuraalbum/api/v1/albums/managed?limit=200", "GET");
       managedAlbums = response.albums || [];
@@ -796,6 +825,7 @@
     status.textContent = "Pruefe Loeschaktion...";
     output.innerHTML = "";
     lastDeleteRequest = null;
+    lastResetRequest = null;
     try {
       const response = await request("/apps/sakuraalbum/api/v1/albums/delete/dry-run", "POST", {
         albumIds,
@@ -843,6 +873,7 @@
         planFingerprint: lastDeleteRequest.planFingerprint,
       });
       lastDeleteRequest = null;
+      lastResetRequest = null;
       status.textContent =
         response.status === "delete_completed"
           ? "Loeschjob abgeschlossen."
@@ -850,6 +881,70 @@
       renderDeleteResult(response);
     } catch (error) {
       status.textContent = `Loeschjob blockiert: ${error.message}`;
+    }
+  }
+
+  async function resetDryRun() {
+    const status = document.getElementById("ska-status");
+    const output = document.getElementById("ska-preview-output");
+    status.textContent = "Pruefe Konto-Reset...";
+    output.innerHTML = "";
+    lastWriteRequest = null;
+    lastDeleteRequest = null;
+    lastResetRequest = null;
+    try {
+      const response = await request("/apps/sakuraalbum/api/v1/account/reset/dry-run", "POST", {});
+      lastResetRequest = {
+        canReset: response.canReset === true,
+        confirmationText: response.confirmationText || "RESET_SAKURAALBUM",
+        planFingerprint: response.planFingerprint || "",
+        deletePlanFingerprint: response.deletePlanFingerprint || "",
+      };
+      status.textContent =
+        response.canReset === true
+          ? "Reset-Vorschau bereit."
+          : "Reset-Vorschau bereit. Zuruecksetzen ist aktuell blockiert.";
+      renderResetResult(response);
+    } catch (error) {
+      status.textContent = `Reset-Vorschau blockiert: ${error.message}`;
+    }
+  }
+
+  async function resetAccount() {
+    const status = document.getElementById("ska-status");
+    const output = document.getElementById("ska-preview-output");
+    if (!lastResetRequest || !lastResetRequest.canReset || !lastResetRequest.planFingerprint) {
+      status.textContent = "Bitte zuerst eine sichere Reset-Vorschau erstellen.";
+      return;
+    }
+
+    const confirmation = window.prompt(
+      `Gib ${lastResetRequest.confirmationText} ein, um SakuraAlbum fuer dein Konto zurueckzusetzen.`,
+    );
+    if (confirmation === null) {
+      return;
+    }
+
+    status.textContent = "Setze SakuraAlbum fuer dein Konto zurueck...";
+    output.innerHTML = "";
+    try {
+      const response = await request("/apps/sakuraalbum/api/v1/account/reset", "POST", {
+        confirmation,
+        planFingerprint: lastResetRequest.planFingerprint,
+        deletePlanFingerprint: lastResetRequest.deletePlanFingerprint,
+      });
+      settings = response.settings || settings;
+      effectiveSettings = response.effectiveSettings || effectiveSettings;
+      sourceFolders = normalizeSourceFolders(settings.sourceFolders, settings.includePaths, effectiveSettings.sourceFolders);
+      lastWriteRequest = null;
+      lastDeleteRequest = null;
+      lastResetRequest = null;
+      render();
+      document.getElementById("ska-status").textContent = "SakuraAlbum wurde fuer dein Konto zurueckgesetzt.";
+      renderResetResult(response);
+      await loadStatus(true);
+    } catch (error) {
+      status.textContent = `Reset blockiert: ${error.message}`;
     }
   }
 
@@ -879,6 +974,7 @@
     }
     lastWriteRequest = null;
     lastDeleteRequest = null;
+    lastResetRequest = null;
   }
 
   async function request(url, method, body) {
@@ -1041,6 +1137,40 @@
 				<strong>Bereit zum Loeschen</strong>
 				<span>Es werden nur Alben geloescht, die SakuraAlbum eindeutig als verwaltet erkennt. Die Bestaetigung lautet ${escapeText(result.confirmationText || "DELETE_MANAGED_ALBUMS")}.</span>
 				<div class="sakuraalbum-actions"><button id="ska-delete-confirm" class="sakuraalbum-button-danger" type="button">Jetzt verwaltete Alben loeschen</button></div>
+			</div>
+		`;
+  }
+
+  function renderResetResult(result) {
+    const output = document.getElementById("ska-preview-output");
+    const summary = result.summary || {};
+    const issues = result.resetBlockedReasons || [];
+    output.innerHTML = `
+			<div class="sakuraalbum-summary">
+				<div><strong>${escapeText(summary.plannedAlbums || 0)}</strong><br>Alben geprueft</div>
+				<div><strong>${escapeText(summary.wouldDeletePhotosAlbums || summary.deletedPhotosAlbums || 0)}</strong><br>Photos-Alben</div>
+				<div><strong>${escapeText(summary.wouldCleanupTrackingRecords || summary.cleanedTrackingRecords || 0)}</strong><br>Tracking</div>
+				<div><strong>${escapeText(summary.deletedDirtyPaths || 0)}</strong><br>Queue</div>
+				<div><strong>${escapeText(summary.deletedSyncCursors || 0)}</strong><br>Cursor</div>
+				<div><strong>${summary.willResetSettings || result.status === "account_reset_completed" ? "Ja" : "Nein"}</strong><br>Einstellungen</div>
+			</div>
+			${issues.map((issue) => `<div class="sakuraalbum-warning">${escapeText(humanDeleteIssueText(issue))}</div>`).join("")}
+			${result.canReset ? renderResetConfirm(result) : ""}
+			${result.deleteResult ? renderDeleteTable(result.deleteResult.albums || []) : ""}
+		`;
+    const resetConfirm = document.getElementById("ska-reset-confirm");
+    if (resetConfirm) {
+      resetConfirm.addEventListener("click", resetAccount);
+    }
+  }
+
+  function renderResetConfirm(result) {
+    return `
+			<div class="sakuraalbum-confirm-panel">
+				<strong>Konto-Reset bereit</strong>
+				<span>Dieser Schritt loescht nur eindeutig SakuraAlbum-verwaltete Photos-Alben, bereinigt SakuraAlbum-Queue und Cursor und setzt deine SakuraAlbum-Einstellungen auf Aus. Fehlerlogs bleiben fuer Diagnose erhalten.</span>
+				<span>Die Bestaetigung lautet ${escapeText(result.confirmationText || "RESET_SAKURAALBUM")}.</span>
+				<div class="sakuraalbum-actions"><button id="ska-reset-confirm" class="sakuraalbum-button-danger" type="button">Jetzt SakuraAlbum zuruecksetzen</button></div>
 			</div>
 		`;
   }
@@ -1522,6 +1652,16 @@
       photos_album_name_mismatch: "Album wurde umbenannt",
     };
     return labels[reason] || "";
+  }
+
+  function sourceModeHelp(mode) {
+    if (mode === "single_album") {
+      return "Erzeugt ein Album fuer diesen Quellordner, auch wenn viele Unterordner enthalten sind.";
+    }
+    if (mode === "depth") {
+      return "Nutzt die Tiefe aus dieser Zeile; tiefere Ordner werden im passenden Oberalbum gesammelt.";
+    }
+    return "Nutzt die Standardregel oben. Aenderungen am Standard wirken auf diesen Ordner mit.";
   }
 
   function humanIssueText(issue) {

@@ -260,6 +260,12 @@ class SettingsService {
 		return $settings;
 	}
 
+	public function resetUserSettings(string $userId): array {
+		$this->userConfig->deleteUserConfig($userId, Application::APP_ID, self::USER_SETTINGS_KEY);
+
+		return $this->normalizeUserSettings([], includeAdminDefaults: false);
+	}
+
 	public function getPreviewLimits(): array {
 		$admin = $this->getAdminSettings();
 		return [

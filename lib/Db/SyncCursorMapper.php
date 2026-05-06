@@ -102,6 +102,14 @@ class SyncCursorMapper extends QBMapper {
 		return $this->update($cursor);
 	}
 
+	public function deleteForUser(string $userId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)));
+
+		return $qb->executeStatement();
+	}
+
 	private function storedPath(string $path): string {
 		$path = trim($path, '/');
 		if (mb_strlen($path) <= 1024) {

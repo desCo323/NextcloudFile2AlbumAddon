@@ -1,6 +1,33 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-06 22:55:00 CET
+Datum: 2026-05-06 23:18:00 CET
+
+Neueste operative Notiz (2026-05-06 23:18 CET):
+- Neuer Version-1-Härtungsblock gestartet: Konto-Reset, bessere Ordnerregel-Erklaerung und Reset-Selbsttests.
+- Backup vor Reset-Testfenster: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-account-reset-20260506-221636/app/`.
+- Wiederherstellungsprompt fuer Neustart: "Stelle SakuraAlbum aus Backup `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-account-reset-20260506-221636/app/` nach `/var/www/nextcloud/apps/sakuraalbum/` wieder her, setze Eigentümer `www-data:www-data`, importiere bei Bedarf `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-account-reset-20260506-221636/db-relevant-before-test.sql`, pruefe danach `occ app:list`, `occ route:list | grep sakuraalbum` und SakuraAlbum-Logs."
+- Implementiert:
+  - Neue API-Routen `POST /api/v1/account/reset/dry-run` und `POST /api/v1/account/reset`.
+  - Neuer `AccountResetService`: Reset-Vorschau wrappt die bestehende sichere Delete-Dry-Run-Logik; Schreib-Reset verlangt `RESET_SAKURAALBUM`, nutzt die verwaltete Albumloeschung und bereinigt danach Queue/Cursor und persoenliche SakuraAlbum-Einstellungen.
+  - `DirtyPathMapper::deleteForUser`, `SyncCursorMapper::deleteForUser`, `SettingsService::resetUserSettings`.
+  - Personal-UI: `Konto-Reset pruefen`, Reset-Ergebnis, exakte Bestaetigung, deutlichere Erklaerungen fuer Standard/Eigene Tiefe/Unterordner zusammenfassen.
+  - `scripts/self-check.sh` prueft Reset-Service, Reset-Routen, UI und exakte Bestaetigung.
+- Fruehe Checks:
+  - `php -l` fuer neue/geaenderte PHP-Dateien erfolgreich.
+  - `node --check js/personal-settings-026.js` und `node --check js/personal-settings.js` erfolgreich.
+- Naechster Schritt:
+  - Vollstaendiges `./scripts/self-check.sh`, Backup fuer kontrolliertes Testfenster, Deployment auf `/var/www/nextcloud/apps/sakuraalbum`, Reset-/Auto-Sync-Live-Test mit `albentest`, anschliessend Testaccount auf 0 zuruecksetzen.
+- Live-Test-Fortschritt vor Server-Neustart:
+  - Produktiv-Deployment des Reset-Blocks wurde durchgefuehrt.
+  - Service-Test mit `albentest`: `single_album` fuer `/Photos` plante 1 Album mit 145 Medienlinks, Schreibtest erstellte 1 verwaltetes Album, Reset-Dry-Run war schreibbar, Reset loeschte 1 verwaltetes Photos-Album und setzte User-Settings zurueck.
+  - Nach Befund blieb eine deaktivierte `oc_preferences`-Zeile fuer `albentest`; lokale Korrektur: `SettingsService::resetUserSettings()` loescht die UserConfig jetzt statt Defaults zu speichern.
+- Server-Sicherheitsstatus nach Neustart (2026-05-06 ca. 22:33 CET):
+  - Server hatte harten Neustart: `last -x` zeigt vorherige Sitzung als `crash`, kein sauberer Shutdown-Eintrag.
+  - Nextcloud wieder geprueft: `occ status` sauber, Maintenance aus, DB-Upgrade nicht noetig, `https://chaosnet.me/status.php` via lokaler SNI-Pruefung HTTP 200.
+  - MariaDB lebt, Testnutzer-Restzustand: 0 aktive SakuraAlbum-Alben, 0 Dirty-Paths, 0 Cursor, 0 Photos-Alben.
+  - Produktive SakuraAlbum-App wurde aus Backup `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-account-reset-20260506-221636/app/` zurueckgerollt.
+  - Produktive SakuraAlbum-Freigaben wurden sicher deaktiviert: `globalEnabled=0`, `autoSyncMode=manual`, `debugMode=0`; PHP-FPM wurde neu gestartet.
+  - Weiterentwicklung nur lokal fortsetzen, bis ein Mensch bestaetigt, dass ein neues Testfenster erlaubt ist.
 
 Neueste operative Notiz (2026-05-06 22:05 CET):
 - Neuer Version-1-Block: direkter ZIP-Download fuer einzelne SakuraAlbum-verwaltete Alben.
