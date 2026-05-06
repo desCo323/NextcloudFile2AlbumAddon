@@ -1,6 +1,6 @@
 {
   "name": "sakuraalbum",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "Nextcloud app for managed Photos albums from folders.",
   "scripts": {

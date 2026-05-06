@@ -6,6 +6,7 @@ namespace OCA\SakuraAlbum\Service;
 
 use OCA\SakuraAlbum\BackgroundJob\AutoSyncJob;
 use OCA\SakuraAlbum\Db\DirtyPathMapper;
+use OCA\SakuraAlbum\Db\ManagedAlbumMapper;
 use OCP\Files\Events\Node\NodeRenamedEvent;
 use OCP\Files\FileInfo;
 use OCP\Files\Node;
@@ -19,11 +20,13 @@ class AutoSyncService {
 	private const AUTO_SYNC_JOB_CLASS = 'OCA\\SakuraAlbum\\BackgroundJob\\AutoSyncJob';
 	private const AUTO_SYNC_NUDGE_INTERVAL_SECONDS = 60;
 	private const AUTO_SYNC_NUDGE_DELAY_SECONDS = 15;
+	private const MISSING_MANAGED_ALBUM_USER_SCAN_LIMIT = 100;
 	private int $autoSyncNudgeLastAt = 0;
 
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly DirtyPathMapper $dirtyPathMapper,
+		private readonly ManagedAlbumMapper $managedAlbumMapper,
 		private readonly AlbumSyncService $albumSyncService,
 		private readonly LogService $logService,
 		private readonly IDBConnection $db,
@@ -80,6 +83,7 @@ class AutoSyncService {
 				'reason' => 'outside_configured_sources',
 				'eventType' => $eventType,
 				'sourcePath' => $path,
+				'match' => $this->autoSyncMatchContext($userId, $path),
 			]);
 			return;
 		}
@@ -186,6 +190,8 @@ class AutoSyncService {
 			], 'Stale automatic sync locks were returned to the pending queue.');
 		}
 
+		$missingManaged = $this->queueMissingManagedAlbumRefreshes($auto, $started);
+
 		$notAfter = $started - (int)$auto['debounceSeconds'];
 		$users = $this->dirtyPathMapper->findDueUsers($notAfter, (int)$auto['maxUsersPerRun']);
 		$summary = [
@@ -199,6 +205,9 @@ class AutoSyncService {
 			'lockedEvents' => 0,
 			'eventLimitHits' => 0,
 			'continuedUsers' => 0,
+			'missingManagedAlbumsSeen' => $missingManaged['missingManagedAlbumsSeen'],
+			'missingManagedAlbumUsersQueued' => $missingManaged['missingManagedAlbumUsersQueued'],
+			'missingManagedAlbumUsersSkipped' => $missingManaged['missingManagedAlbumUsersSkipped'],
 			'skippedReasons' => [],
 		];
 
@@ -361,6 +370,72 @@ class AutoSyncService {
 		return mb_substr($e->getMessage(), 0, 1000);
 	}
 
+	private function queueMissingManagedAlbumRefreshes(array $auto, int $now): array {
+		$summary = [
+			'missingManagedAlbumsSeen' => 0,
+			'missingManagedAlbumUsersQueued' => 0,
+			'missingManagedAlbumUsersSkipped' => 0,
+		];
+
+		$users = $this->managedAlbumMapper->findUsersWithMissingPhotosAlbums(self::MISSING_MANAGED_ALBUM_USER_SCAN_LIMIT);
+		if ($users === []) {
+			return $summary;
+		}
+
+		$summary['missingManagedAlbumsSeen'] = array_sum(array_map(
+			static fn (array $row): int => (int)($row['missingCount'] ?? 0),
+			$users,
+		));
+		$queuedAny = false;
+		foreach ($users as $row) {
+			$userId = (string)($row['userId'] ?? '');
+			if ($userId === '') {
+				continue;
+			}
+
+			$settings = $this->settingsService->getEffectiveUserSettings($userId);
+			if (($settings['enabled'] ?? false) !== true || ($settings['autoSyncActive'] ?? false) !== true) {
+				$summary['missingManagedAlbumUsersSkipped']++;
+				$this->logService->info('auto_sync_missing_managed_album_user_skipped', $userId, [
+					'missingManagedAlbums' => (int)($row['missingCount'] ?? 0),
+					'enabled' => $settings['enabled'] ?? false,
+					'autoSyncActive' => $settings['autoSyncActive'] ?? false,
+				], 'Missing SakuraAlbum-managed Photos albums were detected, but automatic sync is disabled for this user.');
+				continue;
+			}
+
+			$queuedPaths = [];
+			$dueAt = $now - max(30, (int)($auto['debounceSeconds'] ?? 0)) - 1;
+			foreach ($this->autoSyncQueuePaths($settings) as $path) {
+				$storedPath = PathHelper::displayPath($path);
+				$this->dirtyPathMapper->markDirty($userId, $storedPath, 'managed_album_missing', $dueAt);
+				$queuedPaths[] = $storedPath;
+			}
+
+			if ($queuedPaths === []) {
+				$summary['missingManagedAlbumUsersSkipped']++;
+				$this->logService->warning('auto_sync_missing_managed_album_no_sources', $userId, [
+					'missingManagedAlbums' => (int)($row['missingCount'] ?? 0),
+				], 'Missing SakuraAlbum-managed Photos albums were detected, but no active source folder could be queued.');
+				continue;
+			}
+
+			$queuedAny = true;
+			$summary['missingManagedAlbumUsersQueued']++;
+			$this->logService->warning('auto_sync_missing_managed_album_refresh_queued', $userId, [
+				'missingManagedAlbums' => (int)($row['missingCount'] ?? 0),
+				'queuedPaths' => $queuedPaths,
+				'dueAt' => $dueAt,
+			], 'SakuraAlbum detected that managed Photos albums disappeared outside the app and queued an automatic rebuild.');
+		}
+
+		if ($queuedAny) {
+			$this->ensureAutoSyncRunnerQueued();
+		}
+
+		return $summary;
+	}
+
 	public function queueStatus(int $sampleLimit = 12): array {
 		$auto = $this->settingsService->getAutoSyncSettings();
 		$job = $this->autoSyncJobHealth();
@@ -414,6 +489,10 @@ class AutoSyncService {
 			'dueUsersWaitingForWindow' => $dueUsersWaitingForWindow,
 			'oldestPendingAt' => $oldestPendingAt,
 			'nextDueAt' => $nextDueAt,
+			'missingManagedAlbums' => [
+				'count' => $this->managedAlbumMapper->countMissingPhotosAlbums(),
+				'samples' => $this->managedAlbumMapper->findMissingPhotosAlbumSamples(5),
+			],
 			'counts' => $this->dirtyPathMapper->countAllByStatus(),
 			'samples' => $this->dirtyPathMapper->findQueueSamples($sampleLimit),
 		];
@@ -446,6 +525,9 @@ class AutoSyncService {
 			'debounceSeconds' => (int)$auto['debounceSeconds'],
 			'nextDueAt' => $nextDueAt,
 			'oldestPendingAt' => $oldestPendingAt,
+			'missingManagedAlbums' => [
+				'count' => $this->managedAlbumMapper->countMissingPhotosAlbumsForUser($userId),
+			],
 			'counts' => $this->dirtyPathMapper->countByStatusForUser($userId),
 			'samples' => $this->dirtyPathMapper->findQueueSamplesForUser($userId, $sampleLimit),
 		];
@@ -541,6 +623,25 @@ class AutoSyncService {
 		}
 
 		return null;
+	}
+
+	private function autoSyncMatchContext(string $userId, string $path): array {
+		$settings = $this->settingsService->getEffectiveUserSettings($userId);
+		$configuredSources = [];
+		try {
+			$configuredSources = $this->autoSyncQueuePaths($settings);
+		} catch (\Throwable $e) {
+			$configuredSources = ['error:' . mb_substr($e->getMessage(), 0, 120)];
+		}
+
+		return [
+			'enabled' => $settings['enabled'] ?? false,
+			'autoSyncActive' => $settings['autoSyncActive'] ?? false,
+			'normalizedSourcePath' => PathHelper::displayPath($path),
+			'configuredSources' => $configuredSources,
+			'sourceFolderCount' => count($settings['sourceFolders'] ?? []),
+			'includePathCount' => count($settings['includePaths'] ?? []),
+		];
 	}
 
 	private function autoSyncQueuePaths(array $settings): array {

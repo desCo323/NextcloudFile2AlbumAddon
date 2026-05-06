@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace OCA\SakuraAlbum\Service;
 
+use OCA\SakuraAlbum\BackgroundJob\AlbumExportJob;
 use OCA\SakuraAlbum\Db\DirtyPathMapper;
+use OCA\SakuraAlbum\Db\DownloadJobMapper;
 use OCA\SakuraAlbum\Db\ManagedAlbumMapper;
 use OCA\SakuraAlbum\Db\SyncCursorMapper;
+use OCP\BackgroundJob\IJobList;
 
 class AccountResetService {
 	public const RESET_CONFIRMATION = 'RESET_SAKURAALBUM';
@@ -16,6 +19,8 @@ class AccountResetService {
 		private readonly ManagedAlbumMapper $managedAlbumMapper,
 		private readonly DirtyPathMapper $dirtyPathMapper,
 		private readonly SyncCursorMapper $syncCursorMapper,
+		private readonly DownloadJobMapper $downloadJobMapper,
+		private readonly IJobList $jobList,
 		private readonly SettingsService $settingsService,
 		private readonly LogService $logService,
 	) {
@@ -69,8 +74,11 @@ class AccountResetService {
 
 		$deletedDirtyPaths = $this->dirtyPathMapper->deleteForUser($userId);
 		$deletedCursors = $this->syncCursorMapper->deleteForUser($userId);
+		$downloadJobIds = $this->downloadJobMapper->findIdsForUser($userId);
+		$removedDownloadQueueJobs = $this->removeDownloadQueueJobs($userId, $downloadJobIds);
+		$deletedDownloadJobs = $this->downloadJobMapper->deleteForUser($userId);
 		$settings = $this->settingsService->resetUserSettings($userId);
-		$summary = $this->resetSummary($deleteResult, $deletedDirtyPaths, $deletedCursors);
+		$summary = $this->resetSummary($deleteResult, $deletedDirtyPaths, $deletedCursors, $deletedDownloadJobs, $removedDownloadQueueJobs);
 
 		$this->logService->success('account_reset_completed', $userId, [
 			'summary' => $summary,
@@ -89,7 +97,7 @@ class AccountResetService {
 	}
 
 	private function resetPlan(string $userId, array $deletePlan): array {
-		$summary = $this->resetSummary($deletePlan, 0, 0);
+		$summary = $this->resetSummary($deletePlan, 0, 0, 0, 0);
 		$summary['activeManagedAlbums'] = $this->managedAlbumMapper->countActiveForUser($userId);
 		$summary['willResetSettings'] = true;
 		$summary['willClearQueueAndCursors'] = true;
@@ -110,7 +118,7 @@ class AccountResetService {
 		];
 	}
 
-	private function resetSummary(array $deleteResult, int $deletedDirtyPaths, int $deletedCursors): array {
+	private function resetSummary(array $deleteResult, int $deletedDirtyPaths, int $deletedCursors, int $deletedDownloadJobs, int $removedDownloadQueueJobs): array {
 		$deleteSummary = $deleteResult['summary'] ?? [];
 
 		return [
@@ -123,7 +131,28 @@ class AccountResetService {
 			'deleteErrors' => (int)($deleteSummary['deleteErrors'] ?? 0),
 			'deletedDirtyPaths' => $deletedDirtyPaths,
 			'deletedSyncCursors' => $deletedCursors,
+			'deletedDownloadJobs' => $deletedDownloadJobs,
+			'removedDownloadQueueJobs' => $removedDownloadQueueJobs,
 		];
+	}
+
+	/**
+	 * @param int[] $downloadJobIds
+	 */
+	private function removeDownloadQueueJobs(string $userId, array $downloadJobIds): int {
+		$removed = 0;
+		foreach ($downloadJobIds as $downloadJobId) {
+			try {
+				$this->jobList->remove(AlbumExportJob::class, ['jobId' => $downloadJobId]);
+				$removed++;
+			} catch (\Throwable $e) {
+				$this->logService->exception('account_reset_export_queue_cleanup_failed', $e, $userId, [
+					'downloadJobId' => $downloadJobId,
+				]);
+			}
+		}
+
+		return $removed;
 	}
 
 	private function onlyNoAlbumsIssue(array $issues): bool {

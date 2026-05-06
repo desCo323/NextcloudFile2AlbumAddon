@@ -9,6 +9,7 @@ The current development version focuses on safe configuration, preview planning,
 - Admin settings for global enablement, group-limited rollout, default folders, scan limits, job limits, user quotas, video policy, and automatic update load controls.
 - Personal settings for opt-in, selectable source folders, folder-specific rules, exclusions, naming template, separator, depth, and media type.
 - Source folders can use global defaults, a folder-specific depth, or `Alles in ein Album` so a large subtree can be represented as one Photos album.
+- Folder-specific exception rules can override a subtree inside a source folder with a custom depth, one combined album, or complete exclusion.
 - Personal automatic-update opt-in that is only active when admins allow file-event mode.
 - Personal status view with queue state, recent run details, resumable cursor details, expandable diagnostics, and a 0-100% progress bar based on running sync or chunk cursor state.
 - Personal one-step automation action that enables SakuraAlbum plus automatic background generation when the administrator has allowed file-event mode.
@@ -29,6 +30,7 @@ The current development version focuses on safe configuration, preview planning,
 - Confirmed delete API that can delete only Photos albums still matching a SakuraAlbum managed record and a recent server-recorded delete-preview fingerprint.
 - Confirmed personal account reset that previews all managed-album cleanup first, then clears SakuraAlbum queue/cursor state and resets personal SakuraAlbum settings.
 - Direct ZIP download for a single SakuraAlbum-managed album, guarded by admin file and byte limits before streaming starts.
+- Background album export jobs for SakuraAlbum-managed and native Photos albums. Large exports are written into the user's Files area under `SakuraAlbum Exports`; exports above 1 GiB are split into part ZIP files.
 - App-owned tables for future tracking of generated albums and sync runs.
 - App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
 - Admin debug mode with stricter diagnostic logging and a log viewer.
@@ -43,6 +45,7 @@ The current development version focuses on safe configuration, preview planning,
 - Bulk deletion must only operate on app-tracked generated albums.
 - Album ZIP downloads must only operate on app-tracked generated albums that still match the Photos album id, owner, and name.
 - Direct ZIP downloads are blocked before streaming if the album exceeds the configured file or byte limit.
+- Background export jobs re-check album ownership, write only into the requesting user's Files area, and create `.nomedia`/`.noimage` markers in export folders so exported ZIPs are not picked up by SakuraAlbum scans.
 - Deletion requires the exact confirmation text `DELETE_MANAGED_ALBUMS`.
 - Deletion requires a matching plan fingerprint from a recent successful delete dry-run stored by the server.
 - Deletion re-checks the Photos album id, owner, and current name immediately before deleting.
@@ -63,6 +66,7 @@ The current development version focuses on safe configuration, preview planning,
 - Optional Auto-Sync maintenance windows prevent background queue processing outside configured low-load hours.
 - Queued automatic work is skipped if the user disables SakuraAlbum or automatic updates before the background job processes the queue.
 - Settings changes can queue all enabled source folders for the next background run when automatic sync is active.
+- If SakuraAlbum-managed Photos albums are deleted outside SakuraAlbum, the background job detects the missing managed album ids and queues a rebuild for the affected user.
 - Active source folders must not overlap. A nested source selection such as `/Photos` plus `/Photos/Trip` is blocked before writing so media is not planned twice.
 - Background sync is non-parallel and bounded by admin settings for debounce, interval, users per run, runtime, event count, folder count, file count, and album count.
 - Background sync summaries include seen events, reserved events, and event-limit hits so admins can tune load profiles from real diagnostics.

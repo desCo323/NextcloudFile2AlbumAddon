@@ -74,6 +74,7 @@ class AlbumPlanService {
 			$warnings[] = ['code' => 'no_include_paths', 'message' => 'No include folders configured.'];
 		}
 		array_push($warnings, ...$this->sourcePathWarnings($sources));
+		array_push($warnings, ...$this->folderRuleWarnings($settings['folderRules'] ?? [], $sources));
 
 		foreach ($sources as $source) {
 			if (($source['enabled'] ?? true) !== true) {
@@ -153,7 +154,15 @@ class AlbumPlanService {
 		if ($depth > (int)$limits['maxDepth']) {
 			return;
 		}
-		if ($this->isExcluded($currentPath, $settings['excludePatterns'] ?? [])) {
+		$folderSettings = $this->settingsForFolderPath($settings, $sourceRoot, $currentPath);
+		if (($folderSettings['_folderRuleMode'] ?? '') === 'exclude') {
+			$warnings[] = [
+				'code' => 'folder_rule_skip',
+				'path' => PathHelper::displayPath($currentPath),
+			];
+			return;
+		}
+		if ($this->isExcluded($currentPath, $folderSettings['excludePatterns'] ?? [])) {
 			return;
 		}
 
@@ -203,13 +212,14 @@ class AlbumPlanService {
 				}
 				$summary['lastCursorPath'] = PathHelper::displayPath($filePath);
 
-				if (!$this->isMediaFile($node, $settings)) {
+				if (!$this->isMediaFile($node, $folderSettings)) {
 					continue;
 				}
 
 				$summary['mediaFiles']++;
 				$summary['plannedLinks']++;
-				$targetPath = $this->targetAlbumPath($sourceRoot, $currentPath, (int)$settings['albumDepth']);
+				$albumDepthRoot = (string)($folderSettings['_albumDepthRoot'] ?? $sourceRoot);
+				$targetPath = $this->targetAlbumPath($albumDepthRoot, $currentPath, (int)$folderSettings['albumDepth']);
 				$key = $sourceId . "\n" . $sourceRoot . "\n" . $targetPath;
 				$summary['lastMediaFilePath'] = PathHelper::displayPath($filePath);
 
@@ -218,7 +228,7 @@ class AlbumPlanService {
 						'sourceId' => $sourceId,
 						'sourceRoot' => PathHelper::displayPath($sourceRoot),
 						'targetPath' => PathHelper::displayPath($targetPath),
-						'albumName' => $this->albumNameFormatter->format($sourceRoot, $targetPath, $settings),
+						'albumName' => $this->albumNameFormatter->format($sourceRoot, $targetPath, $folderSettings),
 						'mediaCount' => 0,
 						'aggregated' => $targetPath !== $currentPath,
 						'sampleFiles' => [],
@@ -356,6 +366,52 @@ class AlbumPlanService {
 		$result['albumDepth'] = (int)($source['effectiveAlbumDepth'] ?? $settings['albumDepth'] ?? 1);
 		$result['namingTemplate'] = (string)($source['effectiveNamingTemplate'] ?? $settings['namingTemplate'] ?? 'root_relative');
 		$result['separator'] = (string)($source['effectiveSeparator'] ?? $settings['separator'] ?? ' - ');
+		$result['_albumDepthRoot'] = PathHelper::normalizeUserPath((string)($source['path'] ?? ''));
+		return $result;
+	}
+
+	private function settingsForFolderPath(array $settings, string $sourceRoot, string $currentPath): array {
+		$currentPath = PathHelper::normalizeUserPath($currentPath);
+		$sourceRoot = PathHelper::normalizeUserPath($sourceRoot);
+		$bestRule = null;
+		$bestLength = -1;
+
+		foreach (($settings['folderRules'] ?? []) as $rule) {
+			if (!is_array($rule) || (($rule['enabled'] ?? true) !== true)) {
+				continue;
+			}
+			try {
+				$rulePath = PathHelper::normalizeUserPath((string)($rule['path'] ?? ''));
+			} catch (\InvalidArgumentException) {
+				continue;
+			}
+			if (!$this->pathWithin($rulePath, $sourceRoot) || !$this->pathWithin($currentPath, $rulePath)) {
+				continue;
+			}
+			$length = mb_strlen($rulePath);
+			if ($length > $bestLength) {
+				$bestRule = array_merge($rule, ['_normalizedPath' => $rulePath]);
+				$bestLength = $length;
+			}
+		}
+
+		if ($bestRule === null) {
+			return $settings;
+		}
+
+		$mode = (string)($bestRule['mode'] ?? 'depth');
+		$result = $settings;
+		$result['_folderRuleId'] = (string)($bestRule['id'] ?? '');
+		$result['_folderRuleMode'] = $mode;
+		$result['_albumDepthRoot'] = (string)$bestRule['_normalizedPath'];
+		$result['albumDepth'] = (int)($bestRule['effectiveAlbumDepth'] ?? $bestRule['albumDepth'] ?? $settings['albumDepth'] ?? 1);
+		$result['namingTemplate'] = (string)($bestRule['effectiveNamingTemplate'] ?? $bestRule['namingTemplate'] ?? $settings['namingTemplate'] ?? 'root_relative');
+		$result['separator'] = (string)($bestRule['effectiveSeparator'] ?? $bestRule['separator'] ?? $settings['separator'] ?? ' - ');
+
+		if ($mode === 'single_album' || $mode === 'exclude') {
+			$result['albumDepth'] = 0;
+		}
+
 		return $result;
 	}
 
@@ -394,6 +450,56 @@ class AlbumPlanService {
 		}
 
 		return $warnings;
+	}
+
+	private function folderRuleWarnings(array $rules, array $sources): array {
+		$warnings = [];
+		$sourcePaths = [];
+		foreach ($sources as $source) {
+			if (($source['enabled'] ?? true) !== true) {
+				continue;
+			}
+			try {
+				$sourcePaths[] = PathHelper::normalizeUserPath((string)($source['path'] ?? ''));
+			} catch (\InvalidArgumentException) {
+			}
+		}
+
+		foreach ($rules as $rule) {
+			if (!is_array($rule) || (($rule['enabled'] ?? true) !== true)) {
+				continue;
+			}
+			try {
+				$rulePath = PathHelper::normalizeUserPath((string)($rule['path'] ?? ''));
+			} catch (\InvalidArgumentException) {
+				$warnings[] = ['code' => 'invalid_folder_rule_path', 'path' => (string)($rule['path'] ?? '')];
+				continue;
+			}
+
+			$insideSource = false;
+			foreach ($sourcePaths as $sourcePath) {
+				if ($this->pathWithin($rulePath, $sourcePath)) {
+					$insideSource = true;
+					break;
+				}
+			}
+			if (!$insideSource) {
+				$warnings[] = [
+					'code' => 'folder_rule_outside_sources',
+					'path' => PathHelper::displayPath($rulePath),
+				];
+			}
+		}
+
+		return $warnings;
+	}
+
+	private function pathWithin(string $path, string $root): bool {
+		if ($root === '') {
+			return true;
+		}
+
+		return $path === $root || str_starts_with($path, $root . '/');
 	}
 
 	private function pathsOverlap(string $left, string $right): bool {

@@ -48,17 +48,20 @@ foreach ([
 }
 
 foreach ([
-	'Ordner hinzufuegen',
+	'Quellordner hinzufuegen',
+	'Ordnerregel hinzufuegen',
 	'Automatisch aktuell halten',
 	'Gruppe gesperrt',
 	'Wartungsfenster',
 	'Automatik einschalten',
 	'Update vormerken',
+	'Album-Downloads',
 	'Erweiterte manuelle Testfunktionen',
 	'Fehlerbericht vorbereiten',
 	'Details zur aktuellen Aktivitaet',
 	'/apps/sakuraalbum/api/v1/folders',
 	'/apps/sakuraalbum/api/v1/sync/status',
+	'/apps/sakuraalbum/api/v1/albums/export',
 	'/apps/sakuraalbum/api/v1/diagnostics/report',
 	'Alles in ein Album',
 ] as $needle) {
@@ -73,6 +76,8 @@ foreach ([
 	'folder#index',
 	'sync#status',
 	'sync#queueUpdate',
+	'albumExport#albums',
+	'albumExport#create',
 ] as $needle) {
 	assertUiContains($routes, $needle, 'appinfo/routes.php');
 }

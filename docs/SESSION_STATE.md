@@ -1,7 +1,59 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-06 23:18:00 CET
+Datum: 2026-05-07 00:34:00 CEST
 
+Neueste operative Notiz (2026-05-07 00:34 CEST):
+- Benutzerauftrag in diesem Block: Personal-UI einfacher machen, Ordner-Ausnahmen mit eigener Tiefe/Zusammenfassen/Auslassen bauen, spaetere Einstellungswechsel zerstoerungsfrei abgleichen, grosse Album-Downloads als Hintergrundjobs mit ZIP-Teilen ab 1 GiB ergaenzen und den lang bestehenden Auto-Sync-/Cron-Fehler endgueltig nachweisen.
+- Implementierter Stand `1.0.4`:
+  - Personal-UI hat eine einfachere Struktur mit Quellordnern, `Ordner-Regeln`, Vorschau/Status, sicherem Reset und `Album-Downloads`.
+  - `folderRules` speichern Unterordner-Ausnahmen separat von den Standardwerten: `depth`, `single_album` und `exclude`. Die Plan-/Sync-Logik waehlt die passendste aktive Regel je Pfad.
+  - Sync-Konfigurationshash enthaelt die Ordnerregeln; dadurch werden spaetere Aenderungen erkannt. Neue App-Alben werden erzeugt, alte eindeutig SakuraAlbum-verwaltete Albumcontainer koennen ueber die Admin-Sicherheitsoption bereinigt werden; Mediendateien werden nicht geloescht.
+  - Auto-Sync erkennt jetzt aktive SakuraAlbum-Tracking-Zeilen, deren `photos_album_id` extern aus `photos_albums` verschwunden ist, merkt betroffene Benutzer sofort als faellig vor und loggt `auto_sync_missing_managed_album_refresh_queued`.
+  - Neuer Exportpfad: SakuraAlbum- und native Photos-Alben koennen als Hintergrundjob nach `/SakuraAlbum Exports/<Album>-<JobId>/` geschrieben werden. Ab 1 GiB wird in `.partNNN.zip` geteilt; `.nomedia`/`.noimage` verhindern Rekursion in SakuraAlbum-Scans.
+  - Konto-Reset loescht jetzt auch Downloadjob-Datensaetze und die passenden Nextcloud-Queue-Eintraege fuer `AlbumExportJob`.
+- Frisches Live-Backup vor finalem Regressionstest:
+  - Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.4-final-regression-20260507-002408/`.
+  - Enthalten: App-Verzeichnis, `occ-status-before.txt`, `occ-app-list-before.txt`, `db-relevant-before-test.sql`, `SHA256SUMS`.
+  - Wiederherstellungsprompt: "Stelle `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.4-final-regression-20260507-002408/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, importiere bei Bedarf `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.4-final-regression-20260507-002408/db-relevant-before-test.sql`, fuehre `sudo -u www-data php /var/www/nextcloud/occ upgrade` aus, pruefe `occ status`, `occ app:list | grep sakuraalbum`, `occ background-job:list | grep SakuraAlbum` und setze Maintenance aus."
+- Finale Live-Tests mit `albentest`:
+  - `scripts/live-regression-104.php` lief erfolgreich: Testdaten erzeugt, 3 Alben/3 Links geplant, Auto-Sync Erstlauf erzeugte 3 verwaltete Alben, extern geloeschtes Photos-Album wurde im naechsten Lauf erkannt und repariert (`missingManagedAlbumsSeen=1`, `missingManagedAlbumUsersQueued=1`), Exportjob `jobId=4` wurde abgeschlossen, finaler Reset loeschte 3 Photos-Alben, 1 Cursor, 1 Downloadjob und 1 Export-Queue-Eintrag.
+  - Zusaetzlicher echter Nextcloud-Hintergrundjob-Test: Queue fuer `/Photos/SakuraAlbumBgJobRegression` vorbereitet, `occ background-job:execute 80842478984863745 --force-execute` ausgefuehrt, danach 2 verwaltete Alben erstellt; nach externer Albumloeschung reparierte ein weiterer echter Background-Job-Lauf die fehlende Photos-Album-ID.
+  - Cleanup danach: `active=0`, `dirty=0`, `cursors=0`, `downloads=0`, `missing=0` fuer `albentest`; Nextcloud `maintenance=false`, `needsDbUpgrade=false`, AutoSyncJob ist als einziger SakuraAlbum-Job registriert.
+- Lokale Checks nach finalem Queue-Reset-Fix: `./scripts/self-check.sh`, `git diff --check`, `php -l lib/Service/AccountResetService.php`, `php -l lib/Db/DownloadJobMapper.php` erfolgreich.
+- Finales Artefakt neu gebaut und entpackt erneut mit `./scripts/self-check.sh` geprueft: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.4.tar.gz`, SHA256 `f133d976add2a81b356fda9bf45f8b9e35f225a225ddff88f05b434d7991c0e1`.
+- Naechster Schritt: GitHub ohne gespeichertes Token aktualisieren.
+
+Vorherige operative Notiz (2026-05-06 23:45 CEST):
+- Benutzerauftrag: Personal-UI vereinfachen, Unterordner-Regeln mit eigener Tiefe/Auslassen/Zusammenfassen ergaenzen, zerstoerungsfreie Anpassung nach spaeteren Einstellungswechseln sicherstellen, Album-Downloads als Hintergrundjob fuer SakuraAlbum- und native Photos-Alben inklusive grosser ZIP-Teile ab 1 GiB bauen, und den lang bestehenden Auto-Sync-Fehler endgueltig finden.
+- Auto-Sync-Befund aus Live-Logs/DB:
+  - Der vorherige 1.0.3-Fix verarbeitet faellige Dirty-Queue-Eintraege korrekt; `albentest` hatte nach Cron-Lauf 4 aktive SakuraAlbum-Alben und 144 Medienlinks.
+  - Direkter WebDAV-PROPFIND auf Photos-Alben zeigte die erzeugten Alben.
+  - Plausible Restursache fuer den vom Benutzer gemeldeten Fall "alle Alben geloescht, danach keine Neuerstellung": Extern geloeschte Photos-Alben erzeugen keinen Datei-Event in den Quellordnern. SakuraAlbum kann fehlende verwaltete Photos-Album-IDs reparieren, wenn ein Lauf startet, aber bisher wurde ohne Datei-/Settings-Event kein Lauf vorgemerkt.
+- Umsetzung in Arbeit fuer `1.0.4`:
+  - `ManagedAlbumMapper` erkennt aktive SakuraAlbum-Tracking-Zeilen, deren `photos_album_id` nicht mehr in `photos_albums` existiert.
+  - `AutoSyncService` prueft diese Luecke am Anfang jedes Hintergrundlaufs, merkt betroffene Benutzer sofort als faellig vor und loggt `auto_sync_missing_managed_album_refresh_queued`.
+  - Datei-Event-Ignores bekommen detaillierteren Match-Kontext, damit falsche Quellpfad-Zuordnung im Log erkennbar ist.
+  - Benutzer-Einstellungen speichern nun `folderRules`; Plan- und Sync-Services beruecksichtigen Unterordner-Regeln fuer eigene Tiefe, ein Album oder Auslassen.
+  - Veraltete SakuraAlbum-verwaltete Albumstrukturen koennen beim Sync ueber alle aktiven App-Alben hinweg sicher bereinigt werden, wenn der Admin die sichere Bereinigung aktiviert; Mediendateien werden dabei nicht geloescht.
+  - Naechster Teil dieses Blocks: asynchroner Album-Export in Benutzerdateien mit Jobstatus, nativen Photos-Alben, SakuraAlbum-Alben und Teil-ZIP-Dateien ab 1 GiB.
+- Zwischenstand Code (2026-05-06 23:58 CEST):
+  - Neue Tabelle/Entity/Mapper: `sakuraalbum_download_jobs`, `DownloadJob`, `DownloadJobMapper`.
+  - Neuer Hintergrundjob: `AlbumExportJob`, nicht parallel, startet einzelne Exportjobs ueber Job-Argument `jobId`.
+  - Neuer Service/Controller/Routen: `AlbumExportService`, `AlbumExportController`, `/api/v1/albums/export/albums`, `/jobs`, `POST /export`, `GET /export/download`.
+  - Exportjobs validieren Besitzer und Quelle, schreiben ZIPs nach `/SakuraAlbum Exports/<Album>-<JobId>/`, setzen `.nomedia` und `.noimage`, splitten oberhalb 1 GiB in `.partNNN.zip`, loggen Start, Teilabschluss, Erfolg und Fehler.
+  - Personal-UI hat jetzt `Album-Downloads` mit Albumliste, Jobliste, Fortschrittsbalken, Teil-ZIP-Links und Polling fuer laufende Jobs.
+  - README, Benutzer- und Admin-Doku beschreiben Ordner-Ausnahmen, Hintergrunddownloads und die fehlende-verwaltete-Alben-Erkennung.
+  - Version auf `1.0.4` angehoben; cache-busting Assets `admin-settings-104.js` und `personal-settings-104.js` erzeugt.
+  - Lokale Checks bis hier: PHP-Syntax, JS-Syntax, `git diff --check`, `./scripts/self-check.sh`, Artefakt-Build und entpacktes Artefakt-Self-Check erfolgreich.
+  - Artefakt: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.4.tar.gz`, SHA256 `2c165d669a75917d5f94b8106fcb77802b1669df5477a17ec75e427cc7e5e64a`.
+  - Live-Testfenster vorbereitet:
+    - Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.4-export-rules-20260506-235950/`.
+    - Enthalten: App-Verzeichnis, `occ-status-before.txt`, `occ-app-list-before.txt`, `db-relevant-before-test.sql`, `SHA256SUMS`.
+    - Wiederherstellungsprompt: "Stelle `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.4-export-rules-20260506-235950/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, importiere bei Bedarf `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.4-export-rules-20260506-235950/db-relevant-before-test.sql`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ upgrade`, `occ status`, `occ app:list | grep sakuraalbum`, `occ background-job:list | grep SakuraAlbum` und setze Maintenance aus."
+  - Live-Deployment `1.0.4` ausgefuehrt:
+    - Nextcloud kurz in Maintenance gesetzt, Paket nach `/var/www/nextcloud/apps/sakuraalbum` synchronisiert, `occ upgrade` erfolgreich, Maintenance wieder aus.
+    - Status danach: `maintenance=false`, `needsDbUpgrade=false`, SakuraAlbum `1.0.4`.
+    - Neue Export-Routen sind in `occ route:list` vorhanden.
 Neueste operative Notiz (2026-05-06 23:24 CEST):
 - Benutzer meldet: Personal-UI zeigt `1 wartend`, `Naechster Lauf fruehestens ...` verschiebt sich scheinbar weiter und startet nicht.
 - Befund:

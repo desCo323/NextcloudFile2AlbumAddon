@@ -49,6 +49,7 @@ class SettingsService {
 		'enabled' => false,
 		'includePaths' => [],
 		'sourceFolders' => [],
+		'folderRules' => [],
 		'excludePatterns' => [],
 		'namingTemplate' => 'root_relative',
 		'separator' => ' - ',
@@ -225,6 +226,7 @@ class SettingsService {
 			'userEnabled' => $user['enabled'],
 			'includePaths' => $includePaths,
 			'sourceFolders' => $this->effectiveSourceFolders($sourceFolders, $user, $admin),
+			'folderRules' => $this->effectiveFolderRules($user['folderRules'], $user, $admin),
 			'excludePatterns' => $excludePatterns,
 			'namingTemplate' => $user['namingTemplate'],
 			'separator' => $user['separator'],
@@ -328,6 +330,7 @@ class SettingsService {
 			'enabled' => $this->boolValue($input['enabled'] ?? $defaults['enabled']),
 			'includePaths' => $this->pathList($input['includePaths'] ?? $defaults['includePaths']),
 			'sourceFolders' => $this->sourceFolderList($input['sourceFolders'] ?? $defaults['sourceFolders']),
+			'folderRules' => $this->folderRuleList($input['folderRules'] ?? $defaults['folderRules']),
 			'excludePatterns' => $this->stringList($input['excludePatterns'] ?? $defaults['excludePatterns']),
 			'namingTemplate' => $namingTemplate,
 			'separator' => AlbumNameFormatter::sanitizeSeparator((string)($input['separator'] ?? $defaults['separator'])),
@@ -400,6 +403,53 @@ class SettingsService {
 		return $result;
 	}
 
+	private function folderRuleList(mixed $value): array {
+		if (!is_array($value)) {
+			return [];
+		}
+
+		$result = [];
+		$seen = [];
+		foreach ($value as $item) {
+			if (!is_array($item)) {
+				continue;
+			}
+
+			$paths = $this->pathList([$item['path'] ?? '']);
+			if ($paths === []) {
+				continue;
+			}
+			$path = $paths[0];
+			$key = mb_strtolower($path);
+			if (isset($seen[$key])) {
+				continue;
+			}
+			$seen[$key] = true;
+
+			$mode = (string)($item['mode'] ?? 'depth');
+			if (!in_array($mode, ['depth', 'single_album', 'exclude'], true)) {
+				$mode = 'depth';
+			}
+			$namingTemplate = (string)($item['namingTemplate'] ?? '');
+			if ($namingTemplate !== '' && !in_array($namingTemplate, AlbumNameFormatter::TEMPLATES, true)) {
+				$namingTemplate = '';
+			}
+
+			$result[] = [
+				'id' => $this->folderRuleId($path),
+				'path' => $path,
+				'enabled' => $this->boolValue($item['enabled'] ?? true),
+				'mode' => $mode,
+				'albumDepth' => $this->intValue($item['albumDepth'] ?? 1, 0, 20),
+				'namingTemplate' => $namingTemplate,
+				'separator' => $this->optionalSeparator($item['separator'] ?? ''),
+			];
+		}
+
+		usort($result, static fn (array $left, array $right): int => mb_strlen((string)$right['path']) <=> mb_strlen((string)$left['path']));
+		return $result;
+	}
+
 	private function sourceFoldersFromPaths(array $paths, array $user): array {
 		return array_map(fn (string $path): array => [
 			'id' => $this->sourceFolderId($path),
@@ -434,8 +484,30 @@ class SettingsService {
 		}, $sourceFolders);
 	}
 
+	private function effectiveFolderRules(array $folderRules, array $user, array $admin): array {
+		return array_map(function (array $rule) use ($user, $admin): array {
+			$mode = (string)($rule['mode'] ?? 'depth');
+			$depth = match ($mode) {
+				'single_album', 'exclude' => 0,
+				default => min((int)($rule['albumDepth'] ?? 1), (int)$admin['maxScanDepth']),
+			};
+			$namingTemplate = (string)($rule['namingTemplate'] ?? '');
+			$separator = (string)($rule['separator'] ?? '');
+
+			return array_merge($rule, [
+				'effectiveAlbumDepth' => $depth,
+				'effectiveNamingTemplate' => $namingTemplate !== '' ? $namingTemplate : $user['namingTemplate'],
+				'effectiveSeparator' => $separator !== '' ? $separator : $user['separator'],
+			]);
+		}, $folderRules);
+	}
+
 	private function sourceFolderId(string $path): string {
 		return 'src_' . substr(hash('sha256', PathHelper::displayPath($path)), 0, 20);
+	}
+
+	private function folderRuleId(string $path): string {
+		return 'rule_' . substr(hash('sha256', PathHelper::displayPath($path)), 0, 20);
 	}
 
 	private function optionalSeparator(mixed $value): string {

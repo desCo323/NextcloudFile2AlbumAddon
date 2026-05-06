@@ -513,7 +513,7 @@ class AlbumSyncService {
 		if (!$partial && ($settings['syncDeleteMissingManagedAlbums'] ?? false) === true) {
 			if ($summary['albumErrors'] === 0 && $summary['fileErrors'] === 0) {
 				$this->persistWriteProgress($runId, $userId, $plan, $summary, 'cleanup_missing_albums');
-				$missingCleanup = $this->deleteMissingManagedAlbums($userId, $configHash, $currentTargetPaths, $summary['processedAlbums'], $runId);
+				$missingCleanup = $this->deleteMissingManagedAlbums($userId, $currentTargetPaths, $summary['processedAlbums'], $runId);
 				$summary['deletedMissingManagedAlbums'] += $missingCleanup['deletedMissingManagedAlbums'];
 				$summary['cleanedMissingTrackingRecords'] += $missingCleanup['cleanedMissingTrackingRecords'];
 				$summary['missingManagedAlbumDeleteErrors'] += $missingCleanup['missingManagedAlbumDeleteErrors'];
@@ -603,7 +603,7 @@ class AlbumSyncService {
 		return $summary;
 	}
 
-	private function deleteMissingManagedAlbums(string $userId, string $configHash, array $currentTargetPaths, int $processedAlbums, int $runId): array {
+	private function deleteMissingManagedAlbums(string $userId, array $currentTargetPaths, int $processedAlbums, int $runId): array {
 		$summary = [
 			'deletedMissingManagedAlbums' => 0,
 			'cleanedMissingTrackingRecords' => 0,
@@ -621,7 +621,7 @@ class AlbumSyncService {
 			return $summary;
 		}
 
-		$managedAlbums = $this->managedAlbumMapper->findActiveByConfigHash($userId, $configHash, $remainingAlbumBudget + 1);
+		$managedAlbums = $this->managedAlbumMapper->findActiveForUser($userId, $remainingAlbumBudget + 1);
 		if (count($managedAlbums) > $remainingAlbumBudget) {
 			$summary['missingManagedAlbumCleanupTruncated'] = true;
 			$managedAlbums = array_slice($managedAlbums, 0, $remainingAlbumBudget);
@@ -892,6 +892,7 @@ class AlbumSyncService {
 			'namingSchemaVersion' => Application::NAMING_SCHEMA_VERSION,
 			'includePaths' => $includePaths,
 			'sourceFolders' => $this->configSourceFolders($settings['sourceFolders'] ?? []),
+			'folderRules' => $this->configFolderRules($settings['folderRules'] ?? []),
 			'excludePatterns' => $excludePatterns,
 			'namingTemplate' => $settings['namingTemplate'] ?? '',
 			'separator' => $settings['separator'] ?? '',
@@ -911,6 +912,20 @@ class AlbumSyncService {
 			'effectiveNamingTemplate' => (string)($source['effectiveNamingTemplate'] ?? ''),
 			'effectiveSeparator' => (string)($source['effectiveSeparator'] ?? ''),
 		], $sourceFolders);
+		usort($result, static fn (array $a, array $b): int => [$a['path'], $a['id']] <=> [$b['path'], $b['id']]);
+		return $result;
+	}
+
+	private function configFolderRules(array $folderRules): array {
+		$result = array_map(static fn (array $rule): array => [
+			'id' => (string)($rule['id'] ?? ''),
+			'path' => (string)($rule['path'] ?? ''),
+			'enabled' => (bool)($rule['enabled'] ?? true),
+			'mode' => (string)($rule['mode'] ?? 'depth'),
+			'effectiveAlbumDepth' => (int)($rule['effectiveAlbumDepth'] ?? 0),
+			'effectiveNamingTemplate' => (string)($rule['effectiveNamingTemplate'] ?? ''),
+			'effectiveSeparator' => (string)($rule['effectiveSeparator'] ?? ''),
+		], $folderRules);
 		usort($result, static fn (array $a, array $b): int => [$a['path'], $a['id']] <=> [$b['path'], $b['id']]);
 		return $result;
 	}

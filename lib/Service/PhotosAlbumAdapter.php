@@ -39,6 +39,16 @@ class PhotosAlbumAdapter {
 		return $this->albumInfoToArray($album);
 	}
 
+	public function listUserAlbums(string $userId, int $limit): array {
+		$albums = array_map(
+			fn (AlbumInfo $album): array => $this->albumInfoToArray($album),
+			$this->albumMapper->getForUser($userId),
+		);
+		usort($albums, static fn (array $left, array $right): int => strnatcasecmp((string)$left['name'], (string)$right['name']));
+
+		return array_slice($albums, 0, max(1, min(1000, $limit)));
+	}
+
 	public function createAlbum(string $userId, string $albumName, string $location): array {
 		return $this->albumInfoToArray($this->albumMapper->create($userId, $albumName, $location));
 	}

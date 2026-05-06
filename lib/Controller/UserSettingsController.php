@@ -46,6 +46,7 @@ class UserSettingsController extends Controller {
 					'enabled' => $settings['enabled'],
 					'includePaths' => count($settings['includePaths']),
 					'sourceFolders' => count($settings['sourceFolders']),
+					'folderRules' => count($settings['folderRules'] ?? []),
 					'excludePatterns' => count($settings['excludePatterns']),
 					'namingTemplate' => $settings['namingTemplate'],
 					'albumDepth' => $settings['albumDepth'],

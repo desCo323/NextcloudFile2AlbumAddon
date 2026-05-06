@@ -95,6 +95,77 @@ class ManagedAlbumMapper extends QBMapper {
 	}
 
 	/**
+	 * @return array<int,array{userId:string,missingCount:int,oldestSeenAt:int}>
+	 */
+	public function findUsersWithMissingPhotosAlbums(int $limit): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('a.user_id')
+			->selectAlias($qb->func()->count('a.id'), 'missing_count')
+			->selectAlias($qb->func()->min('a.updated_at'), 'oldest_seen_at')
+			->from($this->tableName, 'a')
+			->leftJoin('a', 'photos_albums', 'p', $qb->expr()->eq('a.photos_album_id', 'p.album_id'))
+			->where($qb->expr()->neq('a.status', $qb->createNamedParameter('deleted')))
+			->andWhere($qb->expr()->isNotNull('a.photos_album_id'))
+			->andWhere($qb->expr()->isNull('p.album_id'))
+			->groupBy('a.user_id')
+			->orderBy('oldest_seen_at', 'ASC')
+			->setMaxResults(max(1, min(1000, $limit)));
+
+		return array_map(static fn (array $row): array => [
+			'userId' => (string)($row['user_id'] ?? ''),
+			'missingCount' => (int)($row['missing_count'] ?? 0),
+			'oldestSeenAt' => (int)($row['oldest_seen_at'] ?? 0),
+		], $qb->executeQuery()->fetchAllAssociative());
+	}
+
+	public function countMissingPhotosAlbums(): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('a.id'))
+			->from($this->tableName, 'a')
+			->leftJoin('a', 'photos_albums', 'p', $qb->expr()->eq('a.photos_album_id', 'p.album_id'))
+			->where($qb->expr()->neq('a.status', $qb->createNamedParameter('deleted')))
+			->andWhere($qb->expr()->isNotNull('a.photos_album_id'))
+			->andWhere($qb->expr()->isNull('p.album_id'));
+
+		return (int)$qb->executeQuery()->fetchOne();
+	}
+
+	public function countMissingPhotosAlbumsForUser(string $userId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('a.id'))
+			->from($this->tableName, 'a')
+			->leftJoin('a', 'photos_albums', 'p', $qb->expr()->eq('a.photos_album_id', 'p.album_id'))
+			->where($qb->expr()->eq('a.user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->neq('a.status', $qb->createNamedParameter('deleted')))
+			->andWhere($qb->expr()->isNotNull('a.photos_album_id'))
+			->andWhere($qb->expr()->isNull('p.album_id'));
+
+		return (int)$qb->executeQuery()->fetchOne();
+	}
+
+	/**
+	 * @return array<int,array{userId:string,albumName:string,targetPath:string,photosAlbumId:int}>
+	 */
+	public function findMissingPhotosAlbumSamples(int $limit): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('a.user_id', 'a.album_name', 'a.target_path', 'a.photos_album_id')
+			->from($this->tableName, 'a')
+			->leftJoin('a', 'photos_albums', 'p', $qb->expr()->eq('a.photos_album_id', 'p.album_id'))
+			->where($qb->expr()->neq('a.status', $qb->createNamedParameter('deleted')))
+			->andWhere($qb->expr()->isNotNull('a.photos_album_id'))
+			->andWhere($qb->expr()->isNull('p.album_id'))
+			->orderBy('a.updated_at', 'ASC')
+			->setMaxResults(max(1, min(50, $limit)));
+
+		return array_map(static fn (array $row): array => [
+			'userId' => (string)($row['user_id'] ?? ''),
+			'albumName' => (string)($row['album_name'] ?? ''),
+			'targetPath' => (string)($row['target_path'] ?? ''),
+			'photosAlbumId' => (int)($row['photos_album_id'] ?? 0),
+		], $qb->executeQuery()->fetchAllAssociative());
+	}
+
+	/**
 	 * @return array<int,int>
 	 */
 	public function activeMediaCountsForUserAndIds(string $userId, array $ids): array {

@@ -164,12 +164,32 @@ if ! rg -n "sourceFolders" lib/Service/SettingsService.php lib/Service/AlbumPlan
 	echo "Structured source folder rules are missing" >&2
 	exit 1
 fi
+if ! rg -n "folderRules" lib/Service/SettingsService.php lib/Service/AlbumPlanService.php lib/Service/AlbumSyncService.php js/personal-settings.js >/dev/null; then
+	echo "Folder-specific exception/depth rules are missing" >&2
+	exit 1
+fi
 if ! rg -n "ManagedAlbumDownloadService" lib/Service/ManagedAlbumDownloadService.php lib/Controller/ManagedAlbumController.php >/dev/null; then
 	echo "Managed album download service/controller is missing" >&2
 	exit 1
 fi
 if ! rg -n "albums/managed/download" appinfo/routes.php js/personal-settings.js >/dev/null; then
 	echo "Managed album download API/UI is missing" >&2
+	exit 1
+fi
+if ! rg -n "AlbumExportService" lib/Service/AlbumExportService.php lib/Controller/AlbumExportController.php lib/BackgroundJob/AlbumExportJob.php >/dev/null; then
+	echo "Asynchronous album export service/controller/job is missing" >&2
+	exit 1
+fi
+if ! rg -n "sakuraalbum_download_jobs" lib/Migration lib/Db >/dev/null; then
+	echo "Album export job table is missing" >&2
+	exit 1
+fi
+if ! rg -n "albums/export" appinfo/routes.php js/personal-settings.js >/dev/null; then
+	echo "Album export API/UI is missing" >&2
+	exit 1
+fi
+if ! rg -n "1073741824|PART_SIZE_BYTES" lib/Service/AlbumExportService.php js/personal-settings.js >/dev/null; then
+	echo "Album export ZIP part sizing is missing" >&2
 	exit 1
 fi
 if ! rg -n "maxDownloadFiles|maxDownloadBytes" lib/Service/SettingsService.php js/admin-settings.js >/dev/null; then

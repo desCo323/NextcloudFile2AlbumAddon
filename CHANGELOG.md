@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4
+
+- Added folder-specific exception rules inside source folders for custom depth, one combined album, or exclusion.
+- Added background album export jobs for SakuraAlbum-managed and native Photos albums, with user-visible progress and ZIP part files from 1 GiB upward.
+- Added automatic detection for SakuraAlbum-managed Photos albums that were deleted outside SakuraAlbum, so Auto-Sync can queue a rebuild without waiting for a file event.
+- Expanded Auto-Sync diagnostics for ignored file events and missing managed album rebuilds.
+
 ## 1.0.3
 
 - Scheduled Auto-Sync nudges after the configured debounce window instead of before it, preventing early empty Cron runs from delaying real work by another job interval.

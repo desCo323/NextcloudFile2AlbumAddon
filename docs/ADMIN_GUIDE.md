@@ -30,7 +30,7 @@ Direct album ZIP downloads have separate admin limits:
 - `Download: Dateilimit` blocks direct ZIP streaming when an album contains too many files.
 - `Download: Bytelimit` blocks direct ZIP streaming when the readable album files are too large in total.
 
-These limits are checked before the ZIP response starts. Larger export queues are intentionally left for a later background-export feature.
+These limits are checked before the direct ZIP response starts. Large user downloads should use `Album-Downloads`, which queues a background export and writes ZIP files into the user's Files area under `SakuraAlbum Exports`. Exports above 1 GiB are split into part ZIP files. Export folders contain `.nomedia` and `.noimage` marker files so broad SakuraAlbum source selections do not recursively ingest generated ZIPs.
 
 ## Load control
 
@@ -55,6 +55,8 @@ Set `Automatik` to `Bei Dateiaenderungen` to allow automatic updates server-wide
 If a user later disables SakuraAlbum for their account, queued automatic work for that user is skipped and cleared instead of writing stale work.
 
 Use `Auto: Wartungsfenster Start` and `Auto: Wartungsfenster Ende` to restrict automatic queue processing to low-load hours. Empty values mean always allowed. If the end time is earlier than the start time, the window spans midnight, for example `22:00` to `06:00`.
+
+If a user deletes SakuraAlbum-managed Photos albums directly in Photos, no file event is emitted by Nextcloud. SakuraAlbum therefore checks for active managed tracking rows whose Photos album id no longer exists at the start of automatic background processing and queues a rebuild for the affected source folders.
 
 ## Diagnostics
 
