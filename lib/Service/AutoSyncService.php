@@ -368,6 +368,12 @@ class AutoSyncService {
 		$notAfter = $now - (int)$auto['debounceSeconds'];
 		$oldestPendingAt = $this->dirtyPathMapper->oldestPendingAt();
 		$nextDueAt = $this->dirtyPathMapper->nextPendingDueAt((int)$auto['debounceSeconds']);
+		$dueUsers = $auto['mode'] === 'file_events' && ($auto['globalEnabled'] ?? true) === true && ($auto['windowActive'] ?? true) === true
+			? $this->dirtyPathMapper->countDueUsers($notAfter)
+			: 0;
+		$dueUsersWaitingForWindow = $auto['mode'] === 'file_events' && ($auto['globalEnabled'] ?? true) === true && ($auto['windowActive'] ?? true) !== true
+			? $this->dirtyPathMapper->countDueUsers($notAfter)
+			: 0;
 		$automationBlockingReason = null;
 		if (($auto['globalEnabled'] ?? false) !== true) {
 			$automationBlockingReason = 'global_disabled';
@@ -404,10 +410,10 @@ class AutoSyncService {
 			'maxRuntimeSeconds' => (int)$auto['maxRuntimeSeconds'],
 			'maxEventsPerRun' => (int)$auto['maxEventsPerRun'],
 			'dueBefore' => $notAfter,
-			'dueUsers' => $auto['mode'] === 'file_events' && ($auto['globalEnabled'] ?? true) === true && ($auto['windowActive'] ?? true) === true ? $this->dirtyPathMapper->countDueUsers($notAfter) : 0,
-			'dueUsersWaitingForWindow' => $auto['mode'] === 'file_events' && ($auto['globalEnabled'] ?? true) === true && ($auto['windowActive'] ?? true) !== true ? $this->dirtyPathMapper->countDueUsers($notAfter) : 0,
+			'dueUsers' => $dueUsers,
+			'dueUsersWaitingForWindow' => $dueUsersWaitingForWindow,
 			'oldestPendingAt' => $oldestPendingAt,
-			'nextDueAt' => $nextDueAt !== null ? max($now, $nextDueAt) : null,
+			'nextDueAt' => $nextDueAt,
 			'counts' => $this->dirtyPathMapper->countAllByStatus(),
 			'samples' => $this->dirtyPathMapper->findQueueSamples($sampleLimit),
 		];
@@ -438,7 +444,7 @@ class AutoSyncService {
 			'job' => $job,
 			'now' => $now,
 			'debounceSeconds' => (int)$auto['debounceSeconds'],
-			'nextDueAt' => $nextDueAt !== null ? max($now, $nextDueAt) : null,
+			'nextDueAt' => $nextDueAt,
 			'oldestPendingAt' => $oldestPendingAt,
 			'counts' => $this->dirtyPathMapper->countByStatusForUser($userId),
 			'samples' => $this->dirtyPathMapper->findQueueSamplesForUser($userId, $sampleLimit),
@@ -679,13 +685,14 @@ class AutoSyncService {
 			if (!$this->jobList->has(AutoSyncJob::class, null)) {
 				$this->jobList->add(AutoSyncJob::class);
 			}
+			$runAfter = $now + max(self::AUTO_SYNC_NUDGE_DELAY_SECONDS, (int)($auto['debounceSeconds'] ?? 0) + 1);
 			if (method_exists($this->jobList, 'scheduleAfter')) {
-				$runAfter = $now + self::AUTO_SYNC_NUDGE_DELAY_SECONDS;
 				$this->jobList->scheduleAfter(AutoSyncJob::class, $runAfter, null);
-				$this->forceAutoSyncRunnerToRunSoon($runAfter);
 			}
+			$this->forceAutoSyncRunnerToRunSoon($runAfter);
 			$this->logService->debug('auto_sync_runner_nudged', null, [
-				'runAfter' => $now + self::AUTO_SYNC_NUDGE_DELAY_SECONDS,
+				'runAfter' => $runAfter,
+				'debounceSeconds' => (int)($auto['debounceSeconds'] ?? 0),
 				'jobMode' => $auto['mode'],
 				'backgroundJobsMode' => $this->backgroundJobsMode(),
 			], 'Automatic SakuraAlbum background job was queued for near-term execution after queue update.');
@@ -719,7 +726,7 @@ class AutoSyncService {
 					if ($job instanceof AutoSyncJob) {
 						$this->jobList->resetBackgroundJob($job);
 						$this->jobList->scheduleAfter(AutoSyncJob::class, $runAfter, null);
-						return;
+						break;
 					}
 				}
 			}

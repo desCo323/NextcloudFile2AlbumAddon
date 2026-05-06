@@ -2,6 +2,27 @@
 
 Datum: 2026-05-06 23:18:00 CET
 
+Neueste operative Notiz (2026-05-06 23:24 CEST):
+- Benutzer meldet: Personal-UI zeigt `1 wartend`, `Naechster Lauf fruehestens ...` verschiebt sich scheinbar weiter und startet nicht.
+- Befund:
+  - Dirty-Queue: `albentest`, Pfad `Photos`, `settings_update`, `pending`, `last_seen_at=2026-05-06 23:19:33`.
+  - Cron lief um `23:20:03`; wegen 60s Entprellzeit war der Eintrag erst ab `23:20:33` faellig.
+  - SakuraAlbum-Job setzte nach diesem fruehen Leerlauf `last_run=23:20:03`; Nextcloud plant Intervalljobs danach erst wieder nach 300s (`23:25:03`).
+  - Status setzte `nextDueAt=max(now,nextDueAt)`, wodurch fällige Arbeit bei jedem UI-Refresh wie ein wandernder "fruehestens"-Zeitpunkt aussah.
+- Umsetzung in Arbeit fuer `1.0.3`:
+  - Auto-Sync-Nudge wird nach `debounceSeconds + 1` statt pauschal nach 15s geplant.
+  - `forceAutoSyncRunnerToRunSoon()` faellt auch nach Nextcloud-API-Reset in die direkte DB-Korrektur durch, damit `last_run + Intervall` nicht weiter blockiert.
+  - `queueStatus()` und `queueStatusForUser()` liefern das echte `nextDueAt` ohne `max(now, ...)`.
+  - Admin- und Personal-UI zeigen bei fälligen Einträgen stabil `Faellig, wartet auf Cron` statt einer wandernden Zeit.
+- Abschluss dieses Blocks:
+  - Backup vor Deployment: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.3-autosync-schedule-20260506-232502/`.
+  - Wiederherstellungsprompt: "Stelle `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.3-autosync-schedule-20260506-232502/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe `occ upgrade`, `occ status` und die gesicherten `oc_appconfig_sakuraalbum.tsv`/`oc_sakuraalbum_dirty_paths.tsv`."
+  - `1.0.3` live ausgerollt; `occ upgrade` erfolgreich; Nextcloud danach `maintenance=false`, `needsDbUpgrade=false`, SakuraAlbum `1.0.3`.
+  - Bestehender wartender Eintrag von `23:19:33` wurde nach Deployment per echtem Low-Priority-Cron verarbeitet: `processedUsers=1`, `succeededUsers=1`, Queue danach 0.
+  - Ergebnis der Erstverarbeitung fuer `albentest` `/Photos`: 4 verwaltete Alben, 144 Medienlinks, `fileErrors=0`, `albumErrors=0`.
+  - Regression fuer den Langzeitfehler: Direkt nach erfolgreichem Lauf erneut `queueUserRefresh('albentest')` ausgefuehrt. Neuer Jobzustand war korrekt `last_run=0`, `last_checked=now+61s`; nach Entprellzeit verarbeitete `/usr/local/sbin/nextcloud-cron-lowprio` den Eintrag sofort. Ergebnis: `processedUsers=1`, `succeededUsers=1`, `alreadyLinkedFiles=144`, `linkedFiles=0`, Queue 0, offene Cursor 0.
+  - Die 4 aktiven verwalteten Alben fuer `albentest` wurden bewusst stehen gelassen, damit der Benutzer sie im finalen UI-Test sehen kann.
+
 Neueste operative Notiz (2026-05-06 23:10 CEST):
 - Benutzerauftrag: Nextcloud/SakuraAlbum soll wirklich automatisch laufen.
 - Befund:

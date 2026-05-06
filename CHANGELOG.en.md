@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3
+
+- Scheduled Auto-Sync nudges after the configured debounce window instead of before it, preventing early empty Cron runs from delaying real work by another job interval.
+- Forced the SakuraAlbum background job's stored run state to the debounced run time even when Nextcloud's job-list API resets the job first.
+- Stabilized Auto-Sync status timestamps so already due work is shown as waiting for Cron instead of a moving "earliest next run" time.
+
 ## 1.0.2
 
 - Fixed SakuraAlbum's Auto-Sync Cron health check to read Nextcloud's real app config values `core.lastcron` and `core.backgroundjobs_mode`.
