@@ -87,11 +87,11 @@ if ! rg -n "data-profile" js/admin-settings.js >/dev/null; then
 	echo "Admin load-profile controls are missing" >&2
 	exit 1
 fi
-if ! rg -n "admin-settings-022" lib/Settings/Admin.php >/dev/null; then
+if ! rg -n "admin-settings-023" lib/Settings/Admin.php >/dev/null; then
 	echo "Admin settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
-if ! rg -n "personal-settings-022" lib/Settings/Personal.php >/dev/null; then
+if ! rg -n "personal-settings-023" lib/Settings/Personal.php >/dev/null; then
 	echo "Personal settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
@@ -157,6 +157,22 @@ if ! rg -n "estimatedProgressPercent" lib/Service/AlbumSyncService.php js/person
 fi
 if ! rg -n "Erweiterte manuelle Testfunktionen|Automatik einschalten" js/personal-settings.js >/dev/null; then
 	echo "Personal Auto-Sync UX polish is missing" >&2
+	exit 1
+fi
+if ! rg -n "DiagnosticReportService" lib/Service/DiagnosticReportService.php lib/Controller/DiagnosticsController.php >/dev/null; then
+	echo "Diagnostic report service/controller is missing" >&2
+	exit 1
+fi
+if ! rg -n "diagnostics/report" appinfo/routes.php js/admin-settings.js js/personal-settings.js >/dev/null; then
+	echo "Diagnostic report API/UI routes are missing" >&2
+	exit 1
+fi
+if ! rg -n "sendMailReady.*false|sendMailLater.*true" lib/Service/DiagnosticReportService.php >/dev/null; then
+	echo "Diagnostic report must clearly mark mail sending as future work" >&2
+	exit 1
+fi
+if ! rg -n "Fehlerbericht vorbereiten|Diagnosebericht" js/personal-settings.js js/admin-settings.js >/dev/null; then
+	echo "Diagnostic report UI actions are missing" >&2
 	exit 1
 fi
 if ! rg -n "REASON_UNIQUE_CONSTRAINT_VIOLATION" lib/Service/PhotosAlbumAdapter.php >/dev/null; then

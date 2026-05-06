@@ -28,6 +28,7 @@ The current development version focuses on safe configuration, preview planning,
 - App-owned tables for future tracking of generated albums and sync runs.
 - App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
 - Admin debug mode with stricter diagnostic logging and a log viewer.
+- Redacted diagnostic report preparation for users and admins; direct email sending is intentionally left for a later release.
 - SVG branding with a sakura blossom falling onto a dog.
 
 ## Safety model
@@ -41,6 +42,7 @@ The current development version focuses on safe configuration, preview planning,
 - Preview has strict folder/file limits from admin settings.
 - Debug logs redact common secret keys before storing context.
 - Debug exception traces intentionally omit function arguments.
+- Diagnostic reports reuse redacted app logs and explicitly mark mail sending as disabled until a future mail sender is added.
 - Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, require a matching recent dry-run plan fingerprint stored by the server, and refuse unsafe plans.
 - Existing Photos albums are not modified unless SakuraAlbum already tracks them as managed albums.
 - Repeated updates are idempotent: an already-linked Photos file is counted as already linked, including Photos versions that report the duplicate through the database layer.

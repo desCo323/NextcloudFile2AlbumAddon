@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.3
+
+- Added redacted diagnostic report preparation for users at `/api/v1/diagnostics/report`.
+- Added admin diagnostic report preparation at `/api/v1/admin/diagnostics/report`.
+- Reports include settings, queue state, cursor state, recent runs, managed-album summary, and recent SakuraAlbum logs for the relevant scope.
+- Reports explicitly mark mail sending as future work with `sendMailReady=false`.
+- Added personal `Fehlerbericht vorbereiten` and admin `Diagnosebericht` UI actions with JSON copy support.
+- Added cache-busting `admin-settings-023` and `personal-settings-023` assets.
+
 ## 0.2.2
 
 - Added an admin-only "due Auto-Sync now" action that processes queued automatic work through the existing load limits instead of bypassing cron safety.

@@ -58,6 +58,7 @@ Expected result: `Self-check passed`.
 - The `Update vormerken` action queues enabled source folders for the next background run without directly writing albums.
 - The personal status panel shows a progress bar, queue counters, latest run details, and expandable activity details.
 - Manual write controls are under `Erweiterte manuelle Testfunktionen`; normal users should not need them for automatic background generation.
+- Personal `Fehlerbericht vorbereiten` returns a redacted diagnostic JSON report and marks mail sending as not active yet.
 - For a large first-generation test with a deliberately low `Job: Dateilimit`, automatic sync should create only one bounded chunk per cron run, show cursor/chunk progress, and queue continuation work.
 - Partial chunk status must not show as fully complete. The cursor should expose an estimated progress value below 100% until the final chunk completes.
 - While a chunked background sync is incomplete, no stale-file removal or missing-managed-album cleanup may run from that partial plan.
@@ -122,6 +123,8 @@ Expected result: `Self-check passed`.
   - `auto_sync_runtime_limit_reached` if the runtime limit stops an automatic run
   - `auto_sync_user_completed` or `auto_sync_user_failed` during the automatic-sync test
   - `stale_file_removal_skipped`, `stale_file_remove_failed`, or stale-removal counters if files changed during sync
+- Admin `Diagnosebericht` returns a redacted diagnostic JSON report with auto-sync queue state, recent logs, and mail sending marked as not active yet.
+- Diagnostic reports must not include raw password, request token, authorization header, app password, GitHub token, cookie, or stack-trace arguments.
 - Confirm log context has no raw password, request token, authorization header, app password, or stack-trace arguments.
 
 ## Restore requirement
