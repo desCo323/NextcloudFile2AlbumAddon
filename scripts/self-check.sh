@@ -63,6 +63,14 @@ if ! rg -n "'syncDeleteMissingManagedAlbums' => false" lib/Service/SettingsServi
 	echo "Missing managed album cleanup must stay disabled by default" >&2
 	exit 1
 fi
+if ! rg -n "releaseStaleProcessing" lib/Db/DirtyPathMapper.php lib/Service/AutoSyncService.php >/dev/null; then
+	echo "Automatic sync must recover stale processing locks" >&2
+	exit 1
+fi
+if ! rg -n "auto_sync_runtime_limit_reached" lib/Service/AutoSyncService.php >/dev/null; then
+	echo "Automatic sync runtime-limit logging is missing" >&2
+	exit 1
+fi
 
 echo "Scanning for stale app identifiers"
 legacy_namespace="$(printf 'OCA\\%s' 'File2Album')"
