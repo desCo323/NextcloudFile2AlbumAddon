@@ -2,6 +2,23 @@
 
 Datum: 2026-05-07 00:34:00 CEST
 
+Neueste operative Notiz (2026-05-07 00:59 CEST):
+- Benutzerauftrag: alle Photos-Alben des Nextcloud-Benutzers `frithjofe` loeschen.
+- Sicherheitsumfang:
+  - Es werden nur Eintraege der Nextcloud-Photos-Albumtabellen geloescht, keine Mediendateien im Filesystem.
+  - Vorbefund: Benutzer existiert; Nextcloud gesund (`maintenance=false`, `needsDbUpgrade=false`); Photos `6.0.0`, SakuraAlbum `1.0.4`.
+  - Betroffen: 90 Photos-Alben, 18.983 Album-Dateiverknuepfungen, 0 Album-Collabs.
+  - SakuraAlbum fuer `frithjofe`: keine aktiven Tracking-Datensaetze, keine Dirty-Queue.
+- Backup vor Loeschung:
+  - `/home/cloud/sakuraalbum-backups/photos-albums-frithjofe-pre-delete-20260507-005920/`
+  - Enthalten: `occ-status-before.txt`, `user-info-before.txt`, `albums-before.json`, selektive SQL-Dumps fuer `photos_albums`, `photos_albums_files`, `photos_albums_collabs`, `sakuraalbum_albums`, `db-meta.json`, `SHA256SUMS`.
+  - Wiederherstellungsprompt: "Importiere bei Bedarf die SQL-Dumps aus `/home/cloud/sakuraalbum-backups/photos-albums-frithjofe-pre-delete-20260507-005920/` in die Nextcloud-Datenbank, beginnend mit `photos_albums_frithjofe.sql`, danach `photos_albums_files_frithjofe.sql` und `photos_albums_collabs_frithjofe.sql`; pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und zaehle `photos_albums` fuer `frithjofe`."
+- Loeschung ausgefuehrt:
+  - Geloescht ueber `OCA\\Photos\\Album\\AlbumMapper::delete()` fuer die 90 vorher gesicherten Album-IDs.
+  - Ergebnis: `deletedAlbums=90`, `remainingAlbums=0`, `remainingLinksForDeletedIds=0`, `remainingCollabsForDeletedIds=0`.
+  - Nachpruefung: Nextcloud weiterhin gesund (`maintenance=false`, `needsDbUpgrade=false`); fuer `frithjofe` `owned_photos_albums=0`, `links_for_owned_albums=0`, `collabs_for_owned_albums=0`, `sakura_dirty=0`, `sakura_tracked=0`.
+  - Backup-Pruefsummen mit `sha256sum -c SHA256SUMS` erfolgreich.
+
 Neueste operative Notiz (2026-05-07 00:43 CEST):
 - Benutzer meldet nach `1.0.4`: keine sichtbaren Alben, Personal-Status zeigt nur `wartend 1`.
 - Live-Befund ohne Eingriff:
