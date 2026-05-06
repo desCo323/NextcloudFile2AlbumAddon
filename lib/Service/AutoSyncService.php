@@ -54,6 +54,19 @@ class AutoSyncService {
 		}
 
 		$started = time();
+		$staleOlderThan = $started - max(
+			600,
+			((int)$auto['debounceSeconds']) * 2,
+			((int)$auto['maxRuntimeSeconds']) * 2,
+		);
+		$recoveredLocks = $this->dirtyPathMapper->releaseStaleProcessing($staleOlderThan, (int)$auto['maxEventsPerRun']);
+		if ($recoveredLocks > 0) {
+			$this->logService->warning('auto_sync_stale_locks_recovered', null, [
+				'recoveredLocks' => $recoveredLocks,
+				'olderThan' => $staleOlderThan,
+			], 'Stale automatic sync locks were returned to the pending queue.');
+		}
+
 		$notAfter = $started - (int)$auto['debounceSeconds'];
 		$users = $this->dirtyPathMapper->findDueUsers($notAfter, (int)$auto['maxUsersPerRun']);
 		$summary = [
@@ -62,6 +75,7 @@ class AutoSyncService {
 			'failedUsers' => 0,
 			'skippedUsers' => 0,
 			'dueUsers' => count($users),
+			'recoveredStaleLocks' => $recoveredLocks,
 		];
 
 		foreach ($users as $userId) {
@@ -111,6 +125,17 @@ class AutoSyncService {
 
 			$summary['processedUsers']++;
 		}
+
+		if (($summary['stoppedReason'] ?? '') === 'runtime_limit') {
+			$this->logService->warning('auto_sync_runtime_limit_reached', null, [
+				'summary' => $summary,
+				'maxRuntimeSeconds' => (int)$auto['maxRuntimeSeconds'],
+			], 'Automatic SakuraAlbum sync stopped because the runtime limit was reached.');
+		}
+
+		$this->logService->debug('auto_sync_process_completed', null, [
+			'summary' => $summary,
+		]);
 
 		return $summary;
 	}
