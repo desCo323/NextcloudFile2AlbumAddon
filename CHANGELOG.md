@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2
+
+- Fixed SakuraAlbum's Auto-Sync Cron health check to read Nextcloud's real app config values `core.lastcron` and `core.backgroundjobs_mode`.
+- The admin Auto-Status no longer reports `cron_not_recorded` when Nextcloud Cron is actually running.
+
 ## 1.0.1
 
 - Made `Bei Dateiaenderungen` the default admin Auto-Sync mode for new installations.

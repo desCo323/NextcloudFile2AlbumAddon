@@ -2,6 +2,27 @@
 
 Datum: 2026-05-06 23:18:00 CET
 
+Neueste operative Notiz (2026-05-06 23:10 CEST):
+- Benutzerauftrag: Nextcloud/SakuraAlbum soll wirklich automatisch laufen.
+- Befund:
+  - Nextcloud ist gesund (`maintenance=false`, `needsDbUpgrade=false`) und System-Cron ruft alle 5 Minuten `/usr/local/sbin/nextcloud-cron-lowprio` als `www-data` auf.
+  - Nextcloud speichert den echten Cron-Zeitstempel unter `oc_appconfig`: `core.lastcron=1778101512`; `core.backgroundjobs_mode=cron`.
+  - SakuraAlbum las fuer seine Cron-Diagnose faelschlich `getSystemValue('lastcron')` und meldete deshalb `cron_not_recorded`, obwohl Nextcloud Cron laeuft.
+  - Alter Nebenbefund in `/var/log/nextcloud-cron.log`: ein historischer `Segmentation fault` vor diesem Block; seit dem Reboot sind Cron-Sessions kurz und regelmaessig durchgelaufen.
+- Umsetzung in Arbeit fuer `1.0.2`:
+  - `AutoSyncService::backgroundJobsState()` liest `core.lastcron` per App-Konfiguration.
+  - `AutoSyncService::backgroundJobsMode()` liest `core.backgroundjobs_mode` per App-Konfiguration.
+  - Version und cache-busting Assets werden auf `1.0.2` angehoben.
+- Abschluss dieses Blocks:
+  - Backup vor Deployment: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.2-cron-health-20260506-231046/`.
+  - Wiederherstellungsprompt: "Stelle `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.2-cron-health-20260506-231046/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe `occ upgrade`, `occ status` und `appconfig_core_sakuraalbum.tsv`."
+  - `1.0.2` live ausgerollt; `occ upgrade` erfolgreich; Nextcloud danach `maintenance=false`, `needsDbUpgrade=false`, SakuraAlbum `1.0.2`.
+  - Admin-Auto-Status nach Fix: `backgroundJobsCronHealthy=true`, `automationBlockingReason=null`, `backgroundJobsMode=cron`, `backgroundJobsLastCronAt` gesetzt.
+  - Echter Cron-Verarbeitungstest mit `albentest`: isolierter Ordner `/Photos/SakuraAlbumCron102`, Queue vorgemerkt, nach Entprellzeit `/usr/local/sbin/nextcloud-cron-lowprio` ausgefuehrt. Ergebnis: `auto_sync_user_started`, `auto_chunk_completed`, `auto_sync_user_completed`, `auto_sync_process_completed`; erzeugtes Testalbum `SakuraAlbumCron102` mit 1 Medium.
+  - Cleanup: Account-Reset loeschte 1 Test-Photos-Album und 1 Cursor; Testordner entfernt; danach `active_managed=0`, `dirty=0`, `cursors=0` fuer `albentest`.
+  - Cron-Log wurde vor dem Test nach Backup kopiert und neu begonnen; waehrend des 1.0.2-Tests keine neue Ausgabe/kein Segfault in `/var/log/nextcloud-cron.log`.
+  - Checks: `php -l`, `node --check`, `git diff --check`, `./scripts/self-check.sh`, Artefakt-Build und entpacktes Artefakt-Self-Check erfolgreich. Artefakt: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.2.tar.gz`, SHA256 `0b7bf2f4ddf28e784aaa2b273f440745b5b8c617f7a4229f733af62353da0978`.
+
 Neueste operative Notiz (2026-05-06 22:55 CEST):
 - Benutzer meldet: Personal-UI zeigt "Automatische Albumaktualisierung nicht aktiv", obwohl Admin auf `Bei Dateiaenderungen` steht.
 - Befund aus Live-Konfiguration/Logs: Admin ist `globalEnabled=1`, `autoSyncMode=file_events`, aber `albentest` hatte gespeicherte Benutzerwerte `enabled=false` und `autoSyncEnabled=false`.

@@ -740,7 +740,7 @@ class AutoSyncService {
 
 	private function backgroundJobsState(int $configuredIntervalSeconds, int $now): array {
 		$mode = $this->backgroundJobsMode();
-		$rawLastCron = $this->config->getSystemValue('lastcron', 0);
+		$rawLastCron = $this->config->getAppValue('core', 'lastcron', '0');
 		$lastCronAt = is_numeric($rawLastCron) ? (int)$rawLastCron : null;
 		$lastCronAgeSeconds = $lastCronAt !== null && $lastCronAt > 0 ? max(0, $now - $lastCronAt) : null;
 
@@ -766,6 +766,6 @@ class AutoSyncService {
 	}
 
 	private function backgroundJobsMode(): string {
-		return $this->config->getSystemValueString('backgroundjobs_mode', 'cron');
+		return $this->config->getAppValue('core', 'backgroundjobs_mode', 'cron');
 	}
 }
