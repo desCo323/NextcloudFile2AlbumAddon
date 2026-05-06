@@ -15,9 +15,20 @@ done < <(find js -name '*.js' -print0)
 
 echo "Checking app metadata XML"
 php -r '$xml = simplexml_load_file("appinfo/info.xml"); if (!$xml || (string)$xml->id !== "sakuraalbum" || (string)$xml->name !== "SakuraAlbum") { fwrite(STDERR, "Invalid appinfo/info.xml\n"); exit(1); }'
+APP_VERSION="$(php -r '$xml = simplexml_load_file("appinfo/info.xml"); echo (string)$xml->version;' )"
+ASSET_SUFFIX="${APP_VERSION//./}"
+if command -v curl >/dev/null 2>&1; then
+	echo "Validating app metadata against the official schema"
+	schema_file="$(mktemp)"
+	trap 'rm -f "$schema_file"' EXIT
+	curl -fsSL https://apps.nextcloud.com/schema/apps/info.xsd -o "$schema_file"
+	php -r '$doc = new DOMDocument(); $doc->load("appinfo/info.xml"); if (!$doc->schemaValidate($argv[1])) { fwrite(STDERR, "appinfo/info.xml does not validate against the official schema\n"); exit(1); }' "$schema_file"
+fi
 
 echo "Running naming smoke tests"
 php tests/Smoke/NamingSmokeTest.php >/dev/null
+php tests/Smoke/ReleaseMetadataSmokeTest.php >/dev/null
+php tests/Smoke/UiSmokeTest.php >/dev/null
 
 echo "Scanning for accidental GitHub personal access tokens"
 token_prefix="ghp"
@@ -87,11 +98,11 @@ if ! rg -n "data-profile" js/admin-settings.js >/dev/null; then
 	echo "Admin load-profile controls are missing" >&2
 	exit 1
 fi
-if ! rg -n "admin-settings-023" lib/Settings/Admin.php >/dev/null; then
+if ! rg -n "admin-settings-${ASSET_SUFFIX}" lib/Settings/Admin.php >/dev/null; then
 	echo "Admin settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
-if ! rg -n "personal-settings-023" lib/Settings/Personal.php >/dev/null; then
+if ! rg -n "personal-settings-${ASSET_SUFFIX}" lib/Settings/Personal.php >/dev/null; then
 	echo "Personal settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
@@ -105,6 +116,10 @@ if ! rg -n "autoSyncEnabled" lib/Service/SettingsService.php js/personal-setting
 fi
 if ! rg -n "autoSyncActive" lib/Service/SettingsService.php lib/Service/AutoSyncService.php >/dev/null; then
 	echo "Automatic sync must require the user's effective opt-in state" >&2
+	exit 1
+fi
+if ! rg -n "auto_sync_user_skipped_disabled" lib/Service/AutoSyncService.php docs/ADMIN_GUIDE.md >/dev/null; then
+	echo "Automatic sync must skip already queued work after the user disables auto-sync" >&2
 	exit 1
 fi
 if ! rg -n "sourceFolders" lib/Service/SettingsService.php lib/Service/AlbumPlanService.php js/personal-settings.js >/dev/null; then

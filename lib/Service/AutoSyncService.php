@@ -108,6 +108,18 @@ class AutoSyncService {
 			}
 
 			try {
+				$settings = $this->settingsService->getEffectiveUserSettings($userId);
+				if (($settings['enabled'] ?? false) !== true || ($settings['autoSyncActive'] ?? false) !== true) {
+					$this->dirtyPathMapper->markUserProcessed($userId, $lockTime);
+					$summary['skippedUsers']++;
+					$this->logService->info('auto_sync_user_skipped_disabled', $userId, [
+						'pendingEvents' => $pending,
+						'lockedEvents' => $locked,
+						'enabled' => $settings['enabled'] ?? false,
+						'autoSyncActive' => $settings['autoSyncActive'] ?? false,
+					], 'Automatic SakuraAlbum sync skipped queued work because the user or automatic opt-in is disabled.');
+					continue;
+				}
 				$this->logService->debug('auto_sync_user_started', $userId, [
 					'pendingEvents' => $pending,
 					'lockedEvents' => $locked,

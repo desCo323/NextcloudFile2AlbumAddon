@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.4
+
+- Added user, admin, developer, privacy, and store-release documentation.
+- Added documentation and discussion links to `appinfo/info.xml`.
+- Declared the SakuraAlbum background job in app metadata.
+- Hardened automatic sync so queued work is skipped and cleared if a user disables SakuraAlbum or automatic updates before processing.
+- Added release metadata and UI smoke self-checks.
+- Added cache-busting `admin-settings-024` and `personal-settings-024` assets.
+
 ## 0.2.3
 
 - Added redacted diagnostic report preparation for users at `/api/v1/diagnostics/report`.

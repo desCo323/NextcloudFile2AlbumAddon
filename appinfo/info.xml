@@ -9,19 +9,28 @@ SakuraAlbum creates managed Nextcloud Photos albums from existing folder structu
 
 The app is designed for safe migrations and repeatable synchronization: users can preview planned albums before applying changes, and generated albums are tracked separately so bulk deletion can be limited to app-created albums.
 ]]></description>
-    <version>0.2.3</version>
+    <version>0.2.4</version>
     <licence>AGPL-3.0-or-later</licence>
     <author mail="desco323@users.noreply.github.com">desCo323</author>
     <namespace>SakuraAlbum</namespace>
+    <documentation>
+        <user>https://github.com/desCo323/NextcloudFile2AlbumAddon/blob/main/docs/USER_GUIDE.md</user>
+        <admin>https://github.com/desCo323/NextcloudFile2AlbumAddon/blob/main/docs/ADMIN_GUIDE.md</admin>
+        <developer>https://github.com/desCo323/NextcloudFile2AlbumAddon/blob/main/docs/DEVELOPER_NOTES.md</developer>
+    </documentation>
     <category>multimedia</category>
     <category>files</category>
     <website>https://github.com/desCo323/NextcloudFile2AlbumAddon</website>
+    <discussion>https://github.com/desCo323/NextcloudFile2AlbumAddon/discussions</discussion>
     <bugs>https://github.com/desCo323/NextcloudFile2AlbumAddon/issues</bugs>
     <repository>https://github.com/desCo323/NextcloudFile2AlbumAddon.git</repository>
     <dependencies>
         <php min-version="8.3" />
         <nextcloud min-version="33" max-version="33" />
     </dependencies>
+    <background-jobs>
+        <job>OCA\SakuraAlbum\BackgroundJob\AutoSyncJob</job>
+    </background-jobs>
     <settings>
         <admin>OCA\SakuraAlbum\Settings\Admin</admin>
         <admin-section>OCA\SakuraAlbum\Settings\AdminSection</admin-section>

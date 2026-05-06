@@ -2,7 +2,7 @@
 
 SakuraAlbum is a Nextcloud app for creating managed Photos albums from existing folder structures.
 
-The current development version focuses on safe configuration, preview planning, guarded dry-run/write paths, and guarded deletion of generated albums. It must not be enabled against production Photos albums until a controlled backup test window is prepared.
+The current development version focuses on safe configuration, preview planning, guarded dry-run/write paths, guarded deletion of generated albums, automatic background updates, and store-ready release documentation. It must not be enabled against production Photos albums until a controlled backup test window is prepared.
 
 ## Current scope
 
@@ -29,6 +29,7 @@ The current development version focuses on safe configuration, preview planning,
 - App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
 - Admin debug mode with stricter diagnostic logging and a log viewer.
 - Redacted diagnostic report preparation for users and admins; direct email sending is intentionally left for a later release.
+- User, admin, developer, privacy, and store-release documentation linked from `appinfo/info.xml`.
 - SVG branding with a sakura blossom falling onto a dog.
 
 ## Safety model
@@ -49,6 +50,7 @@ The current development version focuses on safe configuration, preview planning,
 - File events never perform heavy scans or album writes directly. They only queue dirty paths for a later background job.
 - File-event queue rows are collapsed to the affected include root so a large upload inside one selected folder does not create one independent sync job per file.
 - File-event auto-sync requires three gates: global admin enablement, user enablement, and the user's explicit automatic-update opt-in.
+- Queued automatic work is skipped if the user disables SakuraAlbum or automatic updates before the background job processes the queue.
 - Settings changes can queue all enabled source folders for the next background run when automatic sync is active.
 - Active source folders must not overlap. A nested source selection such as `/Photos` plus `/Photos/Trip` is blocked before writing so media is not planned twice.
 - Background sync is non-parallel and bounded by admin settings for debounce, interval, users per run, runtime, event count, folder count, file count, and album count.
@@ -84,3 +86,7 @@ The package is created under `../artifacts/` with a top-level `sakuraalbum/` fol
 Do not enable this app on a production Nextcloud before a backup and restore prompt have been prepared. Live tests may only use the Nextcloud user `albentest`.
 
 During controlled tests, enable admin setting `debugMode` so preview requests, successes, warnings, and failures are stored with enough context for diagnosis.
+
+## Publication notes
+
+SakuraAlbum includes app-store metadata, changelogs, background-job declaration, documentation links, and a release checklist. Before a public app-store submission, re-review `PhotosAlbumAdapter` against the then-current Nextcloud and Photos APIs because it is the intentionally isolated Photos integration point.
