@@ -2,6 +2,20 @@
 
 Datum: 2026-05-07 00:34:00 CEST
 
+Neueste operative Notiz (2026-05-07 00:43 CEST):
+- Benutzer meldet nach `1.0.4`: keine sichtbaren Alben, Personal-Status zeigt nur `wartend 1`.
+- Live-Befund ohne Eingriff:
+  - Nextcloud gesund: `maintenance=false`, `needsDbUpgrade=false`, SakuraAlbum `1.0.4`.
+  - `globalEnabled=1`, `autoSyncMode=file_events`, `jobIntervalMinutes=5`.
+  - System-Cron ist aktiv und `www-data` ruft alle 5 Minuten `/usr/local/sbin/nextcloud-cron-lowprio` auf.
+  - SakuraAlbum-Queue: `albentest`, Pfad `Photos`, `settings_update`, `pending`, `last_seen_at=1778107269`.
+  - Entprellung 60s macht den Eintrag ab `1778107329` faellig; der letzte Cron war `1778107201`, also vor Faelligkeit. Naechster Schritt: auf den naechsten echten Cron warten und pruefen, ob er ohne manuellen Trigger verarbeitet.
+- Ergebnis nach echtem Cron um 2026-05-07 00:45 CEST:
+  - Cron verarbeitete automatisch ohne manuellen Trigger: `processedUsers=1`, `succeededUsers=1`, Queue danach leer.
+  - SakuraAlbum erstellte 4 Photos-Alben fuer `albentest`: `Photos` (5 Dateien), `Photos - OrnerinPhotos 1` (3 Dateien), `Photos - testbilder` (136 Dateien), `Photos - _sakura_live_20260506191458` (1 Datei).
+  - Detail-Log `auto_sync_user_completed`: `foldersScanned=14`, `filesScanned=158`, `mediaFiles=145`, `plannedAlbums=4`, `createdAlbums=4`, `linkedFiles=145`, `fileErrors=0`, `albumErrors=0`, `durationMs=717`.
+  - Wichtige Diagnosekorrektur: erfolgreiche verwaltete Alben haben Status `synced`, nicht `active`; direkte SQL-Zaehler muessen `status != deleted` verwenden oder `ManagedAlbumMapper::countActiveForUser()`.
+
 Neueste operative Notiz (2026-05-07 00:34 CEST):
 - Benutzerauftrag in diesem Block: Personal-UI einfacher machen, Ordner-Ausnahmen mit eigener Tiefe/Zusammenfassen/Auslassen bauen, spaetere Einstellungswechsel zerstoerungsfrei abgleichen, grosse Album-Downloads als Hintergrundjobs mit ZIP-Teilen ab 1 GiB ergaenzen und den lang bestehenden Auto-Sync-/Cron-Fehler endgueltig nachweisen.
 - Implementierter Stand `1.0.4`:
