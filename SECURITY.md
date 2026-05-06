@@ -16,6 +16,7 @@ Open a private report with the repository owner for security-sensitive issues. D
 - Managed deletion requires exact confirmation text, a matching recent delete dry-run plan fingerprint stored by the server for the same user, and only targets active app-owned records for the current user.
 - Managed deletion re-checks Photos album id, owner, and current name before deleting.
 - Controllers keep the framework default CSRF protection enabled.
+- SakuraAlbum admin settings do not read or write Nextcloud's reserved app activation key `enabled`.
 - Debug context is sanitized for common secrets before it is stored, and debug stack traces do not include function arguments.
 
 ## Not yet implemented
