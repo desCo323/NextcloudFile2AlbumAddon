@@ -18,6 +18,7 @@ Open a private report with the repository owner for security-sensitive issues. D
 - Controllers keep the framework default CSRF protection enabled.
 - SakuraAlbum admin settings do not read or write Nextcloud's reserved app activation key `enabled`.
 - Debug context is sanitized for common secrets before it is stored, and debug stack traces do not include function arguments.
+- Duplicate Photos album links are treated as idempotent only after SakuraAlbum confirms the exact album/file/owner link already exists.
 - File-event handling queues dirty paths only; scans and Photos writes happen later in a non-parallel background job.
 - Automatic sync is bounded by admin-controlled debounce, cron interval, user count, runtime, queued event count, folder count, file count, and album count.
 - Automatic sync recovers stale processing locks from interrupted runs instead of leaving queued work permanently reserved.
