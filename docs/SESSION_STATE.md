@@ -21,7 +21,7 @@ Neueste operative Notiz (2026-05-07 00:34 CEST):
   - Cleanup danach: `active=0`, `dirty=0`, `cursors=0`, `downloads=0`, `missing=0` fuer `albentest`; Nextcloud `maintenance=false`, `needsDbUpgrade=false`, AutoSyncJob ist als einziger SakuraAlbum-Job registriert.
 - Lokale Checks nach finalem Queue-Reset-Fix: `./scripts/self-check.sh`, `git diff --check`, `php -l lib/Service/AccountResetService.php`, `php -l lib/Db/DownloadJobMapper.php` erfolgreich.
 - Finales Artefakt neu gebaut und entpackt erneut mit `./scripts/self-check.sh` geprueft: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.4.tar.gz`, SHA256 `f133d976add2a81b356fda9bf45f8b9e35f225a225ddff88f05b434d7991c0e1`.
-- Naechster Schritt: GitHub ohne gespeichertes Token aktualisieren.
+- GitHub aktualisiert: Commit `22e708325b63dac05d412cbb46e7cb1d3255b6d3` wurde auf `main` nach `https://github.com/desCo323/NextcloudFile2AlbumAddon` gepusht. `origin` enthaelt keinen Token; `rg "ghp_[A-Za-z0-9_]+" -n .` findet nichts.
 
 Vorherige operative Notiz (2026-05-06 23:45 CEST):
 - Benutzerauftrag: Personal-UI vereinfachen, Unterordner-Regeln mit eigener Tiefe/Auslassen/Zusammenfassen ergaenzen, zerstoerungsfreie Anpassung nach spaeteren Einstellungswechseln sicherstellen, Album-Downloads als Hintergrundjob fuer SakuraAlbum- und native Photos-Alben inklusive grosser ZIP-Teile ab 1 GiB bauen, und den lang bestehenden Auto-Sync-Fehler endgueltig finden.
