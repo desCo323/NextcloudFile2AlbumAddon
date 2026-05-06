@@ -71,6 +71,14 @@ if ! rg -n "auto_sync_runtime_limit_reached" lib/Service/AutoSyncService.php >/d
 	echo "Automatic sync runtime-limit logging is missing" >&2
 	exit 1
 fi
+if ! rg -n "REASON_UNIQUE_CONSTRAINT_VIOLATION" lib/Service/PhotosAlbumAdapter.php >/dev/null; then
+	echo "Photos duplicate-link DB unique constraint handling is missing" >&2
+	exit 1
+fi
+if ! rg -n "albumContainsOwnedFile" lib/Service/PhotosAlbumAdapter.php >/dev/null; then
+	echo "Photos duplicate-link handling must re-check the exact album/file/owner link" >&2
+	exit 1
+fi
 
 echo "Scanning for stale app identifiers"
 legacy_namespace="$(printf 'OCA\\%s' 'File2Album')"
