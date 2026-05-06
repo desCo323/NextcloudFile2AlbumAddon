@@ -1,4 +1,4 @@
-# Publishes the checked SakuraAlbum source tree from a release artifact.
+# Publishes the checked SakuraAlbum source tree from a split release artifact.
 name: Publish SakuraAlbum source tree
 
 on:
@@ -7,7 +7,7 @@ on:
     branches:
       - main
     paths:
-      - 'releases/sakuraalbum-0.1.6.tar.gz.base64'
+      - 'releases/sakuraalbum-0.1.6.tar.gz.base64.part*'
 
 permissions:
   contents: write
@@ -25,8 +25,9 @@ jobs:
         run: |
           set -euo pipefail
           tmp_dir="$(mktemp -d)"
-          test -f releases/sakuraalbum-0.1.6.tar.gz.base64
-          base64 -d releases/sakuraalbum-0.1.6.tar.gz.base64 > "$tmp_dir/sakuraalbum.tar.gz"
+          parts=(releases/sakuraalbum-0.1.6.tar.gz.base64.part*)
+          test -f "${parts[0]}"
+          cat "${parts[@]}" | base64 -d > "$tmp_dir/sakuraalbum.tar.gz"
           expected="2032621ed7f431edbb5a473398dc659bf6f151287b6f3e711312382420e748d8"
           actual="$(sha256sum "$tmp_dir/sakuraalbum.tar.gz" | awk '{print $1}')"
           test "$actual" = "$expected"
