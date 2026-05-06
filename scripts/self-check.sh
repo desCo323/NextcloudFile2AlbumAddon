@@ -48,6 +48,22 @@ if ! rg -n "assertRecentDeleteDryRunFingerprint" lib/Service/ManagedAlbumDeletio
 	exit 1
 fi
 
+echo "Checking automatic sync safety guards"
+if ! rg -n "setAllowParallelRuns\\(false\\)" lib/BackgroundJob/AutoSyncJob.php >/dev/null; then
+	echo "Automatic sync job must disallow parallel runs" >&2
+	exit 1
+fi
+for event in NodeCreatedEvent NodeDeletedEvent NodeRenamedEvent NodeWrittenEvent; do
+	if ! rg -n "registerEventListener\\(${event}::class" lib/AppInfo/Application.php >/dev/null; then
+		echo "Automatic sync file-event listener is missing: ${event}" >&2
+		exit 1
+	fi
+done
+if ! rg -n "'syncDeleteMissingManagedAlbums' => false" lib/Service/SettingsService.php >/dev/null; then
+	echo "Missing managed album cleanup must stay disabled by default" >&2
+	exit 1
+fi
+
 echo "Scanning for stale app identifiers"
 legacy_namespace="$(printf 'OCA\\%s' 'File2Album')"
 legacy_app_id="file2album"

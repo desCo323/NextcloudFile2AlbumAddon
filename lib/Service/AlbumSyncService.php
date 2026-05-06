@@ -253,10 +253,19 @@ class AlbumSyncService {
 			'linkedFiles' => 0,
 			'alreadyLinkedFiles' => 0,
 			'missingFiles' => 0,
+			'removedFiles' => 0,
+			'removeErrors' => 0,
+			'skippedStaleRemovalAlbums' => 0,
+			'deletedMissingManagedAlbums' => 0,
+			'cleanedMissingTrackingRecords' => 0,
+			'missingManagedAlbumDeleteErrors' => 0,
+			'missingManagedAlbumCleanupTruncated' => false,
 			'fileErrors' => 0,
 			'albumErrors' => 0,
 		];
 		$fileErrorLogs = 0;
+		$removeErrorLogs = 0;
+		$currentTargetPaths = [];
 
 		foreach ($plan['albums'] as $album) {
 			if (!in_array($album['writeAction'] ?? '', ['create', 'update_managed'], true)) {
@@ -272,11 +281,22 @@ class AlbumSyncService {
 				}
 				$summary['processedAlbums']++;
 				$albumId = (int)$albumInfo['id'];
+				$currentTargetPaths[$this->targetPathKey((string)$album['targetPath'])] = true;
 				$this->saveManagedAlbum($userId, $album, $settings, $configHash, $albumId, 'syncing');
 
+				$desiredFileIds = [];
+				$albumMissingFiles = 0;
 				foreach (($album['files'] ?? []) as $filePath) {
 					try {
-						$result = $this->photosAlbumAdapter->addFileToAlbum($userId, $albumId, (string)$filePath);
+						$fileId = $this->photosAlbumAdapter->fileIdForPath($userId, (string)$filePath);
+						if ($fileId === null) {
+							$albumMissingFiles++;
+							$summary['missingFiles']++;
+							continue;
+						}
+
+						$desiredFileIds[$fileId] = true;
+						$result = $this->photosAlbumAdapter->addFileIdToAlbum($albumId, $fileId, $userId);
 						if ($result === 'linked') {
 							$summary['linkedFiles']++;
 						} elseif ($result === 'already_linked') {
@@ -296,6 +316,20 @@ class AlbumSyncService {
 					}
 				}
 
+				if (($settings['syncRemoveMissingFiles'] ?? true) === true && ($album['writeAction'] ?? '') === 'update_managed') {
+					if ($albumMissingFiles > 0) {
+						$summary['skippedStaleRemovalAlbums']++;
+						$this->logService->warning('stale_file_removal_skipped', $userId, [
+							'albumName' => $album['albumName'],
+							'missingFiles' => $albumMissingFiles,
+						], 'Stale file cleanup was skipped because some planned files disappeared during this run.', $runId);
+					} else {
+						$cleanup = $this->removeStaleAlbumFiles($userId, $albumId, array_keys($desiredFileIds), $album, $runId, $removeErrorLogs);
+						$summary['removedFiles'] += $cleanup['removedFiles'];
+						$summary['removeErrors'] += $cleanup['removeErrors'];
+					}
+				}
+
 				$this->saveManagedAlbum($userId, $album, $settings, $configHash, $albumId, 'synced');
 				$this->logService->debug('album_write_completed', $userId, [
 					'albumName' => $album['albumName'],
@@ -307,6 +341,132 @@ class AlbumSyncService {
 				$this->logService->exception('album_write_failed', $e, $userId, [
 					'albumName' => $album['albumName'] ?? '',
 					'writeAction' => $album['writeAction'] ?? '',
+				], $runId);
+			}
+		}
+
+		if (($settings['syncDeleteMissingManagedAlbums'] ?? false) === true) {
+			if ($summary['albumErrors'] === 0 && $summary['fileErrors'] === 0) {
+				$missingCleanup = $this->deleteMissingManagedAlbums($userId, $configHash, $currentTargetPaths, $summary['processedAlbums'], $runId);
+				$summary['deletedMissingManagedAlbums'] += $missingCleanup['deletedMissingManagedAlbums'];
+				$summary['cleanedMissingTrackingRecords'] += $missingCleanup['cleanedMissingTrackingRecords'];
+				$summary['missingManagedAlbumDeleteErrors'] += $missingCleanup['missingManagedAlbumDeleteErrors'];
+				$summary['missingManagedAlbumCleanupTruncated'] = $missingCleanup['missingManagedAlbumCleanupTruncated'];
+			} else {
+				$this->logService->warning('missing_managed_album_cleanup_skipped', $userId, [
+					'albumErrors' => $summary['albumErrors'],
+					'fileErrors' => $summary['fileErrors'],
+				], 'Missing managed album cleanup was skipped because the write run had errors.', $runId);
+			}
+		}
+
+		return $summary;
+	}
+
+	private function removeStaleAlbumFiles(
+		string $userId,
+		int $albumId,
+		array $desiredFileIds,
+		array $album,
+		int $runId,
+		int &$removeErrorLogs,
+	): array {
+		$summary = [
+			'removedFiles' => 0,
+			'removeErrors' => 0,
+		];
+		$desired = array_fill_keys(array_map('intval', $desiredFileIds), true);
+
+		foreach ($this->photosAlbumAdapter->listAlbumFileIds($userId, $albumId) as $fileId) {
+			if (isset($desired[(int)$fileId])) {
+				continue;
+			}
+
+			try {
+				$this->photosAlbumAdapter->removeFileFromAlbum($albumId, (int)$fileId);
+				$summary['removedFiles']++;
+			} catch (\Throwable $e) {
+				$summary['removeErrors']++;
+				if ($removeErrorLogs < 25) {
+					$removeErrorLogs++;
+					$this->logService->exception('stale_file_remove_failed', $e, $userId, [
+						'albumName' => $album['albumName'] ?? '',
+						'fileId' => (int)$fileId,
+					], $runId);
+				}
+			}
+		}
+
+		return $summary;
+	}
+
+	private function deleteMissingManagedAlbums(string $userId, string $configHash, array $currentTargetPaths, int $processedAlbums, int $runId): array {
+		$summary = [
+			'deletedMissingManagedAlbums' => 0,
+			'cleanedMissingTrackingRecords' => 0,
+			'missingManagedAlbumDeleteErrors' => 0,
+			'missingManagedAlbumCleanupTruncated' => false,
+		];
+		$maxAlbums = max(1, (int)$this->settingsService->getJobLimits()['maxAlbums']);
+		$remainingAlbumBudget = max(0, $maxAlbums - $processedAlbums);
+		if ($remainingAlbumBudget === 0) {
+			$summary['missingManagedAlbumCleanupTruncated'] = true;
+			$this->logService->warning('missing_managed_album_cleanup_limited', $userId, [
+				'maxAlbums' => $maxAlbums,
+				'processedAlbums' => $processedAlbums,
+			], 'Missing managed album cleanup was skipped because the per-run album budget was already used.', $runId);
+			return $summary;
+		}
+
+		$managedAlbums = $this->managedAlbumMapper->findActiveByConfigHash($userId, $configHash, $remainingAlbumBudget + 1);
+		if (count($managedAlbums) > $remainingAlbumBudget) {
+			$summary['missingManagedAlbumCleanupTruncated'] = true;
+			$managedAlbums = array_slice($managedAlbums, 0, $remainingAlbumBudget);
+		}
+
+		foreach ($managedAlbums as $managedAlbum) {
+			if (isset($currentTargetPaths[$this->targetPathKey($managedAlbum->getTargetPath())])) {
+				continue;
+			}
+
+			try {
+				$photosAlbumId = $managedAlbum->getPhotosAlbumId();
+				if ($photosAlbumId === null) {
+					$this->managedAlbumMapper->markDeleted($managedAlbum);
+					$summary['cleanedMissingTrackingRecords']++;
+					continue;
+				}
+
+				$photosAlbum = $this->photosAlbumAdapter->findAlbumById($photosAlbumId);
+				if ($photosAlbum === null) {
+					$this->managedAlbumMapper->markDeleted($managedAlbum);
+					$summary['cleanedMissingTrackingRecords']++;
+					continue;
+				}
+
+				if (($photosAlbum['userId'] ?? '') !== $userId || ($photosAlbum['name'] ?? '') !== $managedAlbum->getAlbumName()) {
+					$summary['missingManagedAlbumDeleteErrors']++;
+					$this->logService->warning('missing_managed_album_delete_blocked', $userId, [
+						'managedId' => (int)$managedAlbum->getId(),
+						'albumName' => $managedAlbum->getAlbumName(),
+						'photosAlbumId' => $photosAlbumId,
+					], 'Missing managed album cleanup was blocked because the Photos album no longer matches SakuraAlbum tracking.', $runId);
+					continue;
+				}
+
+				$this->photosAlbumAdapter->deleteAlbum($userId, $photosAlbumId);
+				$this->managedAlbumMapper->markDeleted($managedAlbum);
+				$summary['deletedMissingManagedAlbums']++;
+				$this->logService->success('missing_managed_album_deleted', $userId, [
+					'managedId' => (int)$managedAlbum->getId(),
+					'albumName' => $managedAlbum->getAlbumName(),
+					'targetPath' => $managedAlbum->getTargetPath(),
+				], 'Managed Photos album no longer present in the current plan was deleted.', $runId);
+			} catch (\Throwable $e) {
+				$summary['missingManagedAlbumDeleteErrors']++;
+				$this->logService->exception('missing_managed_album_delete_failed', $e, $userId, [
+					'managedId' => (int)$managedAlbum->getId(),
+					'albumName' => $managedAlbum->getAlbumName(),
 				], $runId);
 			}
 		}
@@ -383,6 +543,10 @@ class AlbumSyncService {
 		}
 
 		return $managedByIdentity->getPhotosAlbumId() === null || $managedByIdentity->getPhotosAlbumId() === $photosAlbumId;
+	}
+
+	private function targetPathKey(string $path): string {
+		return PathHelper::displayPath($path);
 	}
 
 	private function writeSafetyIssues(array $settings, array $plan, array $limits): array {

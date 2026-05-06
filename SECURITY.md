@@ -18,9 +18,12 @@ Open a private report with the repository owner for security-sensitive issues. D
 - Controllers keep the framework default CSRF protection enabled.
 - SakuraAlbum admin settings do not read or write Nextcloud's reserved app activation key `enabled`.
 - Debug context is sanitized for common secrets before it is stored, and debug stack traces do not include function arguments.
+- File-event handling queues dirty paths only; scans and Photos writes happen later in a non-parallel background job.
+- Automatic sync is bounded by admin-controlled debounce, cron interval, user count, runtime, queued event count, folder count, file count, and album count.
+- Stale file removal is limited to Photos albums that SakuraAlbum already tracks as managed.
+- Optional missing-managed-album cleanup is disabled by default and re-checks Photos album id, owner, and name before deleting.
 
 ## Not yet implemented
 
-- Background sync jobs.
-
-Background execution must include non-parallel locks, explicit limits, tracking, and rollback documentation before production testing.
+- External error-report email sending from the UI.
+- Store signing and formal Nextcloud app-store release packaging.

@@ -54,6 +54,25 @@ class ManagedAlbumMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * @return ManagedAlbum[]
+	 */
+	public function findActiveByConfigHash(string $userId, string $configHash, int $limit = 0): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->eq('config_hash', $qb->createNamedParameter($configHash)))
+			->andWhere($qb->expr()->neq('status', $qb->createNamedParameter('deleted')))
+			->orderBy('target_path', 'ASC');
+
+		if ($limit > 0) {
+			$qb->setMaxResults($limit);
+		}
+
+		return $this->findEntities($qb);
+	}
+
 	public function countActiveForUser(string $userId): int {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select($qb->func()->count('*'))

@@ -102,6 +102,10 @@
   border-top: 1px solid var(--color-border);
 }
 
+.sakuraalbum-managed-actions {
+  align-items: center;
+}
+
 .sakuraalbum-button-danger {
   border-color: var(--color-error) !important;
   color: var(--color-error) !important;
@@ -218,6 +222,26 @@
     var(--color-main-background) 94%,
     var(--color-error)
   );
+}
+
+.sakuraalbum-success,
+.sakuraalbum-confirm-panel {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--color-success);
+  border-radius: 6px;
+  background: color-mix(
+    in srgb,
+    var(--color-main-background) 94%,
+    var(--color-success)
+  );
+}
+
+.sakuraalbum-confirm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-left-color: var(--color-error);
 }
 
 @media (max-width: 680px) {

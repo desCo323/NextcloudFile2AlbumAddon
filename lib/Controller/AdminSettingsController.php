@@ -39,6 +39,11 @@ class AdminSettingsController extends Controller {
 				'summary' => [
 					'enabled' => $settings['enabled'],
 					'debugMode' => $settings['debugMode'],
+					'autoSyncMode' => $settings['autoSyncMode'],
+					'autoSyncDebounceSeconds' => $settings['autoSyncDebounceSeconds'],
+					'autoSyncMaxUsersPerRun' => $settings['autoSyncMaxUsersPerRun'],
+					'autoSyncMaxRuntimeSeconds' => $settings['autoSyncMaxRuntimeSeconds'],
+					'autoSyncMaxEventsPerRun' => $settings['autoSyncMaxEventsPerRun'],
 					'maxPreviewFolders' => $settings['maxPreviewFolders'],
 					'maxPreviewFiles' => $settings['maxPreviewFiles'],
 					'maxAlbumsPerRun' => $settings['maxAlbumsPerRun'],

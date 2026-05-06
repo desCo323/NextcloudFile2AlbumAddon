@@ -50,6 +50,14 @@
 						<input id="ska-debug-mode" type="checkbox" title="Speichert ausfuehrlichere SakuraAlbum-Diagnosedaten ohne bekannte Geheimnisse." ${settings.debugMode ? "checked" : ""}>
 					Debug-Logging
 				</label>
+				<label class="sakuraalbum-toggle">
+						<input id="ska-remove-missing" type="checkbox" title="Entfernt Dateien aus SakuraAlbum-verwalteten Alben, wenn sie nicht mehr im geplanten Quellordner liegen." ${settings.syncRemoveMissingFiles ? "checked" : ""}>
+					Veraltete Dateien entfernen
+				</label>
+				<label class="sakuraalbum-toggle">
+						<input id="ska-delete-missing" type="checkbox" title="Loescht SakuraAlbum-verwaltete Alben, wenn sie mit exakt derselben Konfiguration nicht mehr geplant sind. Standardmaessig aus." ${settings.syncDeleteMissingManagedAlbums ? "checked" : ""}>
+					Fehlende verwaltete Alben loeschen
+				</label>
 			</div>
 			<div class="sakuraalbum-grid sakuraalbum-panel">
 				<div class="sakuraalbum-field">
@@ -86,7 +94,30 @@
 					</div>
 					<div class="sakuraalbum-field">
 						<label for="ska-job-interval">Job-Intervall Minuten</label>
-						<input id="ska-job-interval" type="number" min="5" title="Vorbereitung fuer spaetere Cron-Laeufe." value="${escapeAttr(numberValue(settings.jobIntervalMinutes, 360))}">
+						<input id="ska-job-interval" type="number" min="5" title="Mindestabstand zwischen SakuraAlbum-Hintergrundlaeufen." value="${escapeAttr(numberValue(settings.jobIntervalMinutes, 360))}">
+					</div>
+					<div class="sakuraalbum-field">
+						<label for="ska-auto-mode">Automatik</label>
+						<select id="ska-auto-mode" title="Manuell reagiert nur auf Benutzeraktionen. Dateiaenderungen werden gesammelt und spaeter per Cron verarbeitet.">
+							<option value="manual" ${settings.autoSyncMode === "manual" ? "selected" : ""}>Manuell</option>
+							<option value="file_events" ${settings.autoSyncMode === "file_events" ? "selected" : ""}>Bei Dateiaenderungen</option>
+						</select>
+					</div>
+					<div class="sakuraalbum-field">
+						<label for="ska-auto-debounce">Auto: Wartezeit Sekunden</label>
+						<input id="ska-auto-debounce" type="number" min="30" title="Sammelt schnelle Dateioperationen, bevor ein Benutzer synchronisiert wird." value="${escapeAttr(numberValue(settings.autoSyncDebounceSeconds, 300))}">
+					</div>
+					<div class="sakuraalbum-field">
+						<label for="ska-auto-users">Auto: Benutzer pro Lauf</label>
+						<input id="ska-auto-users" type="number" min="1" max="1000" title="Maximale Anzahl Benutzer, die ein Cron-Lauf automatisch synchronisiert." value="${escapeAttr(numberValue(settings.autoSyncMaxUsersPerRun, 3))}">
+					</div>
+					<div class="sakuraalbum-field">
+						<label for="ska-auto-runtime">Auto: Laufzeit Sekunden</label>
+						<input id="ska-auto-runtime" type="number" min="5" max="3600" title="Harter Zeitrahmen fuer einen automatischen SakuraAlbum-Lauf." value="${escapeAttr(numberValue(settings.autoSyncMaxRuntimeSeconds, 30))}">
+					</div>
+					<div class="sakuraalbum-field">
+						<label for="ska-auto-events">Auto: Events pro Benutzer</label>
+						<input id="ska-auto-events" type="number" min="1" max="100000" title="Maximal zusammengefasste Dateiaenderungen pro Benutzer und Cron-Lauf." value="${escapeAttr(numberValue(settings.autoSyncMaxEventsPerRun, 200))}">
 					</div>
 					<div class="sakuraalbum-field">
 						<label for="ska-debug-retention">Debug-Aufbewahrung Tage</label>
@@ -123,6 +154,15 @@
       maxAlbumsPerRun: fieldNumber("ska-job-albums"),
       allowVideos: document.getElementById("ska-allow-videos").checked,
       jobIntervalMinutes: fieldNumber("ska-job-interval"),
+      autoSyncMode: document.getElementById("ska-auto-mode").value,
+      autoSyncDebounceSeconds: fieldNumber("ska-auto-debounce"),
+      autoSyncMaxUsersPerRun: fieldNumber("ska-auto-users"),
+      autoSyncMaxRuntimeSeconds: fieldNumber("ska-auto-runtime"),
+      autoSyncMaxEventsPerRun: fieldNumber("ska-auto-events"),
+      syncRemoveMissingFiles: document.getElementById("ska-remove-missing")
+        .checked,
+      syncDeleteMissingManagedAlbums:
+        document.getElementById("ska-delete-missing").checked,
       requireBulkDeleteConfirmation:
         document.getElementById("ska-confirm-delete").checked,
       debugMode: document.getElementById("ska-debug-mode").checked,

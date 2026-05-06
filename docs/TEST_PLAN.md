@@ -16,6 +16,13 @@ This plan is for a later controlled Nextcloud test window. Do not run it on prod
   - job folders: 100
   - job files: 1000
   - job albums: 20
+- Keep automatic sync disabled for the first manual write/delete checks.
+- For the dedicated automatic-sync check only, enable:
+  - `Automatik`: `Bei Dateiaenderungen`
+  - auto debounce: 60 seconds
+  - auto users per run: 1
+  - auto runtime: 30 seconds
+  - auto events per user: 50
 
 ## Pre-human self-checks
 
@@ -44,6 +51,16 @@ Expected result: `Self-check passed`.
 - Write endpoint rejects if settings or folder contents changed after the dry-run fingerprint was created.
 - Write endpoint rejects while global admin setting or personal user setting is disabled.
 - In the controlled write test, only use files owned by `albentest`.
+- Updating a managed album removes file links for media that was moved or deleted only after a clean plan and only for SakuraAlbum-managed albums.
+- Optional missing-managed-album cleanup stays disabled unless explicitly enabled for a small isolated test folder.
+- If missing-managed-album cleanup is enabled, it deletes only SakuraAlbum-managed Photos albums whose tracked id, owner, and name still match.
+- Automatic sync file-event test:
+  - create one visible image in an included folder for `albentest`;
+  - confirm a dirty-path log entry is recorded and no synchronous write happens during upload;
+  - run Nextcloud cron once after the debounce window;
+  - confirm SakuraAlbum logs `auto_sync_user_completed` and the managed album is updated;
+  - move or delete the image, run cron after debounce, and confirm stale links are removed from the managed album;
+  - confirm the job stops within the configured user/runtime/event limits.
 - Managed album list shows only SakuraAlbum-tracked albums for `albentest`.
 - Delete dry-run works for selected managed albums and reports:
   - Photos albums that would be deleted
@@ -68,6 +85,9 @@ Expected result: `Self-check passed`.
   - `managed_delete_dry_run_completed` or `managed_delete_dry_run_failed`
   - `managed_delete_started`
   - `managed_delete_completed` or `managed_delete_failed`
+  - `auto_sync_dirty_path_recorded` during the automatic-sync test
+  - `auto_sync_user_completed` or `auto_sync_user_failed` during the automatic-sync test
+  - `stale_file_removal_skipped`, `stale_file_remove_failed`, or stale-removal counters if files changed during sync
 - Confirm log context has no raw password, request token, authorization header, app password, or stack-trace arguments.
 
 ## Restore requirement

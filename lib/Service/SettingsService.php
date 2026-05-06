@@ -24,6 +24,13 @@ class SettingsService {
 		'maxAlbumsPerRun' => 500,
 		'allowVideos' => false,
 		'jobIntervalMinutes' => 360,
+		'autoSyncMode' => 'manual',
+		'autoSyncDebounceSeconds' => 300,
+		'autoSyncMaxUsersPerRun' => 3,
+		'autoSyncMaxRuntimeSeconds' => 30,
+		'autoSyncMaxEventsPerRun' => 200,
+		'syncRemoveMissingFiles' => true,
+		'syncDeleteMissingManagedAlbums' => false,
 		'requireBulkDeleteConfirmation' => true,
 		'debugMode' => false,
 		'debugRetentionDays' => 14,
@@ -60,6 +67,13 @@ class SettingsService {
 			'maxAlbumsPerRun' => $this->appConfig->getAppValueInt('maxAlbumsPerRun', self::ADMIN_DEFAULTS['maxAlbumsPerRun']),
 			'allowVideos' => $this->appConfig->getAppValueBool('allowVideos', self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->appConfig->getAppValueInt('jobIntervalMinutes', self::ADMIN_DEFAULTS['jobIntervalMinutes']),
+			'autoSyncMode' => $this->autoSyncMode($this->appConfig->getAppValueString('autoSyncMode', self::ADMIN_DEFAULTS['autoSyncMode'])),
+			'autoSyncDebounceSeconds' => $this->appConfig->getAppValueInt('autoSyncDebounceSeconds', self::ADMIN_DEFAULTS['autoSyncDebounceSeconds']),
+			'autoSyncMaxUsersPerRun' => $this->appConfig->getAppValueInt('autoSyncMaxUsersPerRun', self::ADMIN_DEFAULTS['autoSyncMaxUsersPerRun']),
+			'autoSyncMaxRuntimeSeconds' => $this->appConfig->getAppValueInt('autoSyncMaxRuntimeSeconds', self::ADMIN_DEFAULTS['autoSyncMaxRuntimeSeconds']),
+			'autoSyncMaxEventsPerRun' => $this->appConfig->getAppValueInt('autoSyncMaxEventsPerRun', self::ADMIN_DEFAULTS['autoSyncMaxEventsPerRun']),
+			'syncRemoveMissingFiles' => $this->appConfig->getAppValueBool('syncRemoveMissingFiles', self::ADMIN_DEFAULTS['syncRemoveMissingFiles']),
+			'syncDeleteMissingManagedAlbums' => $this->appConfig->getAppValueBool('syncDeleteMissingManagedAlbums', self::ADMIN_DEFAULTS['syncDeleteMissingManagedAlbums']),
 			'requireBulkDeleteConfirmation' => true,
 			'debugMode' => $this->appConfig->getAppValueBool('debugMode', self::ADMIN_DEFAULTS['debugMode']),
 			'debugRetentionDays' => $this->appConfig->getAppValueInt('debugRetentionDays', self::ADMIN_DEFAULTS['debugRetentionDays']),
@@ -80,6 +94,13 @@ class SettingsService {
 			'maxAlbumsPerRun' => $this->intValue($input['maxAlbumsPerRun'] ?? self::ADMIN_DEFAULTS['maxAlbumsPerRun'], 1, 5000),
 			'allowVideos' => $this->boolValue($input['allowVideos'] ?? self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->intValue($input['jobIntervalMinutes'] ?? self::ADMIN_DEFAULTS['jobIntervalMinutes'], 5, 10080),
+			'autoSyncMode' => $this->autoSyncMode((string)($input['autoSyncMode'] ?? self::ADMIN_DEFAULTS['autoSyncMode'])),
+			'autoSyncDebounceSeconds' => $this->intValue($input['autoSyncDebounceSeconds'] ?? self::ADMIN_DEFAULTS['autoSyncDebounceSeconds'], 30, 86400),
+			'autoSyncMaxUsersPerRun' => $this->intValue($input['autoSyncMaxUsersPerRun'] ?? self::ADMIN_DEFAULTS['autoSyncMaxUsersPerRun'], 1, 1000),
+			'autoSyncMaxRuntimeSeconds' => $this->intValue($input['autoSyncMaxRuntimeSeconds'] ?? self::ADMIN_DEFAULTS['autoSyncMaxRuntimeSeconds'], 5, 3600),
+			'autoSyncMaxEventsPerRun' => $this->intValue($input['autoSyncMaxEventsPerRun'] ?? self::ADMIN_DEFAULTS['autoSyncMaxEventsPerRun'], 1, 100000),
+			'syncRemoveMissingFiles' => $this->boolValue($input['syncRemoveMissingFiles'] ?? self::ADMIN_DEFAULTS['syncRemoveMissingFiles']),
+			'syncDeleteMissingManagedAlbums' => $this->boolValue($input['syncDeleteMissingManagedAlbums'] ?? self::ADMIN_DEFAULTS['syncDeleteMissingManagedAlbums']),
 			'requireBulkDeleteConfirmation' => true,
 			'debugMode' => $this->boolValue($input['debugMode'] ?? self::ADMIN_DEFAULTS['debugMode']),
 			'debugRetentionDays' => $this->intValue($input['debugRetentionDays'] ?? self::ADMIN_DEFAULTS['debugRetentionDays'], 1, 365),
@@ -97,6 +118,13 @@ class SettingsService {
 		$this->appConfig->setAppValueInt('maxAlbumsPerRun', $settings['maxAlbumsPerRun']);
 		$this->appConfig->setAppValueBool('allowVideos', $settings['allowVideos']);
 		$this->appConfig->setAppValueInt('jobIntervalMinutes', $settings['jobIntervalMinutes']);
+		$this->appConfig->setAppValueString('autoSyncMode', $settings['autoSyncMode']);
+		$this->appConfig->setAppValueInt('autoSyncDebounceSeconds', $settings['autoSyncDebounceSeconds']);
+		$this->appConfig->setAppValueInt('autoSyncMaxUsersPerRun', $settings['autoSyncMaxUsersPerRun']);
+		$this->appConfig->setAppValueInt('autoSyncMaxRuntimeSeconds', $settings['autoSyncMaxRuntimeSeconds']);
+		$this->appConfig->setAppValueInt('autoSyncMaxEventsPerRun', $settings['autoSyncMaxEventsPerRun']);
+		$this->appConfig->setAppValueBool('syncRemoveMissingFiles', $settings['syncRemoveMissingFiles']);
+		$this->appConfig->setAppValueBool('syncDeleteMissingManagedAlbums', $settings['syncDeleteMissingManagedAlbums']);
 		$this->appConfig->setAppValueBool('requireBulkDeleteConfirmation', $settings['requireBulkDeleteConfirmation']);
 		$this->appConfig->setAppValueBool('debugMode', $settings['debugMode']);
 		$this->appConfig->setAppValueInt('debugRetentionDays', $settings['debugRetentionDays']);
@@ -140,6 +168,8 @@ class SettingsService {
 			'includeImages' => $user['includeImages'],
 			'includeVideos' => $admin['allowVideos'] && $user['includeVideos'],
 			'namingSchemaVersion' => Application::NAMING_SCHEMA_VERSION,
+			'syncRemoveMissingFiles' => $admin['syncRemoveMissingFiles'],
+			'syncDeleteMissingManagedAlbums' => $admin['syncDeleteMissingManagedAlbums'],
 		];
 	}
 
@@ -173,6 +203,17 @@ class SettingsService {
 			'maxFolders' => $admin['maxJobFolders'],
 			'maxFiles' => $admin['maxJobFiles'],
 			'maxAlbums' => $admin['maxAlbumsPerRun'],
+		];
+	}
+
+	public function getAutoSyncSettings(): array {
+		$admin = $this->getAdminSettings();
+		return [
+			'mode' => $admin['autoSyncMode'],
+			'debounceSeconds' => $admin['autoSyncDebounceSeconds'],
+			'maxUsersPerRun' => $admin['autoSyncMaxUsersPerRun'],
+			'maxRuntimeSeconds' => $admin['autoSyncMaxRuntimeSeconds'],
+			'maxEventsPerRun' => $admin['autoSyncMaxEventsPerRun'],
 		];
 	}
 
@@ -248,6 +289,10 @@ class SettingsService {
 			return in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true);
 		}
 		return false;
+	}
+
+	private function autoSyncMode(string $value): string {
+		return in_array($value, ['manual', 'file_events'], true) ? $value : self::ADMIN_DEFAULTS['autoSyncMode'];
 	}
 
 	private function intValue(mixed $value, int $min, int $max): int {

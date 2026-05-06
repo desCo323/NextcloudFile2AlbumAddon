@@ -6,11 +6,14 @@ The current development version focuses on safe configuration, preview planning,
 
 ## Current scope
 
-- Admin settings for global enablement, default folders, scan limits, job limits, and video policy.
+- Admin settings for global enablement, default folders, scan limits, job limits, video policy, and automatic update load controls.
 - Personal settings for opt-in, folders, exclusions, naming template, separator, depth, and media type.
 - Preview API that scans only the current user folder and returns planned albums without writing album data.
 - Dry-run API that checks generated album names against real Photos albums without writing.
 - Confirmed write API that can create/link albums only when admin and user settings are both enabled and the request matches a recent server-recorded dry-run fingerprint.
+- Optional debounced file-event auto-sync: file create/write/delete/rename events queue dirty paths, and a non-parallel cron job processes due users within admin budgets.
+- Reconciliation for SakuraAlbum-managed albums so removed or moved media can be removed from generated albums during a later sync.
+- Optional cleanup for SakuraAlbum-managed albums that no longer appear in the current plan; this is disabled by default.
 - Managed-album list and delete dry-run APIs for albums tracked in SakuraAlbum's own database.
 - Confirmed delete API that can delete only Photos albums still matching a SakuraAlbum managed record and a recent server-recorded delete-preview fingerprint.
 - App-owned tables for future tracking of generated albums and sync runs.
@@ -31,7 +34,9 @@ The current development version focuses on safe configuration, preview planning,
 - Debug exception traces intentionally omit function arguments.
 - Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, require a matching recent dry-run plan fingerprint stored by the server, and refuse unsafe plans.
 - Existing Photos albums are not modified unless SakuraAlbum already tracks them as managed albums.
-- Background cron execution is still a later feature; the current write path is a bounded on-demand job.
+- File events never perform heavy scans or album writes directly. They only queue dirty paths for a later background job.
+- Background sync is non-parallel and bounded by admin settings for debounce, interval, users per run, runtime, event count, folder count, file count, and album count.
+- Automatic updates mean "scheduled as soon as allowed by debounce and load limits", not synchronous writes during uploads or deletes.
 - SakuraAlbum's global admin enable setting is stored under an app-owned key separate from Nextcloud's reserved app activation flag.
 
 ## Local checks
