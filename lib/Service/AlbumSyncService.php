@@ -902,6 +902,24 @@ class AlbumSyncService {
 		}
 
 		$summary = $cursor->getSummaryJson() !== null ? json_decode($cursor->getSummaryJson(), true) : null;
+		$estimatedRemainingChunkSize = is_array($summary) ? max(
+			1,
+			(int)($summary['plannedWritableLinks'] ?? $summary['plannedLinks'] ?? $summary['processedLinks'] ?? 1),
+		) : 1;
+		$estimatedProgressPercent = match ($cursor->getStatus()) {
+			'completed' => 100,
+			'failed' => 0,
+			default => $cursor->getProcessedFiles() <= 0
+				? 0
+				: min(
+					99,
+					max(
+						1,
+						(int)floor(($cursor->getProcessedFiles() / max(1, $cursor->getProcessedFiles() + $estimatedRemainingChunkSize)) * 100),
+					),
+				),
+		};
+
 		return [
 			'id' => $cursor->getId(),
 			'status' => $cursor->getStatus(),
@@ -910,6 +928,8 @@ class AlbumSyncService {
 			'processedFiles' => $cursor->getProcessedFiles(),
 			'processedAlbums' => $cursor->getProcessedAlbums(),
 			'chunkCount' => $cursor->getChunkCount(),
+			'estimatedProgressPercent' => $estimatedProgressPercent,
+			'estimatedRemainingChunkSize' => $cursor->getStatus() === 'completed' ? 0 : $estimatedRemainingChunkSize,
 			'attempts' => $cursor->getAttempts(),
 			'createdAt' => $cursor->getCreatedAt(),
 			'updatedAt' => $cursor->getUpdatedAt(),

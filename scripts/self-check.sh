@@ -87,11 +87,11 @@ if ! rg -n "data-profile" js/admin-settings.js >/dev/null; then
 	echo "Admin load-profile controls are missing" >&2
 	exit 1
 fi
-if ! rg -n "admin-settings-021" lib/Settings/Admin.php >/dev/null; then
+if ! rg -n "admin-settings-022" lib/Settings/Admin.php >/dev/null; then
 	echo "Admin settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
-if ! rg -n "personal-settings-021" lib/Settings/Personal.php >/dev/null; then
+if ! rg -n "personal-settings-022" lib/Settings/Personal.php >/dev/null; then
 	echo "Personal settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
@@ -141,6 +141,22 @@ if ! rg -n "writeChunk" lib/Service/AlbumSyncService.php lib/Service/AutoSyncSer
 fi
 if ! rg -n "chunk_continue" lib/Service/AutoSyncService.php >/dev/null; then
 	echo "Automatic sync must requeue incomplete chunks" >&2
+	exit 1
+fi
+if ! rg -n "process-due" appinfo/routes.php js/admin-settings.js >/dev/null; then
+	echo "Admin-controlled due automatic sync processing endpoint/UI is missing" >&2
+	exit 1
+fi
+if ! rg -n "processAutoSync" lib/Controller/AdminSettingsController.php >/dev/null; then
+	echo "Admin automatic sync process endpoint handler is missing" >&2
+	exit 1
+fi
+if ! rg -n "estimatedProgressPercent" lib/Service/AlbumSyncService.php js/personal-settings.js >/dev/null; then
+	echo "Chunk cursor estimated progress reporting is missing" >&2
+	exit 1
+fi
+if ! rg -n "Erweiterte manuelle Testfunktionen|Automatik einschalten" js/personal-settings.js >/dev/null; then
+	echo "Personal Auto-Sync UX polish is missing" >&2
 	exit 1
 fi
 if ! rg -n "REASON_UNIQUE_CONSTRAINT_VIOLATION" lib/Service/PhotosAlbumAdapter.php >/dev/null; then

@@ -135,6 +135,36 @@
   gap: 4px;
 }
 
+.sakuraalbum-automation-card {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 1fr);
+  gap: 14px;
+  align-items: start;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid #2f7d72;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-main-background) 96%, #b7eadf);
+}
+
+.sakuraalbum-automation-card-active {
+  border-left-color: var(--color-success);
+}
+
+.sakuraalbum-automation-card > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sakuraalbum-advanced-tools {
+  margin: 4px 0 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
 .sakuraalbum-inline-help {
   color: var(--color-text-maxcontrast);
 }
@@ -466,6 +496,10 @@
   }
 
   .sakuraalbum-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sakuraalbum-automation-card {
     grid-template-columns: 1fr;
   }
 }

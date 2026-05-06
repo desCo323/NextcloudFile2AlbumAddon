@@ -99,6 +99,29 @@ class AdminSettingsController extends Controller {
 		]);
 	}
 
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function processAutoSync(): JSONResponse {
+		try {
+			$summary = $this->autoSyncService->processDueChanges();
+			$status = $this->autoSyncService->queueStatus($this->intParam('limit', 12, 1, 100));
+			$this->logService->success('admin_auto_sync_process_requested', null, [
+				'summary' => $summary,
+				'queueCounts' => $status['counts'] ?? [],
+			], 'Admin requested processing of due automatic SakuraAlbum work.');
+
+			return new JSONResponse([
+				'summary' => $summary,
+				'status' => $status,
+			]);
+		} catch (\Throwable $e) {
+			$this->logService->exception('admin_auto_sync_process_failed', $e);
+
+			return new JSONResponse([
+				'error' => 'admin_auto_sync_process_failed',
+			], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}
+
 	private function intParam(string $key, int $default, int $min, int $max): int {
 		$value = $this->request->getParam($key, $default);
 		$value = is_numeric($value) ? (int)$value : $default;

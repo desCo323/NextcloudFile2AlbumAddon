@@ -7,6 +7,7 @@ namespace OCA\SakuraAlbum\Controller;
 use OCA\SakuraAlbum\AppInfo\Application;
 use OCA\SakuraAlbum\Service\AlbumSyncService;
 use OCA\SakuraAlbum\Service\AutoSyncService;
+use OCA\SakuraAlbum\Service\SettingsService;
 use OCA\SakuraAlbum\Service\SyncSafetyException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -20,6 +21,7 @@ class SyncController extends Controller {
 		private readonly string $userId,
 		private readonly AlbumSyncService $albumSyncService,
 		private readonly AutoSyncService $autoSyncService,
+		private readonly SettingsService $settingsService,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -71,6 +73,9 @@ class SyncController extends Controller {
 			'runs' => $this->albumSyncService->recentRuns($this->userId, $this->intParam('limit', 5, 1, 20)),
 			'queue' => $this->autoSyncService->queueStatusForUser($this->userId, $this->intParam('sampleLimit', 8, 1, 20)),
 			'cursor' => $this->albumSyncService->cursorStatus($this->userId, 5),
+			'settings' => $this->settingsService->getUserSettings($this->userId),
+			'effectiveSettings' => $this->settingsService->getEffectiveUserSettings($this->userId),
+			'adminSettings' => $this->settingsService->getAdminSettings(),
 		]);
 	}
 

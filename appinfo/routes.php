@@ -8,6 +8,7 @@ return [
 		['name' => 'adminSettings#update', 'url' => '/api/v1/admin/settings', 'verb' => 'PUT'],
 		['name' => 'adminSettings#logs', 'url' => '/api/v1/admin/logs', 'verb' => 'GET'],
 		['name' => 'adminSettings#autoSyncStatus', 'url' => '/api/v1/admin/auto-sync/status', 'verb' => 'GET'],
+		['name' => 'adminSettings#processAutoSync', 'url' => '/api/v1/admin/auto-sync/process-due', 'verb' => 'POST'],
 		['name' => 'userSettings#get', 'url' => '/api/v1/user/settings', 'verb' => 'GET'],
 		['name' => 'userSettings#update', 'url' => '/api/v1/user/settings', 'verb' => 'PUT'],
 		['name' => 'folder#index', 'url' => '/api/v1/folders', 'verb' => 'GET'],

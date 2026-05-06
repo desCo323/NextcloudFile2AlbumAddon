@@ -38,7 +38,9 @@ Expected result: `Self-check passed`.
 
 - Admin settings page opens and saves.
 - Admin load profiles update the Auto-Sync/job limit inputs and do not save until `Speichern` is clicked.
+- Admin `Automatik vorbereiten` sets global enablement and `Bei Dateiaenderungen` in the form, but does not persist until `Speichern` is clicked.
 - Admin Auto-Status loads without error and shows pending, processing, failed, due-user, and next-due values.
+- Admin `Faellige Jobs jetzt verarbeiten` processes only currently due Auto-Sync queue rows and respects saved auto-sync user/runtime/event limits.
 - Debug setting remains enabled after reload.
 - Personal settings page opens for `albentest`.
 - Personal settings show a source-folder overview table and an `Ordner hinzufuegen` picker.
@@ -51,10 +53,13 @@ Expected result: `Self-check passed`.
 - Personal settings show `Automatisch aktuell halten`.
 - If admin `Automatik` is `Manuell`, the personal automatic-update switch is disabled and explains that an administrator must enable it.
 - If admin `Automatik` is `Bei Dateiaenderungen`, the personal automatic-update switch can be turned on/off and saving persists it.
+- Personal `Automatik einschalten` enables SakuraAlbum and the user's automatic-update opt-in, saves, and queues the initial/background refresh when server-side gates allow it.
 - Saving settings with user Auto-Sync active queues an initial/background refresh and the personal status panel shows pending work.
 - The `Update vormerken` action queues enabled source folders for the next background run without directly writing albums.
 - The personal status panel shows a progress bar, queue counters, latest run details, and expandable activity details.
+- Manual write controls are under `Erweiterte manuelle Testfunktionen`; normal users should not need them for automatic background generation.
 - For a large first-generation test with a deliberately low `Job: Dateilimit`, automatic sync should create only one bounded chunk per cron run, show cursor/chunk progress, and queue continuation work.
+- Partial chunk status must not show as fully complete. The cursor should expose an estimated progress value below 100% until the final chunk completes.
 - While a chunked background sync is incomplete, no stale-file removal or missing-managed-album cleanup may run from that partial plan.
 - After the last chunk, the cursor status should become `completed` and the status panel should show the final chunk count and processed link count.
 - Preview can run against a small test folder.

@@ -10,13 +10,15 @@ The current development version focuses on safe configuration, preview planning,
 - Personal settings for opt-in, selectable source folders, folder-specific rules, exclusions, naming template, separator, depth, and media type.
 - Source folders can use global defaults, a folder-specific depth, or `Alles in ein Album` so a large subtree can be represented as one Photos album.
 - Personal automatic-update opt-in that is only active when admins allow file-event mode.
-- Personal status view with queue state, recent run details, expandable diagnostics, and a 0-100% progress bar based on the running sync summary.
+- Personal status view with queue state, recent run details, resumable cursor details, expandable diagnostics, and a 0-100% progress bar based on running sync or chunk cursor state.
+- Personal one-step automation action that enables SakuraAlbum plus automatic background generation when the administrator has allowed file-event mode.
 - Resumable background generation for large first runs: automatic sync writes bounded chunks and continues from a stored cursor over later cron runs.
 - Preview API that scans only the current user folder and returns planned albums without writing album data.
 - Dry-run API that checks generated album names against real Photos albums without writing.
 - Confirmed write API that can create/link albums only when admin and user settings are both enabled and the request matches a recent server-recorded dry-run fingerprint.
 - Optional debounced file-event auto-sync: file create/write/delete/rename events queue dirty paths, and a non-parallel cron job processes due users within admin budgets.
 - Admin Auto-Sync status view for queued, processing, failed, due-user, and next-due queue state.
+- Admin-controlled "process due Auto-Sync now" action that respects the same saved user/runtime/event limits as the scheduled background job.
 - Admin load-profile buttons for conservative, balanced, and fast scan/job/event budgets.
 - Recovery for stale auto-sync queue locks if a background run stops after reserving work.
 - Reconciliation for SakuraAlbum-managed albums so removed or moved media can be removed from generated albums during a later sync.
@@ -51,6 +53,7 @@ The current development version focuses on safe configuration, preview planning,
 - Background sync summaries include seen events, reserved events, and event-limit hits so admins can tune load profiles from real diagnostics.
 - Write runs update the current run summary while processing so the UI can report stage, processed albums, processed links, and error counters.
 - Background chunk writes store a per-user/config cursor and requeue themselves while more media remains.
+- Chunk cursors expose an estimated progress percent for user-visible status; it is intentionally an estimate while the total remaining scan size is still unknown.
 - During chunked background writes, SakuraAlbum never removes stale file links or missing managed albums, because a partial plan must not be treated as the full desired album state.
 - Background sync recovers stale processing locks and logs runtime-limit stops so interrupted cron work can be diagnosed.
 - Automatic updates mean "scheduled as soon as allowed by debounce and load limits", not synchronous writes during uploads or deletes.

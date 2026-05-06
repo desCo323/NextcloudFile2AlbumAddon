@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.2
+
+- Added an admin-only "due Auto-Sync now" action that processes queued automatic work through the existing load limits instead of bypassing cron safety.
+- Added a clearer admin automation card, an explicit "Automatik vorbereiten" action, and translated Auto-Sync queue event/status labels.
+- Added a personal automation card and "Automatik einschalten" action so users can enable SakuraAlbum plus automatic background generation in one step when admins allow it.
+- Moved manual write controls into advanced test tools; normal use now emphasizes saving settings and background generation.
+- The personal status endpoint now returns current user, effective, and admin settings so the UI can refresh status without losing server-side state.
+- Chunk cursors now expose an estimated progress percent so partial background chunks no longer appear as a finished 100% run.
+- Added cache-busting `admin-settings-022` and `personal-settings-022` assets.
+
 ## 0.2.1
 
 - Added a resumable background sync cursor table for large first-generation runs.
