@@ -85,6 +85,23 @@ class DirtyPathMapper extends QBMapper {
 		return $qb->executeStatement();
 	}
 
+	public function releaseStaleProcessing(int $olderThan, int $limit): int {
+		$ids = $this->staleProcessingIds($olderThan, $limit);
+		if ($ids === []) {
+			return 0;
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->tableName)
+			->set('status', $qb->createNamedParameter('pending'))
+			->set('locked_at', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+			->set('last_error', $qb->createNamedParameter('Recovered from stale automatic sync processing lock.'))
+			->set('attempts', $qb->func()->add('attempts', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
+			->where($qb->expr()->in('id', $qb->createNamedParameter($ids, IQueryBuilder::PARAM_INT_ARRAY)));
+
+		return $qb->executeStatement();
+	}
+
 	public function markUserProcessed(string $userId, int $processedNotAfter): int {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->tableName)
@@ -149,6 +166,21 @@ class DirtyPathMapper extends QBMapper {
 			->andWhere($qb->expr()->lte('last_seen_at', $qb->createNamedParameter($notAfter, IQueryBuilder::PARAM_INT)))
 			->orderBy('last_seen_at', 'ASC')
 			->setMaxResults(max(1, min(100000, $maxEvents)));
+
+		return array_map('intval', $qb->executeQuery()->fetchFirstColumn());
+	}
+
+	/**
+	 * @return int[]
+	 */
+	private function staleProcessingIds(int $olderThan, int $limit): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('id')
+			->from($this->tableName)
+			->where($qb->expr()->eq('status', $qb->createNamedParameter('processing')))
+			->andWhere($qb->expr()->lte('locked_at', $qb->createNamedParameter($olderThan, IQueryBuilder::PARAM_INT)))
+			->orderBy('locked_at', 'ASC')
+			->setMaxResults(max(1, min(100000, $limit)));
 
 		return array_map('intval', $qb->executeQuery()->fetchFirstColumn());
 	}
