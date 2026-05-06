@@ -61,6 +61,10 @@ Expected result: `Self-check passed`.
   - confirm SakuraAlbum logs `auto_sync_user_completed` and the managed album is updated;
   - move or delete the image, run cron after debounce, and confirm stale links are removed from the managed album;
   - confirm the job stops within the configured user/runtime/event limits.
+- Automatic sync recovery test:
+  - if a dirty-path row is left in `processing` with an old `locked_at`, the next auto-sync run must return it to `pending`;
+  - confirm `auto_sync_stale_locks_recovered` is logged for recovered queue locks;
+  - confirm `auto_sync_runtime_limit_reached` is logged if the runtime limit stops a run.
 - Managed album list shows only SakuraAlbum-tracked albums for `albentest`.
 - Delete dry-run works for selected managed albums and reports:
   - Photos albums that would be deleted
@@ -86,6 +90,8 @@ Expected result: `Self-check passed`.
   - `managed_delete_started`
   - `managed_delete_completed` or `managed_delete_failed`
   - `auto_sync_dirty_path_recorded` during the automatic-sync test
+  - `auto_sync_stale_locks_recovered` if stale processing locks are recovered
+  - `auto_sync_runtime_limit_reached` if the runtime limit stops an automatic run
   - `auto_sync_user_completed` or `auto_sync_user_failed` during the automatic-sync test
   - `stale_file_removal_skipped`, `stale_file_remove_failed`, or stale-removal counters if files changed during sync
 - Confirm log context has no raw password, request token, authorization header, app password, or stack-trace arguments.
