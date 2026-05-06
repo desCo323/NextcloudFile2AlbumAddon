@@ -275,6 +275,7 @@ class SettingsService {
 		$admin = $this->getAdminSettings();
 		$window = $this->autoSyncWindowState($admin);
 		return [
+			'globalEnabled' => (bool)$admin['enabled'],
 			'mode' => $admin['autoSyncMode'],
 			'debounceSeconds' => $admin['autoSyncDebounceSeconds'],
 			'maxUsersPerRun' => $admin['autoSyncMaxUsersPerRun'],

@@ -1370,7 +1370,9 @@
 
   function queueReasonText(reason) {
     const labels = {
+      admin_auto_sync_disabled_global: "Automatik ist zentral deaktiviert",
       admin_auto_sync_disabled: "Automatik ist zentral nicht auf Dateiaenderungen gestellt",
+      admin_auto_sync_mode_manual: "Automatik ist zentral nicht auf Dateiaenderungen gestellt",
       admin_group_not_allowed: "dein Konto ist nicht in einer freigegebenen SakuraAlbum-Gruppe",
       user_auto_sync_disabled: "SakuraAlbum oder automatische Aktualisierung ist fuer dieses Konto nicht aktiv",
       no_source_folders: "kein aktiver Quellordner vorhanden",

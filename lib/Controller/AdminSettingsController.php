@@ -105,21 +105,91 @@ class AdminSettingsController extends Controller {
 
 	#[AuthorizedAdminSetting(settings: Admin::class)]
 	public function autoSyncStatus(): JSONResponse {
-		$limit = $this->intParam('limit', 12, 1, 100);
-		$status = $this->autoSyncService->queueStatus($limit);
-		$this->logService->debug('admin_auto_sync_status_read', null, [
-			'limit' => $limit,
-			'dueUsers' => $status['dueUsers'] ?? 0,
-			'counts' => $status['counts'] ?? [],
-		]);
+		return $this->autoSyncStatusResponse();
+	}
 
-		return new JSONResponse([
-			'status' => $status,
-		]);
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function autoSyncStatusSync(): JSONResponse {
+		return $this->autoSyncStatus();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function autoSyncStatusSyncSlash(): JSONResponse {
+		return $this->autoSyncStatus();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function autoSyncStatusSyncUnderscoreSlash(): JSONResponse {
+		return $this->autoSyncStatus();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function autoSyncStatusSyncNoPuncSlash(): JSONResponse {
+		return $this->autoSyncStatus();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function autoSyncStatusLegacy(): JSONResponse {
+		return $this->autoSyncStatus();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function autoSyncStatusLegacySlash(): JSONResponse {
+		return $this->autoSyncStatus();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function autoSyncStatusSyncUnderscore(): JSONResponse {
+		return $this->autoSyncStatus();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function autoSyncStatusSyncNoPunc(): JSONResponse {
+		return $this->autoSyncStatus();
 	}
 
 	#[AuthorizedAdminSetting(settings: Admin::class)]
 	public function processAutoSync(): JSONResponse {
+		return $this->processAutoSyncResponse();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function processAutoSyncSlash(): JSONResponse {
+		return $this->processAutoSync();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function processAutoSyncSync(): JSONResponse {
+		return $this->processAutoSync();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function processAutoSyncSyncUnderscore(): JSONResponse {
+		return $this->processAutoSync();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function processAutoSyncSyncNoPunc(): JSONResponse {
+		return $this->processAutoSync();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function processAutoSyncSyncSlash(): JSONResponse {
+		return $this->processAutoSync();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function processAutoSyncSyncUnderscoreSlash(): JSONResponse {
+		return $this->processAutoSync();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function processAutoSyncSyncNoPuncSlash(): JSONResponse {
+		return $this->processAutoSync();
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	private function processAutoSyncResponse(): JSONResponse {
 		try {
 			$summary = $this->autoSyncService->processDueChanges();
 			$status = $this->autoSyncService->queueStatus($this->intParam('limit', 12, 1, 100));
@@ -139,6 +209,24 @@ class AdminSettingsController extends Controller {
 				'error' => 'admin_auto_sync_process_failed',
 			], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	private function autoSyncStatusResponse(): JSONResponse {
+		$limit = $this->intParam('limit', 12, 1, 100);
+		$status = $this->autoSyncService->queueStatus($limit);
+		$this->logService->debug('admin_auto_sync_status_read', null, [
+			'limit' => $limit,
+			'dueUsers' => $status['dueUsers'] ?? 0,
+			'counts' => $status['counts'] ?? [],
+			'backgroundJobsMode' => $status['backgroundJobsMode'] ?? null,
+			'backgroundJobsCronHealthy' => $status['backgroundJobsCronHealthy'] ?? null,
+			'backgroundJobsCronReason' => $status['backgroundJobsCronReason'] ?? null,
+			'autoJobHealth' => $status['job'] ?? null,
+		]);
+
+		return new JSONResponse([
+			'status' => $status,
+		]);
 	}
 
 	private function intParam(string $key, int $default, int $min, int $max): int {

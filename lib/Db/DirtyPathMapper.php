@@ -264,6 +264,46 @@ class DirtyPathMapper extends QBMapper {
 		return $qb->executeStatement();
 	}
 
+	public function markUserRetry(string $userId, int $retryAt, string $error): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->tableName)
+			->set('status', $qb->createNamedParameter('pending'))
+			->set('locked_at', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+			->set('attempts', $qb->func()->add('attempts', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT)))
+			->set('last_seen_at', $qb->createNamedParameter($retryAt, IQueryBuilder::PARAM_INT))
+			->set('last_error', $qb->createNamedParameter(mb_substr($error, 0, 1000)))
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->in('status', $qb->createNamedParameter(['processing', 'failed'], IQueryBuilder::PARAM_STR_ARRAY)));
+
+		return $qb->executeStatement();
+	}
+
+	public function requeueFailedForFolderUnavailable(int $maxAttempts, int $retryAt): int {
+		$token = 'user_folder_unavailable';
+		$blockedMessage = 'Chunked automatic album sync is blocked because the current chunk is not safe to write.';
+		$qb = $this->db->getQueryBuilder();
+		$qb->selectDistinct('user_id')
+			->from($this->tableName)
+			->where($qb->expr()->eq('status', $qb->createNamedParameter('failed')))
+			->andWhere($qb->expr()->lt('attempts', $qb->createNamedParameter($maxAttempts, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->like('last_error', $qb->createNamedParameter('%' . $token . '%')),
+				$qb->expr()->like('last_error', $qb->createNamedParameter('%auto_chunk_plan_not_safe:%')),
+				$qb->expr()->like('last_error', $qb->createNamedParameter('%' . $blockedMessage . '%')),
+			));
+		$users = array_map('strval', $qb->executeQuery()->fetchFirstColumn());
+
+		$requeued = 0;
+		foreach ($users as $userId) {
+			if ($userId === '') {
+				continue;
+			}
+			$requeued += $this->markUserRetry($userId, $retryAt, 'Retrying automatic sync after transient folder-unavailable condition.');
+		}
+
+		return $requeued;
+	}
+
 	private function findByUserAndPath(string $userId, string $path): ?DirtyPath {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')

@@ -18,7 +18,7 @@ class AutoSyncJob extends TimedJob {
 	) {
 		parent::__construct($time);
 		$this->setAllowParallelRuns(false);
-		$this->setTimeSensitivity(IJob::TIME_INSENSITIVE);
+		$this->setTimeSensitivity(IJob::TIME_SENSITIVE);
 		$this->setInterval(max(60, $this->settingsService->getAdminSettings()['jobIntervalMinutes'] * 60));
 	}
 

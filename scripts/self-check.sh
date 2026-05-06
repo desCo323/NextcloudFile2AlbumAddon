@@ -104,7 +104,7 @@ if ! rg -n "pendingEventsSeen" lib/Service/AutoSyncService.php js/admin-settings
 	echo "Automatic sync load-summary counters are missing" >&2
 	exit 1
 fi
-if ! rg -n "affectedIncludePath" lib/Service/AutoSyncService.php >/dev/null; then
+if ! rg -n "affectedAutoSyncPath|affectedIncludePath|autoSyncQueuePaths" lib/Service/AutoSyncService.php >/dev/null; then
 	echo "Automatic sync must collapse file events to the affected include root" >&2
 	exit 1
 fi

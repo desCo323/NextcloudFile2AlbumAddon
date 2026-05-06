@@ -10,6 +10,29 @@
   let availableGroups = [];
   const mount = root.querySelector(".sakuraalbum-settings");
 
+  const autoStatusRoutes = [
+    "/apps/sakuraalbum/api/v1/admin/auto_status",
+    "/apps/sakuraalbum/api/v1/admin/auto_status/",
+    "/apps/sakuraalbum/api/v1/admin/auto-status",
+    "/apps/sakuraalbum/api/v1/admin/auto-status/",
+    "/apps/sakuraalbum/api/v1/admin/auto-sync/status",
+    "/apps/sakuraalbum/api/v1/admin/auto-sync/status/",
+    "/apps/sakuraalbum/api/v1/admin/autosync/status",
+    "/apps/sakuraalbum/api/v1/admin/autosync/status/",
+    "/apps/sakuraalbum/api/v1/admin/auto_sync/status",
+    "/apps/sakuraalbum/api/v1/admin/auto_sync/status/",
+  ];
+  const autoRunRoutes = [
+    "/apps/sakuraalbum/api/v1/admin/auto-sync/process-due",
+    "/apps/sakuraalbum/api/v1/admin/autosync/process-due",
+    "/apps/sakuraalbum/api/v1/admin/auto_sync/process-due",
+    "/apps/sakuraalbum/api/v1/admin/auto-sync/process-due/",
+    "/apps/sakuraalbum/api/v1/admin/autosync/process-due/",
+    "/apps/sakuraalbum/api/v1/admin/auto_sync/process-due/",
+    "/apps/sakuraalbum/api/v1/admin/auto-sync/trigger",
+    "/apps/sakuraalbum/api/v1/admin/auto-sync/trigger/",
+  ];
+
   function lines(value) {
     return Array.isArray(value) ? value.join("\n") : "";
   }
@@ -20,6 +43,94 @@
       .value.split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean);
+  }
+
+  async function adminRouteGetJson(candidates) {
+    return requestAdminRoute("GET", candidates, {
+      headers: {requesttoken: OC.requestToken},
+      query: {limit: 12},
+    });
+  }
+
+  async function adminRoutePostJson(candidates, body = {}) {
+    return requestAdminRoute("POST", candidates, {
+      headers: {
+        "Content-Type": "application/json",
+        requesttoken: OC.requestToken,
+      },
+      body,
+    });
+  }
+
+  async function requestAdminRoute(method, candidates, options = {}) {
+    const paths = Array.isArray(candidates) ? candidates : [candidates];
+    const queryString = buildQueryString(options.query || null);
+    let responseError = null;
+
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+      const route = queryString ? `${path}?${queryString}` : path;
+      const response = await fetch(OC.generateUrl(route), {
+        method,
+        headers: Object.assign({}, options.headers || {}, {
+          requesttoken: OC.requestToken,
+        }),
+        body: options.body && Object.keys(options.body || {}).length !== 0
+          ? JSON.stringify(options.body)
+          : undefined,
+      });
+
+      let responseDetail = "";
+      try {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const data = await response.clone().json();
+          if (data && typeof data === "object" && data.error) {
+            responseDetail = `: ${data.error}`;
+          }
+        } else {
+          const text = (await response.clone().text()).trim();
+          if (text) {
+            responseDetail = `: ${text.slice(0, 120)}`;
+          }
+        }
+      } catch {
+        // Keep probing usable even when Nextcloud returns an HTML error page.
+      }
+
+      const candidateError = `HTTP ${response.status} on ${path}${responseDetail}`;
+
+      if (response.status === 404 && i + 1 < paths.length) {
+        responseError = candidateError;
+        continue;
+      }
+
+      if (!response.ok) {
+        responseError = formatAdminRouteError(response.status, path, candidateError);
+        throw new Error(responseError);
+      }
+
+      return response.json();
+    }
+
+    throw new Error(responseError || "Admin-Route ist nicht verfuegbar.");
+  }
+
+  function buildQueryString(query) {
+    if (!query || typeof query !== "object") {
+      return "";
+    }
+
+    const params = [];
+    Object.keys(query).forEach((key) => {
+      const value = query[key];
+      if (value === undefined || value === null || value === "") {
+        return;
+      }
+      params.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+    });
+
+    return params.join("&");
   }
 
   function fieldNumber(id) {
@@ -214,6 +325,7 @@
   }
 
   function collect() {
+    const autoMode = normalizedAutoSyncMode(document.getElementById("ska-auto-mode").value);
     return {
       enabled: document.getElementById("ska-enabled").checked,
       allowedGroups: readLines("ska-allowed-groups"),
@@ -229,7 +341,7 @@
       maxManagedFilesPerUser: fieldNumber("ska-user-file-quota"),
       allowVideos: document.getElementById("ska-allow-videos").checked,
       jobIntervalMinutes: fieldNumber("ska-job-interval"),
-      autoSyncMode: document.getElementById("ska-auto-mode").value,
+      autoSyncMode: autoMode,
       autoSyncDebounceSeconds: fieldNumber("ska-auto-debounce"),
       autoSyncMaxUsersPerRun: fieldNumber("ska-auto-users"),
       autoSyncMaxRuntimeSeconds: fieldNumber("ska-auto-runtime"),
@@ -290,7 +402,7 @@
   }
 
   function renderAdminAutomationCard(settings) {
-    const enabled = settings.enabled && settings.autoSyncMode === "file_events";
+    const enabled = settings.enabled && normalizedAutoSyncMode(settings.autoSyncMode) === "file_events";
     const mode = enabled ? "Automatik serverweit erlaubt" : settings.enabled ? "Manuell gespeichert" : "Zentral gesperrt";
     const next = enabled
       ? "Benutzer koennen Automatisch aktuell halten aktivieren; Datei-Events werden nur vorgemerkt und spaeter per Hintergrundjob verarbeitet."
@@ -311,6 +423,10 @@
 				</div>
 			</div>
 		`;
+  }
+
+  function normalizedAutoSyncMode(value) {
+    return value === "file_events" ? "file_events" : "manual";
   }
 
   async function loadGroups() {
@@ -433,19 +549,7 @@
     status.textContent = "Lade Auto-Status...";
     output.innerHTML = "";
     try {
-      const response = await fetch(
-        `${OC.generateUrl("/apps/sakuraalbum/api/v1/admin/auto-sync/status")}?limit=12`,
-        {
-          method: "GET",
-          headers: {
-            requesttoken: OC.requestToken,
-          },
-        },
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await adminRouteGetJson(autoStatusRoutes);
       renderAutoStatus(data.status || {});
       status.textContent = "Auto-Status geladen.";
     } catch (error) {
@@ -459,21 +563,7 @@
     status.textContent = "Verarbeite faellige Auto-Sync-Jobs...";
     output.innerHTML = "";
     try {
-      const response = await fetch(
-        `${OC.generateUrl("/apps/sakuraalbum/api/v1/admin/auto-sync/process-due")}?limit=12`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            requesttoken: OC.requestToken,
-          },
-          body: JSON.stringify({}),
-        },
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await adminRoutePostJson(autoRunRoutes, {});
       renderAutoProcessResult(data.summary || {}, data.status || {});
       status.textContent = "Faellige Auto-Sync-Jobs verarbeitet.";
     } catch (error) {
@@ -533,11 +623,21 @@
 
   function renderAutoStatus(autoStatus) {
     const output = document.getElementById("ska-log-output");
+    const job = autoStatus.job || {};
     const counts = autoStatus.counts || {};
     const samples = autoStatus.samples || [];
+    const automationBlockingReason = autoStatus.automationBlockingReason || "";
+    const autoModeText = (autoStatus.globalEnabled ?? true) && normalizedAutoSyncMode(autoStatus.mode || "manual") === "file_events"
+      ? "Datei-Events"
+      : "Manuell";
     output.innerHTML = `
+			<div class="sakuraalbum-inline-help">${escapeText(renderAutoSyncJobHealth(job))}</div>
+			<div class="sakuraalbum-inline-help">${escapeText(renderBackgroundJobsHealth(autoStatus))}</div>
+			${automationBlockingReason ? `<div class="sakuraalbum-warning">${escapeText(autoAutomationBlockingHint(autoStatus, automationBlockingReason))}</div>` : ""}
+			${job && job.stale ? `<div class="sakuraalbum-warning">${escapeText(autoSyncJobDiagnostic(job))}</div>` : ""}
 			<div class="sakuraalbum-summary">
 				<div><strong>${escapeText(autoStatus.enabled ? "Ein" : "Aus")}</strong><br>Automatik</div>
+				<div><strong>${escapeText(autoModeText)}</strong><br>Modus</div>
 				<div><strong>${escapeText(autoStatus.processingEnabled ? "Offen" : "Wartet")}</strong><br>Fenster</div>
 				<div><strong>${escapeText(autoStatus.dueUsers || 0)}</strong><br>Faellige Benutzer</div>
 				<div><strong>${escapeText(autoStatus.dueUsersWaitingForWindow || 0)}</strong><br>Warten auf Fenster</div>
@@ -550,9 +650,112 @@
 				<strong>Aktive Grenzen:</strong>
 				<span>${escapeText(autoStatus.maxUsersPerRun || 0)} Benutzer, ${escapeText(autoStatus.maxEventsPerRun || 0)} Events und ${escapeText(autoStatus.maxRuntimeSeconds || 0)} Sekunden pro Hintergrundlauf; Entprellzeit ${escapeText(autoStatus.debounceSeconds || 0)} Sekunden; Wartungsfenster ${escapeText(windowStatusLabel(autoStatus))}.</span>
 			</div>
+			${autoStatus.skippedReasons ? `<div class="sakuraalbum-note">${escapeText(autoSkipTextSummary(autoStatus.skippedReasons))}</div>` : ""}
 			<div class="sakuraalbum-inline-help">Neue, geaenderte, verschobene, geloeschte oder umbenannte Dateien/Ordner erzeugen nur einen Warteschlangeneintrag fuer den betroffenen Quellordner. Der eigentliche Albumabgleich passiert erst, wenn Cron faellige Eintraege verarbeitet.</div>
 			${samples.length === 0 ? '<div class="sakuraalbum-empty">Keine Auto-Sync-Events in der Warteschlange.</div>' : renderAutoQueueTable(samples)}
 		`;
+  }
+
+  function autoAutomationBlockingHint(autoStatus, reason) {
+    const hints = {
+      global_disabled: "Automatik ist global deaktiviert. Bitte 'Global aktiv' einschalten und speichern.",
+      manual_mode: "Automatik steht auf Manuell. Bitte auf 'Bei Dateiaenderungen' umstellen und speichern.",
+      outside_window: "Automatik wartet auf das konfigurierte Wartungsfenster.",
+      missing_job_record: "Auto-Sync-Hintergrundjob fehlt in der Job-Tabelle. Nach dem Speichern kurz warten und erneut laden.",
+      cron_not_recorded: "Cron-Modus ist aktiv, aber Nextcloud hat noch keinen Cron-Lauf registriert.",
+      cron_stale: `Cron lief zuletzt vor etwa ${formatAgeSeconds(autoStatus.backgroundJobsCronAgeSeconds)}. Bitte Host-Cron pruefen.`,
+    };
+
+    return hints[reason] || "Automatik ist aktuell blockiert. Siehe Hintergrundjob-Details.";
+  }
+
+  function formatAgeSeconds(seconds) {
+    if (seconds === null || seconds === undefined || Number.isNaN(seconds)) {
+      return "unbekannter Zeit";
+    }
+    const total = Math.max(0, Math.floor(Number(seconds)));
+    const minutes = Math.floor(total / 60);
+    if (minutes < 60) {
+      return `${minutes} Min`;
+    }
+    const hours = Math.floor(minutes / 60);
+    return `${hours} h ${minutes % 60} min`;
+  }
+
+  function formatAdminRouteError(status, path, candidateError) {
+    if (status === 401) {
+      return `Keine gueltige Admin-Session fuer ${path}. Bitte erneut als Admin anmelden.`;
+    }
+    if (status === 403) {
+      return `Kein Zugriff auf ${path}. Der angemeldete Benutzer hat nicht die noetigen Admin-Rechte.`;
+    }
+    if (status === 404) {
+      return `Auto-Status-Route nicht erreichbar: ${candidateError}. Bitte App-Code, Cache und aktivierte SakuraAlbum-Version pruefen.`;
+    }
+
+    return candidateError;
+  }
+
+  function renderBackgroundJobsHealth(autoStatus) {
+    const mode = autoStatus.backgroundJobsMode || "unknown";
+    if (mode === "cron") {
+      const ageSeconds = autoStatus.backgroundJobsCronAgeSeconds;
+      const last = autoStatus.backgroundJobsLastCronAt;
+      const healthy = autoStatus.backgroundJobsCronHealthy === false ? false : true;
+      const reason = autoStatus.backgroundJobsCronReason || "";
+      if (!healthy) {
+        const lastText = last ? ` letzte Ausfuehrung ${formatTime(last)}` : " keine letzte Ausfuehrung";
+        if (reason === "cron_not_recorded") {
+          return `Hintergrundjobs laufen im Modus ${mode}, aber lastcron ist nicht vorhanden. Bitte System-Cron im Host aktivieren und fuer SakuraAlbum neu starten.`;
+        }
+        const ageText = ageSeconds !== null ? `${Math.max(0, Math.floor(ageSeconds / 60))} Min` : "unbekannt";
+        return `Hintergrundjob-Status ist nicht gesund: letzte Cron-Ausfuehrung ${ageText} her. Bitte Cron/Nextcloud Hintergrundauftraege pruefen.`;
+      }
+      if (last) {
+        const ageText = ageSeconds !== null ? `${Math.max(0, Math.floor(ageSeconds / 60))} Min` : "unbekannt";
+        return `Hintergrundjob-Modus ${escapeText(mode)} ist aktiv; letzter Cron vor ${escapeText(ageText)}.`;
+      }
+      return `Hintergrundjob-Modus ${escapeText(mode)} ist aktiv; cron-Laufzeitdaten sind noch nicht vollstaendig.`;
+    }
+
+    return `Hintergrundjobs-Modus: ${escapeText(mode)}. Automatische Ausfuehrung findet im gewaehlten Trigger-Modus statt.`;
+  }
+
+  function autoSyncJobDiagnostic(job) {
+    if (!job.exists) {
+      return "Kein Auto-Sync-Hintergrundjob in oc_jobs gefunden. Das System kann nicht automatisch triggern, bis der Cron-Worker den App-Job registriert hat.";
+    }
+    if (job.stale) {
+      const lastSeen = job.lastCheckedAt || job.lastRunAt;
+      const age = lastSeen !== null ? `${Math.max(0, Math.floor((job.now - lastSeen) / 60))} Min` : "unbekannt";
+      return `Der Auto-Sync-Hintergrundjob reagiert nicht. Letzte bekannte Aktivitaet vor etwa ${age}. Bitte Cron/Background-Jobs auf dem Server pruefen.`;
+    }
+    if (job.status === "scheduled") {
+      return `Auto-Sync-Hintergrundjob ist geplant. Nächster Check in ${Math.max(0, job.runDueInSeconds || 0)} Sekunden.`;
+    }
+    if (job.status === "ready_or_overdue") {
+      return "Auto-Sync-Hintergrundjob ist fällig. Er sollte beim nächsten Cron-/AJAX-Lauf verarbeitet werden.";
+    }
+    if (job.status === "running") {
+      return "Auto-Sync-Hintergrundjob ist gerade aktiv.";
+    }
+    if (job.status === "bootstrapped") {
+      return "Auto-Sync-Hintergrundjob ist registriert, aber noch nicht regelmaessig ausgefuehrt.";
+    }
+    return "Auto-Sync-Hintergrundjob-Status ist unklar.";
+  }
+
+  function renderAutoSyncJobHealth(job) {
+    if (!job.exists) {
+      return "Hintergrundjob: nicht gefunden (id: -)";
+    }
+
+    const scheduled = job.nextScheduledAt ? ` naechste Pruefung ${formatTime(job.nextScheduledAt)}` : "";
+    const lastRun = job.lastRunAt ? `letzter Lauf ${formatTime(job.lastRunAt)}` : "kein Lauf registriert";
+    const lastCheck = job.lastCheckedAt ? `letzte Pruefung ${formatTime(job.lastCheckedAt)}` : "keine Pruefung registriert";
+    const age = job.jobAgeSeconds !== null ? `${Math.max(0, Math.floor(job.jobAgeSeconds / 60))} Min seit Lauf` : "keine Laufzeit";
+
+    return `Auto-Sync Job ${escapeText(job.jobId || "-")} | ${lastRun} | ${lastCheck}${scheduled} | ${escapeText(age)}.`;
   }
 
   function renderAutoProcessResult(summary, autoStatus) {
@@ -567,6 +770,7 @@
 				<div><strong>${escapeText(summary.recoveredStaleLocks || 0)}</strong><br>Locks repariert</div>
 			</div>
 			${summary.skipped ? `<div class="sakuraalbum-warning">${escapeText(autoSkipText(summary.skipped))}</div>` : ""}
+			${summary.skippedReasons ? `<div class="sakuraalbum-warning">${escapeText(autoSkipTextSummary(summary.skippedReasons))}</div>` : ""}
 			${summary.stoppedReason ? `<div class="sakuraalbum-warning">${escapeText(autoStopText(summary.stoppedReason))}</div>` : ""}
 			<div class="sakuraalbum-note">
 				<strong>Warteschlange nach dem Lauf</strong>
@@ -636,10 +840,30 @@
 
   function autoSkipText(reason) {
     const labels = {
-      auto_sync_disabled: "Automatik ist zentral auf manuell gestellt.",
+      auto_sync_disabled: "Automatik ist zentral ausgeschaltet.",
+      admin_auto_sync_disabled_global: "Automatik ist global ausgeschaltet.",
+      admin_auto_sync_disabled: "Automatik ist zentral auf manuell gestellt.",
+      admin_auto_sync_mode_manual: "Automatik ist zentral auf manuell gestellt.",
+      user_auto_sync_disabled: "Der Nutzer hat die automatische Aktualisierung deaktiviert.",
       outside_auto_sync_window: "Der Lauf wartet auf das konfigurierte Wartungsfenster.",
+      auto_sync_user_locked: "Ein Nutzer wurde auf Grund einer konkurrierenden Sperre uebersprungen.",
+      runtime_limit: "Der Lauf wurde durch das Laufzeitlimit gestoppt.",
     };
     return labels[reason] || reason || "";
+  }
+
+  function autoSkipTextSummary(skippedReasons) {
+    if (!skippedReasons || typeof skippedReasons !== "object") {
+      return "";
+    }
+    const entries = Object.keys(skippedReasons)
+      .filter((reason) => skippedReasons[reason] > 0)
+      .map((reason) => {
+        const count = skippedReasons[reason];
+        const label = autoSkipText(reason);
+        return label ? `${label} (${count})` : `${reason} (${count})`;
+      });
+    return entries.length === 0 ? "" : `Aktuelle Ausloesgrundlage: ${entries.join(", ")}`;
   }
 
   function autoStopText(reason) {
