@@ -22,6 +22,7 @@ This checklist tracks the publication state for SakuraAlbum.
 - Controllers keep CSRF protection enabled.
 - Write and delete operations require fresh server-recorded fingerprints and exact confirmation text.
 - Automatic sync requires admin mode, user enablement, and user automatic opt-in.
+- Group-limited rollout, per-user quotas, and maintenance windows are enforced in server-side services, not only in the UI.
 - Queued automatic work is skipped if the user disables automatic updates before processing.
 - Debug logs redact common secret keys before storage.
 

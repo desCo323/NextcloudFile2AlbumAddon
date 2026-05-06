@@ -40,15 +40,20 @@ class AdminSettingsController extends Controller {
 			$this->logService->success('admin_settings_updated', null, [
 				'summary' => [
 					'enabled' => $settings['enabled'],
+					'allowedGroups' => count($settings['allowedGroups'] ?? []),
 					'debugMode' => $settings['debugMode'],
 					'autoSyncMode' => $settings['autoSyncMode'],
 					'autoSyncDebounceSeconds' => $settings['autoSyncDebounceSeconds'],
 					'autoSyncMaxUsersPerRun' => $settings['autoSyncMaxUsersPerRun'],
 					'autoSyncMaxRuntimeSeconds' => $settings['autoSyncMaxRuntimeSeconds'],
 					'autoSyncMaxEventsPerRun' => $settings['autoSyncMaxEventsPerRun'],
+					'autoSyncWindowStart' => $settings['autoSyncWindowStart'] ?? '',
+					'autoSyncWindowEnd' => $settings['autoSyncWindowEnd'] ?? '',
 					'maxPreviewFolders' => $settings['maxPreviewFolders'],
 					'maxPreviewFiles' => $settings['maxPreviewFiles'],
 					'maxAlbumsPerRun' => $settings['maxAlbumsPerRun'],
+					'maxManagedAlbumsPerUser' => $settings['maxManagedAlbumsPerUser'] ?? 0,
+					'maxManagedFilesPerUser' => $settings['maxManagedFilesPerUser'] ?? 0,
 				],
 			], 'Admin settings saved.');
 
@@ -64,6 +69,20 @@ class AdminSettingsController extends Controller {
 				'error' => 'admin_settings_update_failed',
 			], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	#[AuthorizedAdminSetting(settings: Admin::class)]
+	public function groups(): JSONResponse {
+		$limit = $this->intParam('limit', 200, 1, 500);
+		$groups = $this->settingsService->availableGroups($limit);
+		$this->logService->debug('admin_groups_read', null, [
+			'count' => count($groups),
+			'limit' => $limit,
+		]);
+
+		return new JSONResponse([
+			'groups' => $groups,
+		]);
 	}
 
 	#[AuthorizedAdminSetting(settings: Admin::class)]

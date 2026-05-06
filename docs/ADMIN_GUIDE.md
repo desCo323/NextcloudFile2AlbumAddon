@@ -7,10 +7,23 @@ SakuraAlbum is disabled by default after installation. Users can only write Phot
 1. Enable the app only in a controlled test window.
 2. Open the SakuraAlbum admin settings.
 3. Enable `Debug-Logging`.
-4. Keep `Automatik` on `Manuell` for the first manual preview/write checks.
-5. Use small limits for preview, files, folders, and albums.
-6. Test only with a dedicated test user and isolated test folders.
-7. Disable the app and restore the pre-test state after the window.
+4. If possible, set `Rollout: erlaubte Gruppen` to a dedicated test group first.
+5. Keep `Automatik` on `Manuell` for the first manual preview/write checks.
+6. Use small limits for preview, files, folders, albums, and per-user quotas.
+7. Test only with a dedicated test user and isolated test folders.
+8. Disable the app and restore the pre-test state after the window.
+
+## Rollout and quotas
+
+`Rollout: erlaubte Gruppen` is optional. When it is empty, all users may opt in after the global enable switch is active. When one or more group IDs are configured, a user must be a member of at least one listed group before SakuraAlbum can queue background work or write generated albums.
+
+The per-user quota fields are hard server-side write limits:
+
+- `Benutzerquote: Alben` limits the total active SakuraAlbum-managed albums for one user.
+- `Benutzerquote: Medienlinks` limits the total media links SakuraAlbum tracks across that user's managed albums.
+- `0` means no total quota for that field.
+
+Quota failures block writes and background chunks before Photos albums are changed.
 
 ## Load control
 
@@ -23,6 +36,7 @@ Automatic updates are intentionally delayed and bounded. File events only queue 
 - folder count,
 - file count,
 - album count,
+- total managed album/media quota per user,
 - job interval minutes.
 
 Use `Schonend` for production tests, `Normal` for regular servers, and `Schnell` only for short test windows or strong hardware. Load-profile buttons update the form only; values are not active until `Speichern`.
@@ -32,6 +46,8 @@ Use `Schonend` for production tests, `Normal` for regular servers, and `Schnell`
 Set `Automatik` to `Bei Dateiaenderungen` to allow automatic updates server-wide. Users still need to enable `Automatisch aktuell halten` in their own SakuraAlbum settings.
 
 If a user later disables automatic updates, queued automatic work for that user is skipped and cleared instead of writing stale work.
+
+Use `Auto: Wartungsfenster Start` and `Auto: Wartungsfenster Ende` to restrict automatic queue processing to low-load hours. Empty values mean always allowed. If the end time is earlier than the start time, the window spans midnight, for example `22:00` to `06:00`.
 
 ## Diagnostics
 

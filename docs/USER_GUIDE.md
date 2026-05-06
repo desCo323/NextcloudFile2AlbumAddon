@@ -13,6 +13,8 @@ SakuraAlbum creates Nextcloud Photos albums from folders you already have in Fil
 
 If automatic updates are enabled, the first generation runs in background chunks. The progress bar shows pending work, recent run details, and the current continuation cursor for large libraries.
 
+If the settings page says `Gruppe gesperrt` or `Nicht freigegeben`, SakuraAlbum is limited to administrator-selected groups. In that state the app can show settings, but it will not queue or write albums for your account.
+
 ## Folder rules
 
 Each source folder can use the global rule, a custom depth, or `Alles in ein Album`.
@@ -26,6 +28,8 @@ Nested active source folders are blocked. For example, do not select `/Photos` a
 ## Updates and deletion
 
 `Update vormerken` queues all active source folders for the next background run. File changes also queue updates when automatic mode is active. SakuraAlbum does not write during uploads, moves, or deletes; it waits for the configured background job limits.
+
+Administrators may also set low-load time windows and per-user quotas. If a quota is reached, SakuraAlbum blocks the write and shows the quota reason before changing Photos albums.
 
 `Verwaltete Alben` lists only albums that SakuraAlbum created or updated and still tracks. Deletion requires a preview and the exact confirmation text, and renamed or foreign albums are blocked.
 

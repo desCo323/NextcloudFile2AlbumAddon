@@ -57,6 +57,28 @@ class AutoSyncService {
 				'skipped' => 'auto_sync_disabled',
 			];
 		}
+		if (($auto['windowActive'] ?? true) !== true) {
+			$summary = [
+				'processedUsers' => 0,
+				'succeededUsers' => 0,
+				'failedUsers' => 0,
+				'skippedUsers' => 0,
+				'dueUsers' => 0,
+				'recoveredStaleLocks' => 0,
+				'pendingEventsSeen' => 0,
+				'lockedEvents' => 0,
+				'eventLimitHits' => 0,
+				'continuedUsers' => 0,
+				'skipped' => 'outside_auto_sync_window',
+				'windowStart' => $auto['windowStart'] ?? '',
+				'windowEnd' => $auto['windowEnd'] ?? '',
+				'nextWindowAt' => $auto['nextWindowAt'] ?? null,
+			];
+			$this->logService->debug('auto_sync_window_closed', null, [
+				'summary' => $summary,
+			], 'Automatic SakuraAlbum sync is waiting for the configured low-load window.');
+			return $summary;
+		}
 
 		$started = time();
 		$staleOlderThan = $started - max(
@@ -175,13 +197,20 @@ class AutoSyncService {
 		return [
 			'mode' => $auto['mode'],
 			'enabled' => $auto['mode'] === 'file_events',
+			'processingEnabled' => $auto['mode'] === 'file_events' && ($auto['windowActive'] ?? true) === true,
+			'windowActive' => $auto['windowActive'] ?? true,
+			'windowReason' => $auto['windowReason'] ?? 'always_open',
+			'windowStart' => $auto['windowStart'] ?? '',
+			'windowEnd' => $auto['windowEnd'] ?? '',
+			'nextWindowAt' => $auto['nextWindowAt'] ?? null,
 			'now' => $now,
 			'debounceSeconds' => (int)$auto['debounceSeconds'],
 			'maxUsersPerRun' => (int)$auto['maxUsersPerRun'],
 			'maxRuntimeSeconds' => (int)$auto['maxRuntimeSeconds'],
 			'maxEventsPerRun' => (int)$auto['maxEventsPerRun'],
 			'dueBefore' => $notAfter,
-			'dueUsers' => $auto['mode'] === 'file_events' ? $this->dirtyPathMapper->countDueUsers($notAfter) : 0,
+			'dueUsers' => $auto['mode'] === 'file_events' && ($auto['windowActive'] ?? true) === true ? $this->dirtyPathMapper->countDueUsers($notAfter) : 0,
+			'dueUsersWaitingForWindow' => $auto['mode'] === 'file_events' && ($auto['windowActive'] ?? true) !== true ? $this->dirtyPathMapper->countDueUsers($notAfter) : 0,
 			'oldestPendingAt' => $oldestPendingAt,
 			'nextDueAt' => $nextDueAt !== null ? max($now, $nextDueAt) : null,
 			'counts' => $this->dirtyPathMapper->countAllByStatus(),
@@ -198,6 +227,12 @@ class AutoSyncService {
 		return [
 			'mode' => $auto['mode'],
 			'enabled' => $auto['mode'] === 'file_events',
+			'processingEnabled' => $auto['mode'] === 'file_events' && ($auto['windowActive'] ?? true) === true,
+			'windowActive' => $auto['windowActive'] ?? true,
+			'windowReason' => $auto['windowReason'] ?? 'always_open',
+			'windowStart' => $auto['windowStart'] ?? '',
+			'windowEnd' => $auto['windowEnd'] ?? '',
+			'nextWindowAt' => $auto['nextWindowAt'] ?? null,
 			'now' => $now,
 			'debounceSeconds' => (int)$auto['debounceSeconds'],
 			'nextDueAt' => $nextDueAt !== null ? max($now, $nextDueAt) : null,
@@ -214,6 +249,13 @@ class AutoSyncService {
 			return [
 				'queued' => false,
 				'reason' => 'admin_auto_sync_disabled',
+				'queuedPaths' => [],
+			];
+		}
+		if (($settings['adminGroupAllowed'] ?? true) !== true) {
+			return [
+				'queued' => false,
+				'reason' => 'admin_group_not_allowed',
 				'queuedPaths' => [],
 			];
 		}

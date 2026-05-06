@@ -20,7 +20,7 @@ class Personal implements ISettings {
 	#[\Override]
 	public function getForm(): TemplateResponse {
 		Util::addStyle(Application::APP_ID, 'settings');
-		Util::addScript(Application::APP_ID, 'personal-settings-024');
+		Util::addScript(Application::APP_ID, 'personal-settings-025');
 
 		return new TemplateResponse(Application::APP_ID, 'settings/personal', [
 			'settings' => $this->settingsService->getUserSettings($this->userId),

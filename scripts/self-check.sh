@@ -98,6 +98,26 @@ if ! rg -n "data-profile" js/admin-settings.js >/dev/null; then
 	echo "Admin load-profile controls are missing" >&2
 	exit 1
 fi
+if ! rg -n "allowedGroups" lib/Service/SettingsService.php js/admin-settings.js >/dev/null; then
+	echo "Admin group rollout controls are missing" >&2
+	exit 1
+fi
+if ! rg -n "adminSettings#groups" appinfo/routes.php >/dev/null; then
+	echo "Admin group listing endpoint is missing" >&2
+	exit 1
+fi
+if ! rg -n "adminGroupAllowed" lib/Service/SettingsService.php lib/Service/AutoSyncService.php js/personal-settings.js >/dev/null; then
+	echo "Group rollout must affect effective user settings, auto-sync queueing, and personal UI" >&2
+	exit 1
+fi
+if ! rg -n "autoSyncWindowStart|outside_auto_sync_window" lib/Service/SettingsService.php lib/Service/AutoSyncService.php js/admin-settings.js >/dev/null; then
+	echo "Auto-Sync maintenance window controls are missing" >&2
+	exit 1
+fi
+if ! rg -n "maxManagedAlbumsPerUser|maxManagedFilesPerUser|managed_album_quota_exceeded|managed_file_quota_exceeded" lib/Service/SettingsService.php lib/Service/AlbumSyncService.php js/personal-settings.js >/dev/null; then
+	echo "Per-user managed album/media quota enforcement is missing" >&2
+	exit 1
+fi
 if ! rg -n "admin-settings-${ASSET_SUFFIX}" lib/Settings/Admin.php >/dev/null; then
 	echo "Admin settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.5
+
+- Added admin rollout controls with optional allowed Nextcloud groups and a group picker.
+- Added optional Auto-Sync maintenance windows so background processing can be limited to low-load hours.
+- Added per-user quotas for SakuraAlbum-managed album count and managed media links, enforced before write or chunk jobs.
+- Expanded admin and personal UI explanations for rollout state, quotas, maintenance windows, and quota-blocked plans.
+- Added admin group listing API at `/api/v1/admin/groups`.
+- Added cache-busting `admin-settings-025` and `personal-settings-025` assets.
+
 ## 0.2.4
 
 - Added user, admin, developer, privacy, and store-release documentation.

@@ -7,6 +7,7 @@ namespace OCA\SakuraAlbum\Service;
 use OCA\SakuraAlbum\AppInfo\Application;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\Config\IUserConfig;
+use OCP\IGroupManager;
 
 class SettingsService {
 	private const USER_SETTINGS_KEY = 'settings';
@@ -14,6 +15,7 @@ class SettingsService {
 
 	private const ADMIN_DEFAULTS = [
 		'enabled' => false,
+		'allowedGroups' => [],
 		'defaultIncludePaths' => ['/Photos'],
 		'defaultExcludePatterns' => ['.nomedia', '.noimage'],
 		'maxScanDepth' => 8,
@@ -22,6 +24,8 @@ class SettingsService {
 		'maxJobFolders' => 5000,
 		'maxJobFiles' => 50000,
 		'maxAlbumsPerRun' => 500,
+		'maxManagedAlbumsPerUser' => 0,
+		'maxManagedFilesPerUser' => 0,
 		'allowVideos' => false,
 		'jobIntervalMinutes' => 360,
 		'autoSyncMode' => 'manual',
@@ -29,6 +33,8 @@ class SettingsService {
 		'autoSyncMaxUsersPerRun' => 3,
 		'autoSyncMaxRuntimeSeconds' => 30,
 		'autoSyncMaxEventsPerRun' => 200,
+		'autoSyncWindowStart' => '',
+		'autoSyncWindowEnd' => '',
 		'syncRemoveMissingFiles' => true,
 		'syncDeleteMissingManagedAlbums' => false,
 		'requireBulkDeleteConfirmation' => true,
@@ -53,12 +59,14 @@ class SettingsService {
 	public function __construct(
 		private readonly IAppConfig $appConfig,
 		private readonly IUserConfig $userConfig,
+		private readonly IGroupManager $groupManager,
 	) {
 	}
 
 	public function getAdminSettings(): array {
 		return [
 			'enabled' => $this->appConfig->getAppValueBool(self::ADMIN_GLOBAL_ENABLED_KEY, self::ADMIN_DEFAULTS['enabled']),
+			'allowedGroups' => $this->groupList($this->appConfig->getAppValueArray('allowedGroups', self::ADMIN_DEFAULTS['allowedGroups'], lazy: true)),
 			'defaultIncludePaths' => $this->appConfig->getAppValueArray('defaultIncludePaths', self::ADMIN_DEFAULTS['defaultIncludePaths'], lazy: true),
 			'defaultExcludePatterns' => $this->appConfig->getAppValueArray('defaultExcludePatterns', self::ADMIN_DEFAULTS['defaultExcludePatterns'], lazy: true),
 			'maxScanDepth' => $this->appConfig->getAppValueInt('maxScanDepth', self::ADMIN_DEFAULTS['maxScanDepth']),
@@ -67,6 +75,8 @@ class SettingsService {
 			'maxJobFolders' => $this->appConfig->getAppValueInt('maxJobFolders', self::ADMIN_DEFAULTS['maxJobFolders']),
 			'maxJobFiles' => $this->appConfig->getAppValueInt('maxJobFiles', self::ADMIN_DEFAULTS['maxJobFiles']),
 			'maxAlbumsPerRun' => $this->appConfig->getAppValueInt('maxAlbumsPerRun', self::ADMIN_DEFAULTS['maxAlbumsPerRun']),
+			'maxManagedAlbumsPerUser' => $this->appConfig->getAppValueInt('maxManagedAlbumsPerUser', self::ADMIN_DEFAULTS['maxManagedAlbumsPerUser']),
+			'maxManagedFilesPerUser' => $this->appConfig->getAppValueInt('maxManagedFilesPerUser', self::ADMIN_DEFAULTS['maxManagedFilesPerUser']),
 			'allowVideos' => $this->appConfig->getAppValueBool('allowVideos', self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->appConfig->getAppValueInt('jobIntervalMinutes', self::ADMIN_DEFAULTS['jobIntervalMinutes']),
 			'autoSyncMode' => $this->autoSyncMode($this->appConfig->getAppValueString('autoSyncMode', self::ADMIN_DEFAULTS['autoSyncMode'])),
@@ -74,6 +84,8 @@ class SettingsService {
 			'autoSyncMaxUsersPerRun' => $this->appConfig->getAppValueInt('autoSyncMaxUsersPerRun', self::ADMIN_DEFAULTS['autoSyncMaxUsersPerRun']),
 			'autoSyncMaxRuntimeSeconds' => $this->appConfig->getAppValueInt('autoSyncMaxRuntimeSeconds', self::ADMIN_DEFAULTS['autoSyncMaxRuntimeSeconds']),
 			'autoSyncMaxEventsPerRun' => $this->appConfig->getAppValueInt('autoSyncMaxEventsPerRun', self::ADMIN_DEFAULTS['autoSyncMaxEventsPerRun']),
+			'autoSyncWindowStart' => $this->timeOfDay($this->appConfig->getAppValueString('autoSyncWindowStart', self::ADMIN_DEFAULTS['autoSyncWindowStart'])),
+			'autoSyncWindowEnd' => $this->timeOfDay($this->appConfig->getAppValueString('autoSyncWindowEnd', self::ADMIN_DEFAULTS['autoSyncWindowEnd'])),
 			'syncRemoveMissingFiles' => $this->appConfig->getAppValueBool('syncRemoveMissingFiles', self::ADMIN_DEFAULTS['syncRemoveMissingFiles']),
 			'syncDeleteMissingManagedAlbums' => $this->appConfig->getAppValueBool('syncDeleteMissingManagedAlbums', self::ADMIN_DEFAULTS['syncDeleteMissingManagedAlbums']),
 			'requireBulkDeleteConfirmation' => true,
@@ -86,6 +98,7 @@ class SettingsService {
 	public function saveAdminSettings(array $input): array {
 		$settings = [
 			'enabled' => $this->boolValue($input['enabled'] ?? self::ADMIN_DEFAULTS['enabled']),
+			'allowedGroups' => $this->groupList($input['allowedGroups'] ?? self::ADMIN_DEFAULTS['allowedGroups']),
 			'defaultIncludePaths' => $this->pathList($input['defaultIncludePaths'] ?? self::ADMIN_DEFAULTS['defaultIncludePaths']),
 			'defaultExcludePatterns' => $this->stringList($input['defaultExcludePatterns'] ?? self::ADMIN_DEFAULTS['defaultExcludePatterns']),
 			'maxScanDepth' => $this->intValue($input['maxScanDepth'] ?? self::ADMIN_DEFAULTS['maxScanDepth'], 0, 20),
@@ -94,6 +107,8 @@ class SettingsService {
 			'maxJobFolders' => $this->intValue($input['maxJobFolders'] ?? self::ADMIN_DEFAULTS['maxJobFolders'], 10, 100000),
 			'maxJobFiles' => $this->intValue($input['maxJobFiles'] ?? self::ADMIN_DEFAULTS['maxJobFiles'], 10, 1000000),
 			'maxAlbumsPerRun' => $this->intValue($input['maxAlbumsPerRun'] ?? self::ADMIN_DEFAULTS['maxAlbumsPerRun'], 1, 5000),
+			'maxManagedAlbumsPerUser' => $this->intValue($input['maxManagedAlbumsPerUser'] ?? self::ADMIN_DEFAULTS['maxManagedAlbumsPerUser'], 0, 100000),
+			'maxManagedFilesPerUser' => $this->intValue($input['maxManagedFilesPerUser'] ?? self::ADMIN_DEFAULTS['maxManagedFilesPerUser'], 0, 5000000),
 			'allowVideos' => $this->boolValue($input['allowVideos'] ?? self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->intValue($input['jobIntervalMinutes'] ?? self::ADMIN_DEFAULTS['jobIntervalMinutes'], 5, 10080),
 			'autoSyncMode' => $this->autoSyncMode((string)($input['autoSyncMode'] ?? self::ADMIN_DEFAULTS['autoSyncMode'])),
@@ -101,6 +116,8 @@ class SettingsService {
 			'autoSyncMaxUsersPerRun' => $this->intValue($input['autoSyncMaxUsersPerRun'] ?? self::ADMIN_DEFAULTS['autoSyncMaxUsersPerRun'], 1, 1000),
 			'autoSyncMaxRuntimeSeconds' => $this->intValue($input['autoSyncMaxRuntimeSeconds'] ?? self::ADMIN_DEFAULTS['autoSyncMaxRuntimeSeconds'], 5, 3600),
 			'autoSyncMaxEventsPerRun' => $this->intValue($input['autoSyncMaxEventsPerRun'] ?? self::ADMIN_DEFAULTS['autoSyncMaxEventsPerRun'], 1, 100000),
+			'autoSyncWindowStart' => $this->timeOfDay($input['autoSyncWindowStart'] ?? self::ADMIN_DEFAULTS['autoSyncWindowStart']),
+			'autoSyncWindowEnd' => $this->timeOfDay($input['autoSyncWindowEnd'] ?? self::ADMIN_DEFAULTS['autoSyncWindowEnd']),
 			'syncRemoveMissingFiles' => $this->boolValue($input['syncRemoveMissingFiles'] ?? self::ADMIN_DEFAULTS['syncRemoveMissingFiles']),
 			'syncDeleteMissingManagedAlbums' => $this->boolValue($input['syncDeleteMissingManagedAlbums'] ?? self::ADMIN_DEFAULTS['syncDeleteMissingManagedAlbums']),
 			'requireBulkDeleteConfirmation' => true,
@@ -110,6 +127,7 @@ class SettingsService {
 		];
 
 		$this->appConfig->setAppValueBool(self::ADMIN_GLOBAL_ENABLED_KEY, $settings['enabled']);
+		$this->appConfig->setAppValueArray('allowedGroups', $settings['allowedGroups'], lazy: true);
 		$this->appConfig->setAppValueArray('defaultIncludePaths', $settings['defaultIncludePaths'], lazy: true);
 		$this->appConfig->setAppValueArray('defaultExcludePatterns', $settings['defaultExcludePatterns'], lazy: true);
 		$this->appConfig->setAppValueInt('maxScanDepth', $settings['maxScanDepth']);
@@ -118,6 +136,8 @@ class SettingsService {
 		$this->appConfig->setAppValueInt('maxJobFolders', $settings['maxJobFolders']);
 		$this->appConfig->setAppValueInt('maxJobFiles', $settings['maxJobFiles']);
 		$this->appConfig->setAppValueInt('maxAlbumsPerRun', $settings['maxAlbumsPerRun']);
+		$this->appConfig->setAppValueInt('maxManagedAlbumsPerUser', $settings['maxManagedAlbumsPerUser']);
+		$this->appConfig->setAppValueInt('maxManagedFilesPerUser', $settings['maxManagedFilesPerUser']);
 		$this->appConfig->setAppValueBool('allowVideos', $settings['allowVideos']);
 		$this->appConfig->setAppValueInt('jobIntervalMinutes', $settings['jobIntervalMinutes']);
 		$this->appConfig->setAppValueString('autoSyncMode', $settings['autoSyncMode']);
@@ -125,6 +145,8 @@ class SettingsService {
 		$this->appConfig->setAppValueInt('autoSyncMaxUsersPerRun', $settings['autoSyncMaxUsersPerRun']);
 		$this->appConfig->setAppValueInt('autoSyncMaxRuntimeSeconds', $settings['autoSyncMaxRuntimeSeconds']);
 		$this->appConfig->setAppValueInt('autoSyncMaxEventsPerRun', $settings['autoSyncMaxEventsPerRun']);
+		$this->appConfig->setAppValueString('autoSyncWindowStart', $settings['autoSyncWindowStart']);
+		$this->appConfig->setAppValueString('autoSyncWindowEnd', $settings['autoSyncWindowEnd']);
 		$this->appConfig->setAppValueBool('syncRemoveMissingFiles', $settings['syncRemoveMissingFiles']);
 		$this->appConfig->setAppValueBool('syncDeleteMissingManagedAlbums', $settings['syncDeleteMissingManagedAlbums']);
 		$this->appConfig->setAppValueBool('requireBulkDeleteConfirmation', $settings['requireBulkDeleteConfirmation']);
@@ -139,6 +161,20 @@ class SettingsService {
 		return $this->appConfig->getAppValueBool('debugMode', self::ADMIN_DEFAULTS['debugMode']);
 	}
 
+	public function availableGroups(int $limit = 200): array {
+		$limit = max(1, min(500, $limit));
+		$groups = array_map(
+			static fn ($group): array => [
+				'id' => $group->getGID(),
+				'displayName' => $group->getDisplayName(),
+			],
+			$this->groupManager->search('', $limit, 0),
+		);
+		usort($groups, static fn (array $left, array $right): int => mb_strtolower($left['displayName']) <=> mb_strtolower($right['displayName']));
+
+		return $groups;
+	}
+
 	public function getUserSettings(string $userId): array {
 		$stored = $this->userConfig->getValueArray($userId, Application::APP_ID, self::USER_SETTINGS_KEY, [], lazy: true);
 		return $this->normalizeUserSettings($stored, includeAdminDefaults: false);
@@ -147,6 +183,8 @@ class SettingsService {
 	public function getEffectiveUserSettings(string $userId, ?array $overrides = null): array {
 		$admin = $this->getAdminSettings();
 		$user = $this->getUserSettings($userId);
+		$groupAllowed = $this->isUserInAllowedGroups($userId, $admin['allowedGroups'] ?? []);
+		$adminEnabledForUser = $admin['enabled'] && $groupAllowed;
 
 		if ($overrides !== null) {
 			$user = $this->normalizeUserSettings(array_merge($user, $overrides), includeAdminDefaults: false);
@@ -169,8 +207,11 @@ class SettingsService {
 		$defaultAlbumDepth = min($user['albumDepth'], $admin['maxScanDepth']);
 
 		return [
-			'enabled' => $admin['enabled'] && $user['enabled'],
-			'adminEnabled' => $admin['enabled'],
+			'enabled' => $adminEnabledForUser && $user['enabled'],
+			'adminEnabled' => $adminEnabledForUser,
+			'adminGlobalEnabled' => $admin['enabled'],
+			'adminGroupAllowed' => $groupAllowed,
+			'allowedGroups' => $admin['allowedGroups'] ?? [],
 			'userEnabled' => $user['enabled'],
 			'includePaths' => $includePaths,
 			'sourceFolders' => $this->effectiveSourceFolders($sourceFolders, $user, $admin),
@@ -181,13 +222,17 @@ class SettingsService {
 			'includeImages' => $user['includeImages'],
 			'includeVideos' => $admin['allowVideos'] && $user['includeVideos'],
 			'autoSyncEnabled' => $user['autoSyncEnabled'],
-			'autoSyncAvailable' => $admin['autoSyncMode'] === 'file_events',
-			'autoSyncActive' => $admin['autoSyncMode'] === 'file_events' && $user['autoSyncEnabled'],
+			'autoSyncAvailable' => $adminEnabledForUser && $admin['autoSyncMode'] === 'file_events',
+			'autoSyncActive' => $adminEnabledForUser && $admin['autoSyncMode'] === 'file_events' && $user['autoSyncEnabled'],
 			'autoSyncMode' => $admin['autoSyncMode'],
 			'autoSyncDebounceSeconds' => $admin['autoSyncDebounceSeconds'],
+			'autoSyncWindowStart' => $admin['autoSyncWindowStart'],
+			'autoSyncWindowEnd' => $admin['autoSyncWindowEnd'],
 			'namingSchemaVersion' => Application::NAMING_SCHEMA_VERSION,
 			'syncRemoveMissingFiles' => $admin['syncRemoveMissingFiles'],
 			'syncDeleteMissingManagedAlbums' => $admin['syncDeleteMissingManagedAlbums'],
+			'maxManagedAlbumsPerUser' => $admin['maxManagedAlbumsPerUser'],
+			'maxManagedFilesPerUser' => $admin['maxManagedFilesPerUser'],
 		];
 	}
 
@@ -221,17 +266,25 @@ class SettingsService {
 			'maxFolders' => $admin['maxJobFolders'],
 			'maxFiles' => $admin['maxJobFiles'],
 			'maxAlbums' => $admin['maxAlbumsPerRun'],
+			'maxManagedAlbumsPerUser' => $admin['maxManagedAlbumsPerUser'],
+			'maxManagedFilesPerUser' => $admin['maxManagedFilesPerUser'],
 		];
 	}
 
 	public function getAutoSyncSettings(): array {
 		$admin = $this->getAdminSettings();
+		$window = $this->autoSyncWindowState($admin);
 		return [
 			'mode' => $admin['autoSyncMode'],
 			'debounceSeconds' => $admin['autoSyncDebounceSeconds'],
 			'maxUsersPerRun' => $admin['autoSyncMaxUsersPerRun'],
 			'maxRuntimeSeconds' => $admin['autoSyncMaxRuntimeSeconds'],
 			'maxEventsPerRun' => $admin['autoSyncMaxEventsPerRun'],
+			'windowStart' => $admin['autoSyncWindowStart'],
+			'windowEnd' => $admin['autoSyncWindowEnd'],
+			'windowActive' => $window['active'],
+			'windowReason' => $window['reason'],
+			'nextWindowAt' => $window['nextWindowAt'],
 		];
 	}
 
@@ -392,6 +445,95 @@ class SettingsService {
 		}
 
 		return array_values(array_unique($result));
+	}
+
+	private function groupList(mixed $value): array {
+		$groups = [];
+		foreach ($this->stringList($value) as $group) {
+			$group = mb_substr($group, 0, 128);
+			if ($group === '' || str_contains($group, '/') || str_contains($group, '\\')) {
+				continue;
+			}
+			$groups[] = $group;
+			if (count($groups) >= 100) {
+				break;
+			}
+		}
+
+		return array_values(array_unique($groups));
+	}
+
+	private function timeOfDay(mixed $value): string {
+		if (!is_scalar($value)) {
+			return '';
+		}
+		$value = trim((string)$value);
+		if ($value === '') {
+			return '';
+		}
+		if (!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/', $value, $matches)) {
+			return '';
+		}
+
+		return sprintf('%02d:%02d', (int)$matches[1], (int)$matches[2]);
+	}
+
+	private function isUserInAllowedGroups(string $userId, array $allowedGroups): bool {
+		$allowedGroups = $this->groupList($allowedGroups);
+		if ($allowedGroups === []) {
+			return true;
+		}
+
+		foreach ($allowedGroups as $groupId) {
+			if ($this->groupManager->isInGroup($userId, $groupId)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private function autoSyncWindowState(array $admin, ?int $now = null): array {
+		$start = $this->timeOfDay($admin['autoSyncWindowStart'] ?? '');
+		$end = $this->timeOfDay($admin['autoSyncWindowEnd'] ?? '');
+		$now ??= time();
+		if ($start === '' || $end === '' || $start === $end) {
+			return [
+				'active' => true,
+				'reason' => 'always_open',
+				'nextWindowAt' => null,
+			];
+		}
+
+		$currentMinute = ((int)date('G', $now) * 60) + (int)date('i', $now);
+		$startMinute = $this->minuteOfDay($start);
+		$endMinute = $this->minuteOfDay($end);
+		$active = $startMinute < $endMinute
+			? ($currentMinute >= $startMinute && $currentMinute < $endMinute)
+			: ($currentMinute >= $startMinute || $currentMinute < $endMinute);
+
+		return [
+			'active' => $active,
+			'reason' => $active ? 'inside_window' : 'outside_window',
+			'nextWindowAt' => $active ? null : $this->nextWindowAt($now, $startMinute),
+		];
+	}
+
+	private function minuteOfDay(string $time): int {
+		[$hour, $minute] = array_map('intval', explode(':', $time, 2));
+		return ($hour * 60) + $minute;
+	}
+
+	private function nextWindowAt(int $now, int $startMinute): int {
+		$todayStart = strtotime(date('Y-m-d', $now) . sprintf(' %02d:%02d:00', intdiv($startMinute, 60), $startMinute % 60));
+		if ($todayStart === false) {
+			return $now;
+		}
+		if ($todayStart > $now) {
+			return $todayStart;
+		}
+
+		return $todayStart + 86400;
 	}
 
 	private function boolValue(mixed $value): bool {

@@ -6,6 +6,7 @@ return [
 	'routes' => [
 		['name' => 'adminSettings#get', 'url' => '/api/v1/admin/settings', 'verb' => 'GET'],
 		['name' => 'adminSettings#update', 'url' => '/api/v1/admin/settings', 'verb' => 'PUT'],
+		['name' => 'adminSettings#groups', 'url' => '/api/v1/admin/groups', 'verb' => 'GET'],
 		['name' => 'adminSettings#logs', 'url' => '/api/v1/admin/logs', 'verb' => 'GET'],
 		['name' => 'adminSettings#autoSyncStatus', 'url' => '/api/v1/admin/auto-sync/status', 'verb' => 'GET'],
 		['name' => 'adminSettings#processAutoSync', 'url' => '/api/v1/admin/auto-sync/process-due', 'verb' => 'POST'],

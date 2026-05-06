@@ -21,6 +21,9 @@ Open a private report with the repository owner for security-sensitive issues. D
 - Duplicate Photos album links are treated as idempotent only after SakuraAlbum confirms the exact album/file/owner link already exists.
 - File-event handling queues dirty paths only; scans and Photos writes happen later in a non-parallel background job.
 - Automatic sync is bounded by admin-controlled debounce, cron interval, user count, runtime, queued event count, folder count, file count, and album count.
+- Admins can restrict SakuraAlbum rollout to selected Nextcloud groups; users outside the allowed groups cannot queue or write generated albums.
+- Optional per-user managed album/media quotas are checked server-side before writes and background chunks.
+- Optional Auto-Sync maintenance windows prevent queue processing outside configured low-load hours.
 - Queued automatic sync work is skipped and cleared if the user disables SakuraAlbum or automatic updates before the queue is processed.
 - Automatic sync recovers stale processing locks from interrupted runs instead of leaving queued work permanently reserved.
 - Stale file removal is limited to Photos albums that SakuraAlbum already tracks as managed.

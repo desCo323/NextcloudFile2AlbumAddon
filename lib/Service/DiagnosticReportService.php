@@ -103,6 +103,9 @@ class DiagnosticReportService {
 		return [
 			'enabled' => $settings['enabled'] ?? false,
 			'adminEnabled' => $settings['adminEnabled'] ?? false,
+			'adminGlobalEnabled' => $settings['adminGlobalEnabled'] ?? false,
+			'adminGroupAllowed' => $settings['adminGroupAllowed'] ?? true,
+			'allowedGroups' => $settings['allowedGroups'] ?? [],
 			'userEnabled' => $settings['userEnabled'] ?? false,
 			'includePaths' => $settings['includePaths'] ?? [],
 			'sourceFolders' => $settings['sourceFolders'] ?? [],
@@ -117,15 +120,20 @@ class DiagnosticReportService {
 			'autoSyncActive' => $settings['autoSyncActive'] ?? false,
 			'autoSyncMode' => $settings['autoSyncMode'] ?? 'manual',
 			'autoSyncDebounceSeconds' => $settings['autoSyncDebounceSeconds'] ?? 0,
+			'autoSyncWindowStart' => $settings['autoSyncWindowStart'] ?? '',
+			'autoSyncWindowEnd' => $settings['autoSyncWindowEnd'] ?? '',
 			'namingSchemaVersion' => $settings['namingSchemaVersion'] ?? 0,
 			'syncRemoveMissingFiles' => $settings['syncRemoveMissingFiles'] ?? false,
 			'syncDeleteMissingManagedAlbums' => $settings['syncDeleteMissingManagedAlbums'] ?? false,
+			'maxManagedAlbumsPerUser' => $settings['maxManagedAlbumsPerUser'] ?? 0,
+			'maxManagedFilesPerUser' => $settings['maxManagedFilesPerUser'] ?? 0,
 		];
 	}
 
 	private function publicAdminSettings(array $settings): array {
 		return [
 			'enabled' => $settings['enabled'] ?? false,
+			'allowedGroups' => $settings['allowedGroups'] ?? [],
 			'defaultIncludePaths' => $settings['defaultIncludePaths'] ?? [],
 			'defaultExcludePatterns' => $settings['defaultExcludePatterns'] ?? [],
 			'maxScanDepth' => $settings['maxScanDepth'] ?? 0,
@@ -134,6 +142,8 @@ class DiagnosticReportService {
 			'maxJobFolders' => $settings['maxJobFolders'] ?? 0,
 			'maxJobFiles' => $settings['maxJobFiles'] ?? 0,
 			'maxAlbumsPerRun' => $settings['maxAlbumsPerRun'] ?? 0,
+			'maxManagedAlbumsPerUser' => $settings['maxManagedAlbumsPerUser'] ?? 0,
+			'maxManagedFilesPerUser' => $settings['maxManagedFilesPerUser'] ?? 0,
 			'allowVideos' => $settings['allowVideos'] ?? false,
 			'jobIntervalMinutes' => $settings['jobIntervalMinutes'] ?? 0,
 			'autoSyncMode' => $settings['autoSyncMode'] ?? 'manual',
@@ -141,6 +151,8 @@ class DiagnosticReportService {
 			'autoSyncMaxUsersPerRun' => $settings['autoSyncMaxUsersPerRun'] ?? 0,
 			'autoSyncMaxRuntimeSeconds' => $settings['autoSyncMaxRuntimeSeconds'] ?? 0,
 			'autoSyncMaxEventsPerRun' => $settings['autoSyncMaxEventsPerRun'] ?? 0,
+			'autoSyncWindowStart' => $settings['autoSyncWindowStart'] ?? '',
+			'autoSyncWindowEnd' => $settings['autoSyncWindowEnd'] ?? '',
 			'syncRemoveMissingFiles' => $settings['syncRemoveMissingFiles'] ?? false,
 			'syncDeleteMissingManagedAlbums' => $settings['syncDeleteMissingManagedAlbums'] ?? false,
 			'debugMode' => $settings['debugMode'] ?? false,

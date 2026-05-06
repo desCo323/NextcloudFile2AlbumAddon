@@ -112,7 +112,7 @@ class AlbumSyncService {
 
 			$this->applyAlbumLimit($plan, $limits);
 			$plan = $this->inspectExistingAlbums($userId, $plan, $configHash);
-			$issues = $this->writeSafetyIssues($settings, $plan, $limits);
+			$issues = $this->writeSafetyIssues($userId, $settings, $plan, $limits);
 			$plan['summary']['safetyIssueCount'] = count($issues);
 			$currentPlanFingerprint = $this->planFingerprint($plan, $configHash);
 
@@ -231,7 +231,7 @@ class AlbumSyncService {
 			$plan = $this->albumPlanService->buildExecutionPlan($userId, $settings, $limits);
 			$this->applyAlbumLimit($plan, $limits);
 			$plan = $this->inspectExistingAlbums($userId, $plan, $configHash);
-			$issues = $this->writeSafetyIssues($settings, $plan, $limits);
+			$issues = $this->writeSafetyIssues($userId, $settings, $plan, $limits);
 			$plan['summary']['safetyIssueCount'] = count($issues);
 			$currentPlanFingerprint = $this->planFingerprint($plan, $configHash);
 
@@ -752,7 +752,7 @@ class AlbumSyncService {
 		return PathHelper::displayPath($path);
 	}
 
-	private function writeSafetyIssues(array $settings, array $plan, array $limits): array {
+	private function writeSafetyIssues(string $userId, array $settings, array $plan, array $limits): array {
 		$issues = [];
 		$summary = $plan['summary'] ?? [];
 
@@ -761,6 +761,8 @@ class AlbumSyncService {
 				'code' => 'write_disabled',
 				'message' => 'Global admin setting and personal setting must both be enabled before albums can be created.',
 				'adminEnabled' => $settings['adminEnabled'] ?? false,
+				'adminGlobalEnabled' => $settings['adminGlobalEnabled'] ?? false,
+				'adminGroupAllowed' => $settings['adminGroupAllowed'] ?? true,
 				'userEnabled' => $settings['userEnabled'] ?? false,
 			];
 		}
@@ -777,6 +779,30 @@ class AlbumSyncService {
 			$issues[] = ['code' => 'existing_unmanaged_albums', 'count' => (int)$summary['blockedExistingAlbums']];
 		}
 
+		$maxManagedAlbums = (int)($settings['maxManagedAlbumsPerUser'] ?? $limits['maxManagedAlbumsPerUser'] ?? 0);
+		$maxManagedFiles = (int)($settings['maxManagedFilesPerUser'] ?? $limits['maxManagedFilesPerUser'] ?? 0);
+		if ($maxManagedAlbums > 0 || $maxManagedFiles > 0) {
+			$projection = $this->quotaProjection($userId, $plan);
+			if ($maxManagedAlbums > 0 && $projection['projectedManagedAlbums'] > $maxManagedAlbums) {
+				$issues[] = [
+					'code' => 'managed_album_quota_exceeded',
+					'limit' => $maxManagedAlbums,
+					'current' => $projection['currentManagedAlbums'],
+					'projected' => $projection['projectedManagedAlbums'],
+					'wouldCreateAlbums' => $projection['wouldCreateAlbums'],
+				];
+			}
+			if ($maxManagedFiles > 0 && $projection['projectedManagedFiles'] > $maxManagedFiles) {
+				$issues[] = [
+					'code' => 'managed_file_quota_exceeded',
+					'limit' => $maxManagedFiles,
+					'current' => $projection['currentManagedFiles'],
+					'projected' => $projection['projectedManagedFiles'],
+					'plannedWritableLinks' => $projection['plannedWritableLinks'],
+				];
+			}
+		}
+
 		foreach (($plan['warnings'] ?? []) as $warning) {
 			$code = (string)($warning['code'] ?? '');
 			if (in_array($code, self::BLOCKING_WARNING_CODES, true)) {
@@ -789,6 +815,56 @@ class AlbumSyncService {
 		}
 
 		return $issues;
+	}
+
+	private function quotaProjection(string $userId, array $plan): array {
+		$currentManagedAlbums = $this->managedAlbumMapper->countActiveForUser($userId);
+		$currentManagedFiles = $this->managedAlbumMapper->sumActiveMediaCountForUser($userId);
+		$writableAlbums = array_values(array_filter(
+			$plan['albums'] ?? [],
+			static fn (array $album): bool => in_array($album['writeAction'] ?? '', ['create', 'update_managed'], true),
+		));
+		$managedIds = [];
+		foreach ($writableAlbums as $album) {
+			$managedId = (int)($album['_managedAlbumId'] ?? 0);
+			if (($album['writeAction'] ?? '') === 'update_managed' && $managedId > 0) {
+				$managedIds[] = $managedId;
+			}
+		}
+		$oldMediaCounts = $this->managedAlbumMapper->activeMediaCountsForUserAndIds($userId, $managedIds);
+
+		$projectedManagedAlbums = $currentManagedAlbums;
+		$projectedManagedFiles = $currentManagedFiles;
+		$wouldCreateAlbums = 0;
+		$plannedWritableLinks = 0;
+		$subtractedManagedIds = [];
+
+		foreach ($writableAlbums as $album) {
+			$mediaCount = max(0, (int)($album['mediaCount'] ?? count($album['files'] ?? [])));
+			$plannedWritableLinks += count($album['files'] ?? []);
+			if (($album['writeAction'] ?? '') === 'create') {
+				$projectedManagedAlbums++;
+				$projectedManagedFiles += $mediaCount;
+				$wouldCreateAlbums++;
+				continue;
+			}
+
+			$managedId = (int)($album['_managedAlbumId'] ?? 0);
+			if ($managedId > 0 && !isset($subtractedManagedIds[$managedId])) {
+				$projectedManagedFiles -= (int)($oldMediaCounts[$managedId] ?? 0);
+				$subtractedManagedIds[$managedId] = true;
+			}
+			$projectedManagedFiles += $mediaCount;
+		}
+
+		return [
+			'currentManagedAlbums' => $currentManagedAlbums,
+			'projectedManagedAlbums' => $projectedManagedAlbums,
+			'wouldCreateAlbums' => $wouldCreateAlbums,
+			'currentManagedFiles' => max(0, $currentManagedFiles),
+			'projectedManagedFiles' => max(0, $projectedManagedFiles),
+			'plannedWritableLinks' => $plannedWritableLinks,
+		];
 	}
 
 	private function applyAlbumLimit(array &$plan, array $limits): void {

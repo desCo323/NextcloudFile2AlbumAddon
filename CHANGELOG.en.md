@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.5
+
+- Added admin rollout controls with optional allowed Nextcloud groups.
+- Added optional Auto-Sync maintenance windows for low-load background processing.
+- Added per-user managed album and managed media-link quotas.
+- Expanded admin and personal UI explanations for rollout, quota, and window state.
+- Added cache-busting `admin-settings-025` and `personal-settings-025` assets.
+
 ## 0.2.4
 
 - Added user, admin, developer, privacy, and store-release documentation.

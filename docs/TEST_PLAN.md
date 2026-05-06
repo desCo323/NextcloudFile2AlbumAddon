@@ -37,14 +37,20 @@ Expected result: `Self-check passed`.
 ## Manual checks after activation
 
 - Admin settings page opens and saves.
-- Admin settings load the versioned `admin-settings-024` asset.
+- Admin settings load the versioned `admin-settings-025` asset.
+- Admin `Gruppen laden` returns Nextcloud groups without exposing user membership.
+- Admin `Rollout: erlaubte Gruppen` blocks SakuraAlbum writes and Auto-Sync queueing for users outside the configured groups.
+- Admin per-user album/media quotas block write plans before Photos albums are changed when the projected managed total exceeds the quota.
+- Admin Auto-Sync maintenance window shows as open/closed in Auto-Status and blocks `Faellige Jobs jetzt verarbeiten` outside the configured window.
 - Admin load profiles update the Auto-Sync/job limit inputs and do not save until `Speichern` is clicked.
 - Admin `Automatik vorbereiten` sets global enablement and `Bei Dateiaenderungen` in the form, but does not persist until `Speichern` is clicked.
 - Admin Auto-Status loads without error and shows pending, processing, failed, due-user, and next-due values.
 - Admin `Faellige Jobs jetzt verarbeiten` processes only currently due Auto-Sync queue rows and respects saved auto-sync user/runtime/event limits.
 - Debug setting remains enabled after reload.
 - Personal settings page opens for `albentest`.
-- Personal settings load the versioned `personal-settings-024` asset.
+- Personal settings load the versioned `personal-settings-025` asset.
+- Personal settings show `Gruppe gesperrt`/`Nicht freigegeben` if the user is outside the admin rollout groups.
+- Personal status shows the active maintenance window and quota summary.
 - Personal settings show a source-folder overview table and an `Ordner hinzufuegen` picker.
 - The folder picker lists only folders from `albentest`'s files area and never asks for a raw path.
 - Adding multiple independent source folders persists after saving and reloading.

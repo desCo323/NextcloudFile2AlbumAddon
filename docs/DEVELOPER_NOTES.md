@@ -22,7 +22,7 @@ Before a public app-store submission, re-review this adapter against the then-cu
 
 ## Background sync
 
-File events must never scan folders or write Photos albums directly. They only queue dirty source roots. `AutoSyncJob` is non-parallel and delegates to `AutoSyncService::processDueChanges()`, which respects admin limits and user opt-in before calling chunked writes.
+File events must never scan folders or write Photos albums directly. They only queue dirty source roots. `AutoSyncJob` is non-parallel and delegates to `AutoSyncService::processDueChanges()`, which respects admin limits, optional maintenance windows, group rollout, quotas, and user opt-in before calling chunked writes.
 
 Large first-generation runs use `sakuraalbum_sync_cursors`. Partial chunks do not run stale-file removal or missing-managed-album cleanup because a partial plan is not the full desired state.
 

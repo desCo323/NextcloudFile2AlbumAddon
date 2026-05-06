@@ -6,7 +6,7 @@ The current development version focuses on safe configuration, preview planning,
 
 ## Current scope
 
-- Admin settings for global enablement, default folders, scan limits, job limits, video policy, and automatic update load controls.
+- Admin settings for global enablement, group-limited rollout, default folders, scan limits, job limits, user quotas, video policy, and automatic update load controls.
 - Personal settings for opt-in, selectable source folders, folder-specific rules, exclusions, naming template, separator, depth, and media type.
 - Source folders can use global defaults, a folder-specific depth, or `Alles in ein Album` so a large subtree can be represented as one Photos album.
 - Personal automatic-update opt-in that is only active when admins allow file-event mode.
@@ -20,6 +20,8 @@ The current development version focuses on safe configuration, preview planning,
 - Admin Auto-Sync status view for queued, processing, failed, due-user, and next-due queue state.
 - Admin-controlled "process due Auto-Sync now" action that respects the same saved user/runtime/event limits as the scheduled background job.
 - Admin load-profile buttons for conservative, balanced, and fast scan/job/event budgets.
+- Optional Auto-Sync maintenance windows so queued work only runs during configured low-load hours.
+- Optional per-user quotas for SakuraAlbum-managed album count and managed media-link count.
 - Recovery for stale auto-sync queue locks if a background run stops after reserving work.
 - Reconciliation for SakuraAlbum-managed albums so removed or moved media can be removed from generated albums during a later sync.
 - Optional cleanup for SakuraAlbum-managed albums that no longer appear in the current plan; this is disabled by default.
@@ -50,6 +52,9 @@ The current development version focuses on safe configuration, preview planning,
 - File events never perform heavy scans or album writes directly. They only queue dirty paths for a later background job.
 - File-event queue rows are collapsed to the affected include root so a large upload inside one selected folder does not create one independent sync job per file.
 - File-event auto-sync requires three gates: global admin enablement, user enablement, and the user's explicit automatic-update opt-in.
+- Admins can further restrict SakuraAlbum to selected Nextcloud groups; users outside those groups cannot queue or write generated albums.
+- Per-user managed album and managed media-link quotas are enforced on the server before dry-run-approved writes or background chunks can write.
+- Optional Auto-Sync maintenance windows prevent background queue processing outside configured low-load hours.
 - Queued automatic work is skipped if the user disables SakuraAlbum or automatic updates before the background job processes the queue.
 - Settings changes can queue all enabled source folders for the next background run when automatic sync is active.
 - Active source folders must not overlap. A nested source selection such as `/Photos` plus `/Photos/Trip` is blocked before writing so media is not planned twice.

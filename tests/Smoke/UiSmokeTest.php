@@ -31,11 +31,16 @@ $css = readText($root, 'css/settings.css');
 
 foreach ([
 	'Automatik vorbereiten',
+	'Gruppen laden',
+	'Rollout: erlaubte Gruppen',
+	'Benutzerquote: Alben',
+	'Auto: Wartungsfenster Start',
 	'Auto-Status laden',
 	'Faellige Jobs jetzt verarbeiten',
 	'Diagnosebericht',
 	'/apps/sakuraalbum/api/v1/admin/auto-sync/status',
 	'/apps/sakuraalbum/api/v1/admin/auto-sync/process-due',
+	'/apps/sakuraalbum/api/v1/admin/groups',
 	'/apps/sakuraalbum/api/v1/admin/diagnostics/report',
 	'Neue, geaenderte, verschobene, geloeschte oder umbenannte',
 ] as $needle) {
@@ -45,6 +50,8 @@ foreach ([
 foreach ([
 	'Ordner hinzufuegen',
 	'Automatisch aktuell halten',
+	'Gruppe gesperrt',
+	'Wartungsfenster',
 	'Automatik einschalten',
 	'Update vormerken',
 	'Erweiterte manuelle Testfunktionen',
@@ -60,6 +67,7 @@ foreach ([
 
 foreach ([
 	'adminSettings#processAutoSync',
+	'adminSettings#groups',
 	'diagnostics#adminReport',
 	'diagnostics#personalReport',
 	'folder#index',
@@ -74,6 +82,7 @@ foreach ([
 	'sakuraalbum-folder-browser',
 	'sakuraalbum-automation-card',
 	'sakuraalbum-report-json',
+	'sakuraalbum-group-picker',
 ] as $needle) {
 	assertUiContains($css, $needle, 'css/settings.css');
 }

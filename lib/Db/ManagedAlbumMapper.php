@@ -83,6 +83,41 @@ class ManagedAlbumMapper extends QBMapper {
 		return (int)$qb->executeQuery()->fetchOne();
 	}
 
+	public function sumActiveMediaCountForUser(string $userId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->selectAlias($qb->func()->sum('media_count'), 'media_count_sum')
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->neq('status', $qb->createNamedParameter('deleted')));
+
+		$value = $qb->executeQuery()->fetchOne();
+		return $value !== false && $value !== null ? (int)$value : 0;
+	}
+
+	/**
+	 * @return array<int,int>
+	 */
+	public function activeMediaCountsForUserAndIds(string $userId, array $ids): array {
+		$ids = $this->normalizeIds($ids);
+		if ($ids === []) {
+			return [];
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('id', 'media_count')
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->neq('status', $qb->createNamedParameter('deleted')))
+			->andWhere($qb->expr()->in('id', $qb->createNamedParameter($ids, IQueryBuilder::PARAM_INT_ARRAY)));
+
+		$result = [];
+		foreach ($qb->executeQuery()->fetchAllAssociative() as $row) {
+			$result[(int)$row['id']] = (int)($row['media_count'] ?? 0);
+		}
+
+		return $result;
+	}
+
 	/**
 	 * @return ManagedAlbum[]
 	 */
