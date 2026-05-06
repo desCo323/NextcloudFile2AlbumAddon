@@ -64,6 +64,24 @@ if ! rg -n "setAllowParallelRuns\\(false\\)" lib/BackgroundJob/AutoSyncJob.php >
 	echo "Automatic sync job must disallow parallel runs" >&2
 	exit 1
 fi
+for command in Preview Sync DeleteGenerated; do
+	if ! rg -n "OCA\\\\SakuraAlbum\\\\Command\\\\${command}" appinfo/info.xml >/dev/null; then
+		echo "OCC command metadata is missing: ${command}" >&2
+		exit 1
+	fi
+	if [[ ! -f "lib/Command/${command}.php" ]]; then
+		echo "OCC command class is missing: ${command}" >&2
+		exit 1
+	fi
+done
+if ! rg -n "dry-run.*required|dry_run_required" lib/Command/Sync.php lib/Command/DeleteGenerated.php >/dev/null; then
+	echo "OCC sync/delete helpers must require explicit dry-run mode" >&2
+	exit 1
+fi
+if rg -n "albumSyncService->write|managedAlbumDeletionService->delete\\(" lib/Command >/dev/null; then
+	echo "OCC helpers must not call write/delete methods directly" >&2
+	exit 1
+fi
 for event in NodeCreatedEvent NodeDeletedEvent NodeRenamedEvent NodeWrittenEvent; do
 	if ! rg -n "registerEventListener\\(${event}::class" lib/AppInfo/Application.php >/dev/null; then
 		echo "Automatic sync file-event listener is missing: ${event}" >&2

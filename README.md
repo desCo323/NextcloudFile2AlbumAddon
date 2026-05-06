@@ -31,6 +31,7 @@ The current development version focuses on safe configuration, preview planning,
 - App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
 - Admin debug mode with stricter diagnostic logging and a log viewer.
 - Redacted diagnostic report preparation for users and admins; direct email sending is intentionally left for a later release.
+- Safe OCC commands for controlled test windows: preview, sync dry-run, and generated-album delete dry-run.
 - User, admin, developer, privacy, and store-release documentation linked from `appinfo/info.xml`.
 - SVG branding with a sakura blossom falling onto a dog.
 
@@ -85,6 +86,16 @@ Build a clean local package from the app directory:
 ```
 
 The package is created under `../artifacts/` with a top-level `sakuraalbum/` folder and fails if development-only or repository-only files such as `node_modules`, `vendor`, `.git`, `.github`, `releases`, `SOURCE_MANIFEST.txt`, caches, logs, or nested archives are included.
+
+Dry-run OCC helpers for controlled test windows:
+
+```bash
+php occ sakuraalbum:preview --user albentest
+php occ sakuraalbum:sync --user albentest --dry-run
+php occ sakuraalbum:delete-generated --user albentest --dry-run --all
+```
+
+These helpers are intentionally non-destructive.
 
 ## Production test rule
 

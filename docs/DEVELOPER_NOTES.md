@@ -34,3 +34,9 @@ Large first-generation runs use `sakuraalbum_sync_cursors`. Partial chunks do no
 ```
 
 The self-check is intentionally conservative: it checks syntax, metadata, UI labels/routes, safety guard strings, cache-busting asset names, and accidental secret patterns.
+
+SakuraAlbum registers OCC commands through `appinfo/info.xml`. The current commands are intentionally read-only/dry-run:
+
+- `sakuraalbum:preview`
+- `sakuraalbum:sync --dry-run`
+- `sakuraalbum:delete-generated --dry-run`

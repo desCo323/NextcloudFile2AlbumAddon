@@ -56,6 +56,22 @@ if ((string)$info->documentation->user === '' || (string)$info->documentation->a
 if ((string)$info->{'background-jobs'}->job !== 'OCA\SakuraAlbum\BackgroundJob\AutoSyncJob') {
 	fail('Background job metadata is missing');
 }
+if (!isset($info->commands->command)) {
+	fail('Command metadata is missing');
+}
+$commands = [];
+foreach ($info->commands->command as $command) {
+	$commands[] = (string)$command;
+}
+foreach ([
+	'OCA\SakuraAlbum\Command\Preview',
+	'OCA\SakuraAlbum\Command\Sync',
+	'OCA\SakuraAlbum\Command\DeleteGenerated',
+] as $command) {
+	if (!in_array($command, $commands, true)) {
+		fail("Missing command metadata: {$command}");
+	}
+}
 
 $package = json_decode(file_get_contents(requireFile($root, 'package.json')) ?: '', true);
 if (!is_array($package) || ($package['version'] ?? '') !== $version) {

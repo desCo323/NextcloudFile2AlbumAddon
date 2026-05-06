@@ -37,7 +37,7 @@ Expected result: `Self-check passed`.
 ## Manual checks after activation
 
 - Admin settings page opens and saves.
-- Admin settings load the versioned `admin-settings-025` asset.
+- Admin settings load the versioned `admin-settings-026` asset.
 - Admin `Gruppen laden` returns Nextcloud groups without exposing user membership.
 - Admin `Rollout: erlaubte Gruppen` blocks SakuraAlbum writes and Auto-Sync queueing for users outside the configured groups.
 - Admin per-user album/media quotas block write plans before Photos albums are changed when the projected managed total exceeds the quota.
@@ -48,7 +48,7 @@ Expected result: `Self-check passed`.
 - Admin `Faellige Jobs jetzt verarbeiten` processes only currently due Auto-Sync queue rows and respects saved auto-sync user/runtime/event limits.
 - Debug setting remains enabled after reload.
 - Personal settings page opens for `albentest`.
-- Personal settings load the versioned `personal-settings-025` asset.
+- Personal settings load the versioned `personal-settings-026` asset.
 - Personal settings show `Gruppe gesperrt`/`Nicht freigegeben` if the user is outside the admin rollout groups.
 - Personal status shows the active maintenance window and quota summary.
 - Personal settings show a source-folder overview table and an `Ordner hinzufuegen` picker.
@@ -68,6 +68,9 @@ Expected result: `Self-check passed`.
 - The personal status panel shows a progress bar, queue counters, latest run details, and expandable activity details.
 - Manual write controls are under `Erweiterte manuelle Testfunktionen`; normal users should not need them for automatic background generation.
 - Personal `Fehlerbericht vorbereiten` returns a redacted diagnostic JSON report and marks mail sending as not active yet.
+- OCC `sakuraalbum:preview --user albentest --json` returns preview JSON and does not write Photos albums.
+- OCC `sakuraalbum:sync --user albentest --dry-run --json` returns a dry-run result and refuses to run without `--dry-run`.
+- OCC `sakuraalbum:delete-generated --user albentest --dry-run --all --json` returns a delete preview and refuses to run without `--dry-run`.
 - For a large first-generation test with a deliberately low `Job: Dateilimit`, automatic sync should create only one bounded chunk per cron run, show cursor/chunk progress, and queue continuation work.
 - Partial chunk status must not show as fully complete. The cursor should expose an estimated progress value below 100% until the final chunk completes.
 - While a chunked background sync is incomplete, no stale-file removal or missing-managed-album cleanup may run from that partial plan.

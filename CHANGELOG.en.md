@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.6
+
+- Added safe OCC commands for controlled test windows.
+- Added `sakuraalbum:preview`, `sakuraalbum:sync --dry-run`, and `sakuraalbum:delete-generated --dry-run`.
+- Commands do not write or delete Photos albums.
+- Added cache-busting `admin-settings-026` and `personal-settings-026` assets.
+
 ## 0.2.5
 
 - Added admin rollout controls with optional allowed Nextcloud groups.

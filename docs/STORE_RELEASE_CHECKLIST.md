@@ -11,6 +11,7 @@ This checklist tracks the publication state for SakuraAlbum.
 - `CHANGELOG.md` exists for the app store.
 - `CHANGELOG.en.md` exists for user update notifications.
 - The background job class is declared in `appinfo/info.xml`.
+- Dry-run OCC command classes are declared in `appinfo/info.xml`.
 - The archive root is `sakuraalbum/`.
 
 ## Safety
@@ -23,6 +24,7 @@ This checklist tracks the publication state for SakuraAlbum.
 - Write and delete operations require fresh server-recorded fingerprints and exact confirmation text.
 - Automatic sync requires admin mode, user enablement, and user automatic opt-in.
 - Group-limited rollout, per-user quotas, and maintenance windows are enforced in server-side services, not only in the UI.
+- OCC helpers for sync and generated-album deletion require explicit `--dry-run` and do not call write/delete methods.
 - Queued automatic work is skipped if the user disables automatic updates before processing.
 - Debug logs redact common secret keys before storage.
 

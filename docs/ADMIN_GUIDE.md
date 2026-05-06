@@ -55,6 +55,18 @@ Enable debug logging during test windows. The admin log viewer and `Diagnoseberi
 
 Direct diagnostic email sending is not implemented yet. Reports are prepared locally and can be copied from the UI.
 
+## OCC dry-run helpers
+
+After SakuraAlbum is installed in a controlled test window, admins can inspect behavior without Photos writes:
+
+```bash
+sudo -u www-data php /var/www/nextcloud/occ sakuraalbum:preview --user albentest
+sudo -u www-data php /var/www/nextcloud/occ sakuraalbum:sync --user albentest --dry-run
+sudo -u www-data php /var/www/nextcloud/occ sakuraalbum:delete-generated --user albentest --dry-run --all
+```
+
+Use `--json` for machine-readable output in automated test logs.
+
 ## Cleanup
 
 SakuraAlbum tracks generated albums in its own database. Bulk deletion and missing-album cleanup are limited to active SakuraAlbum-managed records and re-check the Photos album id, owner, and name before deletion. Missing managed album cleanup is disabled by default.
