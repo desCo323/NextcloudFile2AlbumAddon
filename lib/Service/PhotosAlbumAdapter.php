@@ -7,6 +7,7 @@ namespace OCA\SakuraAlbum\Service;
 use OCA\Photos\Album\AlbumInfo;
 use OCA\Photos\Album\AlbumMapper;
 use OCA\Photos\Exception\AlreadyInAlbumException;
+use OCP\DB\Exception as DbException;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -84,6 +85,12 @@ class PhotosAlbumAdapter {
 			return 'linked';
 		} catch (AlreadyInAlbumException) {
 			return 'already_linked';
+		} catch (DbException $e) {
+			if ($e->getReason() === DbException::REASON_UNIQUE_CONSTRAINT_VIOLATION
+				&& $this->albumContainsOwnedFile($albumId, $fileId, $owner)) {
+				return 'already_linked';
+			}
+			throw $e;
 		}
 	}
 
@@ -110,6 +117,18 @@ class PhotosAlbumAdapter {
 
 	public function removeFileFromAlbum(int $albumId, int $fileId): void {
 		$this->albumMapper->removeFile($albumId, $fileId);
+	}
+
+	private function albumContainsOwnedFile(int $albumId, int $fileId, string $owner): bool {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*'))
+			->from('photos_albums_files')
+			->where($qb->expr()->eq('album_id', $qb->createNamedParameter($albumId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('file_id', $qb->createNamedParameter($fileId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('owner', $qb->createNamedParameter($owner)))
+			->setMaxResults(1);
+
+		return (int)$qb->executeQuery()->fetchOne() > 0;
 	}
 
 	private function albumInfoToArray(AlbumInfo $album): array {
