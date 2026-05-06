@@ -7,7 +7,7 @@ on:
     branches:
       - main
     paths:
-      - 'releases/sakuraalbum-0.1.6.tar.gz.base64.part*'
+      - 'releases/sakuraalbum-0.1.6.tar.gz.base64.part07'
 
 permissions:
   contents: write
