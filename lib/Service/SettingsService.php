@@ -30,7 +30,7 @@ class SettingsService {
 		'maxDownloadBytes' => 2147483648,
 		'allowVideos' => false,
 		'jobIntervalMinutes' => 360,
-		'autoSyncMode' => 'manual',
+		'autoSyncMode' => 'file_events',
 		'autoSyncDebounceSeconds' => 300,
 		'autoSyncMaxUsersPerRun' => 3,
 		'autoSyncMaxRuntimeSeconds' => 30,
@@ -55,7 +55,7 @@ class SettingsService {
 		'albumDepth' => 1,
 		'includeImages' => true,
 		'includeVideos' => false,
-		'autoSyncEnabled' => false,
+		'autoSyncEnabled' => true,
 	];
 
 	public function __construct(
@@ -213,6 +213,8 @@ class SettingsService {
 			$user['excludePatterns'],
 		)));
 		$defaultAlbumDepth = min($user['albumDepth'], $admin['maxScanDepth']);
+		$autoSyncAvailable = $adminEnabledForUser && $admin['autoSyncMode'] === 'file_events';
+		$autoSyncActive = $autoSyncAvailable && $user['enabled'];
 
 		return [
 			'enabled' => $adminEnabledForUser && $user['enabled'],
@@ -229,9 +231,9 @@ class SettingsService {
 			'albumDepth' => $defaultAlbumDepth,
 			'includeImages' => $user['includeImages'],
 			'includeVideos' => $admin['allowVideos'] && $user['includeVideos'],
-			'autoSyncEnabled' => $user['autoSyncEnabled'],
-			'autoSyncAvailable' => $adminEnabledForUser && $admin['autoSyncMode'] === 'file_events',
-			'autoSyncActive' => $adminEnabledForUser && $admin['autoSyncMode'] === 'file_events' && $user['autoSyncEnabled'],
+			'autoSyncEnabled' => $autoSyncActive,
+			'autoSyncAvailable' => $autoSyncAvailable,
+			'autoSyncActive' => $autoSyncActive,
 			'autoSyncMode' => $admin['autoSyncMode'],
 			'autoSyncDebounceSeconds' => $admin['autoSyncDebounceSeconds'],
 			'autoSyncWindowStart' => $admin['autoSyncWindowStart'],
@@ -248,6 +250,10 @@ class SettingsService {
 
 	public function saveUserSettings(string $userId, array $input): array {
 		$settings = $this->normalizeUserSettings($input, includeAdminDefaults: false);
+		$admin = $this->getAdminSettings();
+		if (($admin['autoSyncMode'] ?? '') === 'file_events') {
+			$settings['autoSyncEnabled'] = $settings['enabled'];
+		}
 		$this->userConfig->setValueArray(
 			$userId,
 			Application::APP_ID,

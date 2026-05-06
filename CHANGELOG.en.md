@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- Made `Bei Dateiaenderungen` the default admin Auto-Sync mode for new installations.
+- Removed the confusing second personal Auto-Sync opt-in as an effective blocker: when the admin allows file-event updates, users only need to enable SakuraAlbum for their account.
+- Updated personal and admin UI copy so the automatic-update state matches the effective server behavior.
+
 ## 1.0.0
 
 - Marked SakuraAlbum as the first version-1 release candidate.

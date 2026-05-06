@@ -67,11 +67,11 @@ The smoke creates one tiny PNG under `/Photos/SakuraAlbumV1Smoke` for `albentest
 - A source folder can be set to `Alles in ein Album`; preview then aggregates its subfolders into the source-root album.
 - A source folder can be set to `Eigene Tiefe`; preview uses that depth only for this source while other sources keep the global default.
 - The same source folder cannot be added twice from the picker.
-- Personal settings show `Automatisch aktuell halten`.
-- If admin `Automatik` is `Manuell`, the personal automatic-update switch is disabled and explains that an administrator must enable it.
-- If admin `Automatik` is `Bei Dateiaenderungen`, the personal automatic-update switch can be turned on/off and saving persists it.
-- If automatic work is already queued and the user turns `Automatisch aktuell halten` off before processing, the due background run skips and clears that user's queued work without writing albums.
-- Personal `Automatik einschalten` enables SakuraAlbum and the user's automatic-update opt-in, saves, and queues the initial/background refresh when server-side gates allow it.
+- Personal settings show automatic updates as an admin-controlled state.
+- If admin `Automatik` is `Manuell`, the personal automatic-update state is disabled and explains that an administrator must enable it.
+- If admin `Automatik` is `Bei Dateiaenderungen`, enabling `SakuraAlbum verwenden` is enough to make the user's effective Auto-Sync active.
+- If automatic work is already queued and the user turns SakuraAlbum off before processing, the due background run skips and clears that user's queued work without writing albums.
+- Personal `Automatik einschalten` enables SakuraAlbum, saves, and queues the initial/background refresh when server-side gates allow it.
 - Saving settings with user Auto-Sync active queues an initial/background refresh and the personal status panel shows pending work.
 - The `Update vormerken` action queues enabled source folders for the next background run without directly writing albums.
 - The personal status panel shows a progress bar, queue counters, latest run details, and expandable activity details.
@@ -103,8 +103,8 @@ The smoke creates one tiny PNG under `/Photos/SakuraAlbumV1Smoke` for `albentest
 - Automatic sync file-event test:
   - create one visible image in an included folder for `albentest`;
   - confirm a dirty-path log entry is recorded for the affected include root and no synchronous write happens during upload;
-  - confirm no dirty-path row is recorded while the user's `Automatisch aktuell halten` switch is off;
-  - enable the user's `Automatisch aktuell halten` switch and repeat the file change;
+  - confirm no dirty-path row is recorded while SakuraAlbum is off for the user;
+  - enable `SakuraAlbum verwenden` and repeat the file change;
   - run Nextcloud cron once after the debounce window;
   - confirm SakuraAlbum logs `auto_sync_user_completed` and the managed album is updated;
   - move or delete the image, run cron after debounce, and confirm stale links are removed from the managed album;

@@ -50,9 +50,9 @@ Use `Schonend` for production tests, `Normal` for regular servers, and `Schnell`
 
 ## Automatic updates
 
-Set `Automatik` to `Bei Dateiaenderungen` to allow automatic updates server-wide. Users still need to enable `Automatisch aktuell halten` in their own SakuraAlbum settings.
+Set `Automatik` to `Bei Dateiaenderungen` to allow automatic updates server-wide. This is the default for new installations. Users only need to enable `SakuraAlbum verwenden` in their own SakuraAlbum settings; the automatic update state then follows the admin mode.
 
-If a user later disables automatic updates, queued automatic work for that user is skipped and cleared instead of writing stale work.
+If a user later disables SakuraAlbum for their account, queued automatic work for that user is skipped and cleared instead of writing stale work.
 
 Use `Auto: Wartungsfenster Start` and `Auto: Wartungsfenster Ende` to restrict automatic queue processing to low-load hours. Empty values mean always allowed. If the end time is earlier than the start time, the window spans midnight, for example `22:00` to `06:00`.
 

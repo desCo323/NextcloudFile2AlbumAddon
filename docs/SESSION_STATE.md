@@ -2,6 +2,23 @@
 
 Datum: 2026-05-06 23:18:00 CET
 
+Neueste operative Notiz (2026-05-06 22:55 CEST):
+- Benutzer meldet: Personal-UI zeigt "Automatische Albumaktualisierung nicht aktiv", obwohl Admin auf `Bei Dateiaenderungen` steht.
+- Befund aus Live-Konfiguration/Logs: Admin ist `globalEnabled=1`, `autoSyncMode=file_events`, aber `albentest` hatte gespeicherte Benutzerwerte `enabled=false` und `autoSyncEnabled=false`.
+- Umsetzung in Arbeit fuer `1.0.1`:
+  - Admin-Default `autoSyncMode` wird `file_events`.
+  - Benutzer-Auto-Sync ist kein zweiter wirksamer Opt-in-Blocker mehr: Wenn Admin Datei-Events erlaubt und der Benutzer `SakuraAlbum verwenden` aktiviert, ist `autoSyncActive=true`.
+  - Personal-UI zeigt `Automatisch aktuell halten` als Admin-Standard/Status statt als separaten aktivierbaren Pflichtschalter.
+  - Admin- und Benutzerdokumentation werden an diese Logik angepasst.
+- Abschluss dieses Blocks:
+  - `1.0.1` live nach Backup `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.1-autosync-default-20260506-225633/` ausgerollt.
+  - Backup-Wiederherstellungsprompt: "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-1.0.1-autosync-default-20260506-225633/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, importiere bei Bedarf die `oc_sakuraalbum_*.sql` Dumps und stelle `oc_appconfig_sakuraalbum.tsv` sowie `oc_preferences_albentest_sakuraalbum.tsv` manuell wieder her; danach `occ upgrade`, `occ app:list` und `occ status` pruefen."
+  - Live-Service-Test: Speichern mit `enabled=true` und absichtlich `autoSyncEnabled=false` setzt serverseitig `autoSyncEnabled=true`; effektive Werte danach `autoSyncAvailable=true`, `autoSyncActive=true`.
+  - Live-Auto-Sync-Test mit isoliertem Testordner `/Photos/SakuraAlbumAuto101`: Queue vorgemerkt, nach Entprellzeit `processDueChanges()` mit `processedUsers=1`, `succeededUsers=1`; Reset loeschte 1 erzeugtes Photos-Album und 1 Cursor. Testordner entfernt; Queue danach 0, Cursor 0, aktive Testalben 0.
+  - Kurzzeitiger Fehler im Test: ein versehentlich gestarteter `maintenance:repair --include-expensive` wurde abgebrochen; danach wurde `maintenance:mode --off` gesetzt und `occ status` bestaetigte `maintenance=false`, `needsDbUpgrade=false`.
+  - Nebenbefund ausserhalb SakuraAlbum: Nextcloud `lastcron` ist leer und `/var/log/nextcloud-cron.log` enthaelt `Segmentation fault`; SakuraAlbum Admin-Status meldet deshalb korrekt `cron_not_recorded`.
+  - Checks: `./scripts/self-check.sh`, JS/PHP Syntax, `git diff --check`, Artefakt-Build und entpacktes Artefakt-Self-Check erfolgreich. Artefakt: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.1.tar.gz`, SHA256 `970f28475f04b52c793edb8844ce75453763889100d86f8a96dc2a9d002c40fb`.
+
 Neueste operative Notiz (2026-05-06 22:39 CET):
 - Version-1-Releaseblock gestartet.
 - Lokaler Stand wurde auf `1.0.0` angehoben:
