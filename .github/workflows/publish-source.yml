@@ -1,8 +1,13 @@
-# Publishes the checked SakuraAlbum source tree from a release artifact when manually dispatched.
+# Publishes the checked SakuraAlbum source tree from a release artifact.
 name: Publish SakuraAlbum source tree
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'releases/sakuraalbum-0.1.6.tar.gz.base64'
 
 permissions:
   contents: write
@@ -20,8 +25,11 @@ jobs:
         run: |
           set -euo pipefail
           tmp_dir="$(mktemp -d)"
-          test -f releases/sakuraalbum-0.1.1.tar.gz.base64
-          base64 -d releases/sakuraalbum-0.1.1.tar.gz.base64 > "$tmp_dir/sakuraalbum.tar.gz"
+          test -f releases/sakuraalbum-0.1.6.tar.gz.base64
+          base64 -d releases/sakuraalbum-0.1.6.tar.gz.base64 > "$tmp_dir/sakuraalbum.tar.gz"
+          expected="2032621ed7f431edbb5a473398dc659bf6f151287b6f3e711312382420e748d8"
+          actual="$(sha256sum "$tmp_dir/sakuraalbum.tar.gz" | awk '{print $1}')"
+          test "$actual" = "$expected"
           tar -xzf "$tmp_dir/sakuraalbum.tar.gz" -C "$tmp_dir"
 
           for path in .gitignore CHANGELOG.md README.md SECURITY.md appinfo composer.json css docs img js lib package.json scripts templates tests; do
@@ -41,6 +49,9 @@ jobs:
           test -f lib/Service/ManagedAlbumDeletionService.php
           test -f lib/Controller/ManagedAlbumController.php
           test -f lib/Service/PhotosAlbumAdapter.php
+          test -f lib/BackgroundJob/AutoSyncJob.php
+          test -f lib/Listener/FileChangeListener.php
+          test -f lib/Service/AutoSyncService.php
           test -f js/personal-settings.js
           test -f css/settings.css
           test -f img/app.svg
@@ -57,5 +68,5 @@ jobs:
             echo "Source tree is already up to date."
             exit 0
           fi
-          git commit -m "Publish SakuraAlbum source tree"
+          git commit -m "Publish SakuraAlbum 0.1.6 source tree"
           git push
