@@ -87,11 +87,11 @@ if ! rg -n "data-profile" js/admin-settings.js >/dev/null; then
 	echo "Admin load-profile controls are missing" >&2
 	exit 1
 fi
-if ! rg -n "admin-settings-020" lib/Settings/Admin.php >/dev/null; then
+if ! rg -n "admin-settings-021" lib/Settings/Admin.php >/dev/null; then
 	echo "Admin settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
-if ! rg -n "personal-settings-020" lib/Settings/Personal.php >/dev/null; then
+if ! rg -n "personal-settings-021" lib/Settings/Personal.php >/dev/null; then
 	echo "Personal settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
@@ -125,6 +125,22 @@ if ! rg -n "queueUserRefresh" lib/Service/AutoSyncService.php lib/Controller/Use
 fi
 if ! rg -n "progressPercent" lib/Service/AlbumSyncService.php js/personal-settings.js >/dev/null; then
 	echo "User sync progress reporting is missing" >&2
+	exit 1
+fi
+if ! rg -n "sakuraalbum_sync_cursors" lib/Migration lib/Db >/dev/null; then
+	echo "Resumable background sync cursor table is missing" >&2
+	exit 1
+fi
+if ! rg -n "buildExecutionChunk" lib/Service/AlbumPlanService.php lib/Service/AlbumSyncService.php >/dev/null; then
+	echo "Chunked execution planning is missing" >&2
+	exit 1
+fi
+if ! rg -n "writeChunk" lib/Service/AlbumSyncService.php lib/Service/AutoSyncService.php >/dev/null; then
+	echo "Automatic sync must use resumable chunk writes" >&2
+	exit 1
+fi
+if ! rg -n "chunk_continue" lib/Service/AutoSyncService.php >/dev/null; then
+	echo "Automatic sync must requeue incomplete chunks" >&2
 	exit 1
 fi
 if ! rg -n "REASON_UNIQUE_CONSTRAINT_VIOLATION" lib/Service/PhotosAlbumAdapter.php >/dev/null; then

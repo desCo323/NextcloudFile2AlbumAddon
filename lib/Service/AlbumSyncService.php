@@ -7,6 +7,8 @@ namespace OCA\SakuraAlbum\Service;
 use OCA\SakuraAlbum\AppInfo\Application;
 use OCA\SakuraAlbum\Db\ManagedAlbum;
 use OCA\SakuraAlbum\Db\ManagedAlbumMapper;
+use OCA\SakuraAlbum\Db\SyncCursor;
+use OCA\SakuraAlbum\Db\SyncCursorMapper;
 use OCA\SakuraAlbum\Db\SyncRun;
 use OCA\SakuraAlbum\Db\SyncRunMapper;
 
@@ -31,6 +33,7 @@ class AlbumSyncService {
 		private readonly AlbumPlanService $albumPlanService,
 		private readonly PhotosAlbumAdapter $photosAlbumAdapter,
 		private readonly ManagedAlbumMapper $managedAlbumMapper,
+		private readonly SyncCursorMapper $syncCursorMapper,
 		private readonly SyncRunMapper $syncRunMapper,
 		private readonly LogService $logService,
 	) {
@@ -42,6 +45,10 @@ class AlbumSyncService {
 
 	public function write(string $userId, string $confirmation, string $planFingerprint): array {
 		return $this->execute($userId, 'write', true, $confirmation, null, $planFingerprint);
+	}
+
+	public function writeChunk(string $userId): array {
+		return $this->executeChunk($userId);
 	}
 
 	public function recentRuns(string $userId, int $limit = 10): array {
@@ -57,6 +64,144 @@ class AlbumSyncService {
 			],
 			$this->syncRunMapper->findRecentForUser($userId, $limit),
 		);
+	}
+
+	public function cursorStatus(string $userId, int $limit = 5): array {
+		$settings = $this->settingsService->getEffectiveUserSettings($userId);
+		$currentConfigHash = $this->configHash($settings);
+		$current = $this->syncCursorMapper->findForUserConfig($userId, $currentConfigHash);
+		$cursors = array_map(
+			fn (SyncCursor $cursor): array => $this->publicCursor($cursor, $currentConfigHash),
+			$this->syncCursorMapper->findRecentForUser($userId, $limit),
+		);
+
+		return [
+			'currentConfigHash' => $currentConfigHash,
+			'current' => $current !== null ? $this->publicCursor($current, $currentConfigHash) : null,
+			'cursors' => $cursors,
+		];
+	}
+
+	private function executeChunk(string $userId): array {
+		$run = $this->syncRunMapper->start($userId, 'auto_chunk');
+		$runId = (int)$run->getId();
+		$started = microtime(true);
+
+		$this->logService->info('auto_chunk_started', $userId, [
+			'summary' => [
+				'runType' => 'auto_chunk',
+			],
+		], 'Chunked automatic album sync started.', $runId);
+
+		try {
+			$settings = $this->settingsService->getEffectiveUserSettings($userId);
+			$limits = $this->settingsService->getJobLimits();
+			$configHash = $this->configHash($settings);
+			$cursor = $this->syncCursorMapper->findOrCreate($userId, $configHash, time());
+			$startAfter = $cursor->getCursorPath();
+			$plan = $this->albumPlanService->buildExecutionChunk($userId, $settings, $limits, $startAfter);
+
+			if ($startAfter !== null && $startAfter !== '' && ($plan['summary']['cursorFound'] ?? true) !== true) {
+				$this->logService->warning('auto_chunk_cursor_missing', $userId, [
+					'cursorPath' => PathHelper::displayPath($startAfter),
+					'configHash' => $configHash,
+				], 'Chunk cursor file is no longer present. The chunked sync restarts from the beginning and relies on idempotent link handling.', $runId);
+				$plan = $this->albumPlanService->buildExecutionChunk($userId, $settings, $limits, null);
+				$plan['summary']['cursorReset'] = true;
+			}
+
+			$this->applyAlbumLimit($plan, $limits);
+			$plan = $this->inspectExistingAlbums($userId, $plan, $configHash);
+			$issues = $this->writeSafetyIssues($settings, $plan, $limits);
+			$plan['summary']['safetyIssueCount'] = count($issues);
+			$currentPlanFingerprint = $this->planFingerprint($plan, $configHash);
+
+			if ($issues !== []) {
+				$summary = $this->runSummary($plan['summary'], $started, $issues);
+				$summary['planFingerprint'] = $currentPlanFingerprint;
+				$this->syncCursorMapper->markChunkResult($cursor, 'failed', $cursor->getCursorPath(), $summary, 'Chunk plan is not safe to write.');
+				throw new SyncSafetyException(
+					'auto_chunk_plan_not_safe',
+					'Chunked automatic album sync is blocked because the current chunk is not safe to write.',
+					409,
+					['issues' => $issues],
+				);
+			}
+
+			$writeSummary = [];
+			if (($plan['albums'] ?? []) !== []) {
+				$writeSummary = $this->writePlan($userId, $plan, $settings, $configHash, $runId, partial: true);
+				$plan['summary'] = array_merge($plan['summary'], $writeSummary);
+			} else {
+				$plan['summary'] = array_merge($plan['summary'], [
+					'createdAlbums' => 0,
+					'updatedManagedAlbums' => 0,
+					'processedAlbums' => 0,
+					'plannedWritableAlbums' => 0,
+					'plannedWritableLinks' => 0,
+					'processedLinks' => 0,
+					'linkedFiles' => 0,
+					'alreadyLinkedFiles' => 0,
+					'missingFiles' => 0,
+					'fileErrors' => 0,
+					'albumErrors' => 0,
+					'progressPercent' => 100,
+					'progressStage' => 'completed',
+				]);
+			}
+
+			$hasMore = ($plan['summary']['hasMore'] ?? false) === true;
+			$lastCursorPath = (string)($plan['summary']['lastCursorPath'] ?? '');
+			$cursorPath = $lastCursorPath !== '' ? PathHelper::normalizeUserPath($lastCursorPath) : $cursor->getCursorPath();
+			$status = $hasMore ? 'auto_chunk_partial' : 'auto_chunk_completed';
+			$cursorStatus = $hasMore ? 'pending' : 'completed';
+			$summary = $this->runSummary($plan['summary'], $started, []);
+			$summary['planFingerprint'] = $currentPlanFingerprint;
+			$summary['hasMore'] = $hasMore;
+			$summary['cursorPath'] = $cursorPath !== null && $cursorPath !== '' ? PathHelper::displayPath($cursorPath) : '';
+			$this->syncCursorMapper->markChunkResult($cursor, $cursorStatus, $cursorPath, $summary);
+			$this->syncRunMapper->finish($run, $status, $summary);
+			$this->logService->success($status, $userId, [
+				'durationMs' => $summary['durationMs'],
+				'summary' => $summary,
+				'warningCount' => count($plan['warnings'] ?? []),
+			], $hasMore ? 'Chunked automatic album sync completed a partial chunk.' : 'Chunked automatic album sync completed all currently planned media.', $runId);
+
+			return [
+				'runId' => $runId,
+				'mode' => 'auto_chunk',
+				'status' => $status,
+				'hasMore' => $hasMore,
+				'canWrite' => true,
+				'writeBlockedReasons' => [],
+				'planFingerprint' => $currentPlanFingerprint,
+				'summary' => $summary,
+				'warnings' => $plan['warnings'] ?? [],
+				'albums' => $this->publicAlbums($plan['albums'] ?? []),
+				'cursor' => $this->publicCursor($this->syncCursorMapper->findForUserConfig($userId, $configHash), $configHash),
+			];
+		} catch (SyncSafetyException $e) {
+			$summary = [
+				'durationMs' => (int)((microtime(true) - $started) * 1000),
+				'errorCode' => $e->getErrorCode(),
+				'details' => $e->getDetails(),
+			];
+			$this->syncRunMapper->finish($run, 'failed', $summary, $e->getMessage());
+			$this->logService->warning($e->getErrorCode(), $userId, [
+				'summary' => $summary,
+			], $e->getMessage(), $runId);
+			throw $e;
+		} catch (\Throwable $e) {
+			$summary = [
+				'durationMs' => (int)((microtime(true) - $started) * 1000),
+				'errorCode' => 'auto_chunk_failed',
+			];
+			$this->syncRunMapper->finish($run, 'failed', $summary, $e->getMessage());
+			$this->logService->exception('auto_chunk_failed', $e, $userId, [
+				'durationMs' => $summary['durationMs'],
+			], $runId);
+			throw $e;
+		}
 	}
 
 	private function execute(string $userId, string $runType, bool $write, string $confirmation, ?array $settingsOverride, string $planFingerprint = ''): array {
@@ -246,7 +391,7 @@ class AlbumSyncService {
 		return $plan;
 	}
 
-	private function writePlan(string $userId, array $plan, array $settings, string $configHash, int $runId): array {
+	private function writePlan(string $userId, array $plan, array $settings, string $configHash, int $runId, bool $partial = false): array {
 		$writableAlbums = array_values(array_filter(
 			$plan['albums'] ?? [],
 			static fn (array $album): bool => in_array($album['writeAction'] ?? '', ['create', 'update_managed'], true),
@@ -333,7 +478,7 @@ class AlbumSyncService {
 					}
 				}
 
-				if (($settings['syncRemoveMissingFiles'] ?? true) === true && ($album['writeAction'] ?? '') === 'update_managed') {
+				if (!$partial && ($settings['syncRemoveMissingFiles'] ?? true) === true && ($album['writeAction'] ?? '') === 'update_managed') {
 					if ($albumMissingFiles > 0) {
 						$summary['skippedStaleRemovalAlbums']++;
 						$this->logService->warning('stale_file_removal_skipped', $userId, [
@@ -365,7 +510,7 @@ class AlbumSyncService {
 			}
 		}
 
-		if (($settings['syncDeleteMissingManagedAlbums'] ?? false) === true) {
+		if (!$partial && ($settings['syncDeleteMissingManagedAlbums'] ?? false) === true) {
 			if ($summary['albumErrors'] === 0 && $summary['fileErrors'] === 0) {
 				$this->persistWriteProgress($runId, $userId, $plan, $summary, 'cleanup_missing_albums');
 				$missingCleanup = $this->deleteMissingManagedAlbums($userId, $configHash, $currentTargetPaths, $summary['processedAlbums'], $runId);
@@ -392,6 +537,7 @@ class AlbumSyncService {
 		$totalUnits = max(1, (int)$summary['plannedWritableAlbums'] + (int)$summary['plannedWritableLinks']);
 		$doneUnits = min($totalUnits, (int)$summary['processedAlbums'] + $this->processedLinks($summary));
 		$percent = $stage === 'completed' ? 100 : min(99, (int)floor(($doneUnits / $totalUnits) * 100));
+		$summary['processedLinks'] = $this->processedLinks($summary);
 		$summary['progressPercent'] = $percent;
 		$summary['progressStage'] = $stage;
 
@@ -401,7 +547,7 @@ class AlbumSyncService {
 			'plannedWritableAlbums' => (int)$summary['plannedWritableAlbums'],
 			'plannedWritableLinks' => (int)$summary['plannedWritableLinks'],
 			'processedAlbums' => (int)$summary['processedAlbums'],
-			'processedLinks' => $this->processedLinks($summary),
+			'processedLinks' => (int)$summary['processedLinks'],
 			'linkedFiles' => (int)$summary['linkedFiles'],
 			'alreadyLinkedFiles' => (int)$summary['alreadyLinkedFiles'],
 			'missingFiles' => (int)$summary['missingFiles'],
@@ -748,5 +894,28 @@ class AlbumSyncService {
 			static fn (array $album): array => array_intersect_key($album, $publicKeys),
 			$albums,
 		);
+	}
+
+	private function publicCursor(?SyncCursor $cursor, string $currentConfigHash): ?array {
+		if ($cursor === null) {
+			return null;
+		}
+
+		$summary = $cursor->getSummaryJson() !== null ? json_decode($cursor->getSummaryJson(), true) : null;
+		return [
+			'id' => $cursor->getId(),
+			'status' => $cursor->getStatus(),
+			'currentConfig' => hash_equals($currentConfigHash, $cursor->getConfigHash()),
+			'cursorPath' => $cursor->getCursorPath() !== null ? PathHelper::displayPath($cursor->getCursorPath()) : '',
+			'processedFiles' => $cursor->getProcessedFiles(),
+			'processedAlbums' => $cursor->getProcessedAlbums(),
+			'chunkCount' => $cursor->getChunkCount(),
+			'attempts' => $cursor->getAttempts(),
+			'createdAt' => $cursor->getCreatedAt(),
+			'updatedAt' => $cursor->getUpdatedAt(),
+			'completedAt' => $cursor->getCompletedAt(),
+			'summary' => is_array($summary) ? $summary : null,
+			'lastError' => $cursor->getLastError(),
+		];
 	}
 }

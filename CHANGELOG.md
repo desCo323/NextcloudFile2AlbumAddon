@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1
+
+- Added a resumable background sync cursor table for large first-generation runs.
+- Added deterministic chunk execution plans that continue after the last processed file path.
+- Automatic file-event sync now writes one bounded chunk per run and requeues the user when more media remains.
+- Chunk writes keep the existing safety gates but do not require a human dry-run fingerprint because they are server-owned background work.
+- Stale-file removal and missing-managed-album cleanup are disabled during chunk writes so partial scans cannot remove media or albums that were simply not reached yet.
+- Personal status now exposes the current background cursor, chunk count, processed link count, and last cursor path.
+- Added cache-busting `admin-settings-021` and `personal-settings-021` assets.
+
 ## 0.2.0
 
 - Added structured multi-source folder settings with stable source ids and legacy `includePaths` fallback.

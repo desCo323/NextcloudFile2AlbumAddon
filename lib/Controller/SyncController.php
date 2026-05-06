@@ -70,6 +70,7 @@ class SyncController extends Controller {
 		return new JSONResponse([
 			'runs' => $this->albumSyncService->recentRuns($this->userId, $this->intParam('limit', 5, 1, 20)),
 			'queue' => $this->autoSyncService->queueStatusForUser($this->userId, $this->intParam('sampleLimit', 8, 1, 20)),
+			'cursor' => $this->albumSyncService->cursorStatus($this->userId, 5),
 		]);
 	}
 

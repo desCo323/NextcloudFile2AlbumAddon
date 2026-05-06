@@ -54,6 +54,9 @@ Expected result: `Self-check passed`.
 - Saving settings with user Auto-Sync active queues an initial/background refresh and the personal status panel shows pending work.
 - The `Update vormerken` action queues enabled source folders for the next background run without directly writing albums.
 - The personal status panel shows a progress bar, queue counters, latest run details, and expandable activity details.
+- For a large first-generation test with a deliberately low `Job: Dateilimit`, automatic sync should create only one bounded chunk per cron run, show cursor/chunk progress, and queue continuation work.
+- While a chunked background sync is incomplete, no stale-file removal or missing-managed-album cleanup may run from that partial plan.
+- After the last chunk, the cursor status should become `completed` and the status panel should show the final chunk count and processed link count.
 - Preview can run against a small test folder.
 - Dry-run can run against a small test folder and reports:
   - planned albums

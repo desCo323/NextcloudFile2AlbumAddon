@@ -11,6 +11,7 @@ The current development version focuses on safe configuration, preview planning,
 - Source folders can use global defaults, a folder-specific depth, or `Alles in ein Album` so a large subtree can be represented as one Photos album.
 - Personal automatic-update opt-in that is only active when admins allow file-event mode.
 - Personal status view with queue state, recent run details, expandable diagnostics, and a 0-100% progress bar based on the running sync summary.
+- Resumable background generation for large first runs: automatic sync writes bounded chunks and continues from a stored cursor over later cron runs.
 - Preview API that scans only the current user folder and returns planned albums without writing album data.
 - Dry-run API that checks generated album names against real Photos albums without writing.
 - Confirmed write API that can create/link albums only when admin and user settings are both enabled and the request matches a recent server-recorded dry-run fingerprint.
@@ -49,6 +50,8 @@ The current development version focuses on safe configuration, preview planning,
 - Background sync is non-parallel and bounded by admin settings for debounce, interval, users per run, runtime, event count, folder count, file count, and album count.
 - Background sync summaries include seen events, reserved events, and event-limit hits so admins can tune load profiles from real diagnostics.
 - Write runs update the current run summary while processing so the UI can report stage, processed albums, processed links, and error counters.
+- Background chunk writes store a per-user/config cursor and requeue themselves while more media remains.
+- During chunked background writes, SakuraAlbum never removes stale file links or missing managed albums, because a partial plan must not be treated as the full desired album state.
 - Background sync recovers stale processing locks and logs runtime-limit stops so interrupted cron work can be diagnosed.
 - Automatic updates mean "scheduled as soon as allowed by debounce and load limits", not synchronous writes during uploads or deletes.
 - SakuraAlbum's global admin enable setting is stored under an app-owned key separate from Nextcloud's reserved app activation flag.

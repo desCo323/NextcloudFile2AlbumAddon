@@ -29,17 +29,38 @@ class AlbumPlanService {
 		return $this->buildPlan($userId, $settings, $limits, true);
 	}
 
-	private function buildPlan(string $userId, array $settings, array $limits, bool $includeFiles): array {
+	public function buildExecutionChunk(string $userId, array $settings, array $limits, ?string $startAfterFile): array {
+		$startAfterFile = $startAfterFile !== null && $startAfterFile !== ''
+			? PathHelper::normalizeUserPath($startAfterFile)
+			: '';
+		return $this->buildPlan($userId, $settings, $limits, true, true, $startAfterFile);
+	}
+
+	private function buildPlan(
+		string $userId,
+		array $settings,
+		array $limits,
+		bool $includeFiles,
+		bool $chunkMode = false,
+		string $startAfterFile = '',
+	): array {
 		$warnings = [];
 		$albums = [];
 		$summary = [
 			'foldersScanned' => 0,
 			'filesScanned' => 0,
+			'skippedBeforeCursor' => 0,
 			'mediaFiles' => 0,
 			'plannedLinks' => 0,
 			'plannedAlbums' => 0,
 			'collisions' => 0,
 			'truncated' => false,
+			'chunked' => $chunkMode,
+			'hasMore' => false,
+			'startAfterFile' => $startAfterFile !== '' ? PathHelper::displayPath($startAfterFile) : '',
+			'cursorFound' => $startAfterFile === '',
+			'lastCursorPath' => '',
+			'lastMediaFilePath' => '',
 		];
 
 		try {
@@ -79,8 +100,22 @@ class AlbumPlanService {
 			}
 
 			$sourceSettings = $this->settingsForSource($settings, $source);
-			$this->scanFolder($rootNode, $rootPath, $rootPath, 0, $sourceSettings, $limits, $includeFiles, $albums, $summary, $warnings, (string)($source['id'] ?? ''));
-			if ($summary['truncated']) {
+			$this->scanFolder(
+				$rootNode,
+				$rootPath,
+				$rootPath,
+				0,
+				$sourceSettings,
+				$limits,
+				$includeFiles,
+				$albums,
+				$summary,
+				$warnings,
+				(string)($source['id'] ?? ''),
+				$chunkMode,
+				$startAfterFile,
+			);
+			if ($summary['truncated'] || $summary['hasMore']) {
 				break;
 			}
 		}
@@ -109,8 +144,10 @@ class AlbumPlanService {
 		array &$summary,
 		array &$warnings,
 		string $sourceId,
+		bool $chunkMode = false,
+		string $startAfterFile = '',
 	): void {
-		if ($summary['truncated']) {
+		if ($summary['truncated'] || $summary['hasMore']) {
 			return;
 		}
 		if ($depth > (int)$limits['maxDepth']) {
@@ -132,7 +169,7 @@ class AlbumPlanService {
 				$warnings[] = ['code' => 'media_marker_skip', 'path' => PathHelper::displayPath($currentPath)];
 				return;
 			}
-			$nodes = $folder->getDirectoryListing();
+			$nodes = $this->sortedNodes($folder->getDirectoryListing());
 		} catch (StorageNotAvailableException) {
 			$warnings[] = ['code' => 'storage_unavailable', 'path' => PathHelper::displayPath($currentPath)];
 			return;
@@ -140,12 +177,31 @@ class AlbumPlanService {
 
 		foreach ($nodes as $node) {
 			if ($node instanceof File) {
+				$filePath = trim($currentPath . '/' . $node->getName(), '/');
+				if ($chunkMode && ($summary['cursorFound'] ?? true) !== true) {
+					$summary['skippedBeforeCursor']++;
+					if ($filePath === $startAfterFile) {
+						$summary['cursorFound'] = true;
+					}
+					continue;
+				}
+
 				$summary['filesScanned']++;
 				if ($summary['filesScanned'] > (int)$limits['maxFiles']) {
-					$summary['truncated'] = true;
-					$warnings[] = ['code' => 'max_files_reached', 'limit' => (int)$limits['maxFiles']];
+					if ($chunkMode) {
+						$summary['hasMore'] = true;
+						$warnings[] = [
+							'code' => 'chunk_file_limit_reached',
+							'limit' => (int)$limits['maxFiles'],
+							'lastCursorPath' => $summary['lastCursorPath'],
+						];
+					} else {
+						$summary['truncated'] = true;
+						$warnings[] = ['code' => 'max_files_reached', 'limit' => (int)$limits['maxFiles']];
+					}
 					return;
 				}
+				$summary['lastCursorPath'] = PathHelper::displayPath($filePath);
 
 				if (!$this->isMediaFile($node, $settings)) {
 					continue;
@@ -155,7 +211,7 @@ class AlbumPlanService {
 				$summary['plannedLinks']++;
 				$targetPath = $this->targetAlbumPath($sourceRoot, $currentPath, (int)$settings['albumDepth']);
 				$key = $sourceId . "\n" . $sourceRoot . "\n" . $targetPath;
-				$filePath = trim($currentPath . '/' . $node->getName(), '/');
+				$summary['lastMediaFilePath'] = PathHelper::displayPath($filePath);
 
 				if (!isset($albums[$key])) {
 					$albums[$key] = [
@@ -188,11 +244,24 @@ class AlbumPlanService {
 				continue;
 			}
 			$childPath = trim($currentPath . '/' . $node->getName(), '/');
-			$this->scanFolder($node, $sourceRoot, $childPath, $depth + 1, $settings, $limits, $includeFiles, $albums, $summary, $warnings, $sourceId);
-			if ($summary['truncated']) {
+			$this->scanFolder($node, $sourceRoot, $childPath, $depth + 1, $settings, $limits, $includeFiles, $albums, $summary, $warnings, $sourceId, $chunkMode, $startAfterFile);
+			if ($summary['truncated'] || $summary['hasMore']) {
 				return;
 			}
 		}
+	}
+
+	private function sortedNodes(array $nodes): array {
+		usort($nodes, static function ($left, $right): int {
+			$leftIsFolder = $left instanceof Folder;
+			$rightIsFolder = $right instanceof Folder;
+			if ($leftIsFolder !== $rightIsFolder) {
+				return $leftIsFolder ? 1 : -1;
+			}
+			return strnatcasecmp($left->getName(), $right->getName());
+		});
+
+		return $nodes;
 	}
 
 	private function targetAlbumPath(string $sourceRoot, string $currentPath, int $albumDepth): string {

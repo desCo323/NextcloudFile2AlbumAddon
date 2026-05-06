@@ -84,6 +84,7 @@ class AutoSyncService {
 			'pendingEventsSeen' => 0,
 			'lockedEvents' => 0,
 			'eventLimitHits' => 0,
+			'continuedUsers' => 0,
 		];
 
 		foreach ($users as $userId) {
@@ -115,26 +116,18 @@ class AutoSyncService {
 						'maxRuntimeSeconds' => (int)$auto['maxRuntimeSeconds'],
 					],
 				]);
-				$dryRun = $this->albumSyncService->dryRun($userId);
-				if (($dryRun['canWrite'] ?? false) !== true || ($dryRun['planFingerprint'] ?? '') === '') {
-					$this->dirtyPathMapper->markUserFailed($userId, 'Automatic sync dry-run is not safe to write.', time());
-					$this->logService->warning('auto_sync_dry_run_blocked', $userId, [
-						'pendingEvents' => $pending,
-						'lockedEvents' => $locked,
-						'summary' => $dryRun['summary'] ?? [],
-						'issues' => $dryRun['writeBlockedReasons'] ?? [],
-					], 'Automatic SakuraAlbum sync was blocked by dry-run safety checks.');
-					$summary['failedUsers']++;
-					continue;
-				}
-
-				$write = $this->albumSyncService->write($userId, AlbumSyncService::WRITE_CONFIRMATION, (string)$dryRun['planFingerprint']);
+				$write = $this->albumSyncService->writeChunk($userId);
 				$this->dirtyPathMapper->markUserProcessed($userId, $lockTime);
+				if (($write['hasMore'] ?? false) === true) {
+					$this->queueUserRefresh($userId, 'chunk_continue');
+					$summary['continuedUsers'] = (int)($summary['continuedUsers'] ?? 0) + 1;
+				}
 				$this->logService->success('auto_sync_user_completed', $userId, [
 					'pendingEvents' => $pending,
 					'lockedEvents' => $locked,
 					'summary' => $write['summary'] ?? [],
-				], 'Automatic SakuraAlbum sync completed.');
+					'hasMore' => $write['hasMore'] ?? false,
+				], ($write['hasMore'] ?? false) === true ? 'Automatic SakuraAlbum sync completed one chunk and queued the next one.' : 'Automatic SakuraAlbum sync completed.');
 				$summary['succeededUsers']++;
 			} catch (\Throwable $e) {
 				$this->dirtyPathMapper->markUserFailed($userId, $e->getMessage(), time());
