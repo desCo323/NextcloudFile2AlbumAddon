@@ -87,6 +87,10 @@ if ! rg -n "data-profile" js/admin-settings.js >/dev/null; then
 	echo "Admin load-profile controls are missing" >&2
 	exit 1
 fi
+if rg -n "OC\\.generateUrl\\([^)]*\\?" js >/dev/null; then
+	echo "Do not pass query strings directly into OC.generateUrl; append them after URL generation" >&2
+	exit 1
+fi
 if ! rg -n "autoSyncEnabled" lib/Service/SettingsService.php js/personal-settings.js >/dev/null; then
 	echo "Personal automatic-update opt-in setting is missing" >&2
 	exit 1

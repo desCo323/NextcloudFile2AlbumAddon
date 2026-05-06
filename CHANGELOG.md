@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.11
+
+- Fixed admin Auto-Status and log loading URLs by keeping query parameters outside `OC.generateUrl()`, preventing encoded-query 404 responses.
+- Updated the shared personal API helper to preserve query parameters safely after generating the Nextcloud app URL.
+- Clarified the admin automatic-update explanation: admins allow file-event mode, users still opt in per account.
+
 ## 0.1.10
 
 - Added a personal `Automatisch aktuell halten` opt-in toggle.

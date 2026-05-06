@@ -409,7 +409,9 @@
       options.body = JSON.stringify(body);
     }
 
-    const response = await fetch(OC.generateUrl(url), options);
+    const [path, query] = String(url).split("?", 2);
+    const finalUrl = `${OC.generateUrl(path)}${query ? `?${query}` : ""}`;
+    const response = await fetch(finalUrl, options);
     if (!response.ok) {
       let message = `HTTP ${response.status}`;
       try {

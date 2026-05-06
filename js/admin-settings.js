@@ -64,6 +64,10 @@
 				<strong>Auto-Sync schreibt nie direkt im Datei-Event.</strong>
 				<span>Dateiaenderungen werden gesammelt, entprellt und erst im Hintergrund verarbeitet. Die Limits unten begrenzen, wie viele Benutzer, Events, Ordner, Dateien und Alben ein Lauf maximal beruehrt.</span>
 			</div>
+			<div class="sakuraalbum-note">
+				<strong>Automatik braucht zwei Freigaben.</strong>
+				<span>Der Administrator erlaubt hier Bei Dateiaenderungen. Danach muss jeder Benutzer in den SakuraAlbum-Benutzereinstellungen selbst Automatisch aktuell halten aktivieren.</span>
+			</div>
 			<div class="sakuraalbum-load-profiles">
 				<span>Lastprofil</span>
 				<button type="button" data-profile="gentle" title="Sehr vorsichtige Werte fuer produktive Server oder schwache Hardware.">Schonend</button>
@@ -113,6 +117,7 @@
 							<option value="manual" ${settings.autoSyncMode === "manual" ? "selected" : ""}>Manuell</option>
 							<option value="file_events" ${settings.autoSyncMode === "file_events" ? "selected" : ""}>Bei Dateiaenderungen</option>
 						</select>
+						<span class="sakuraalbum-field-help">Bei Dateiaenderungen erlaubt automatische Updates serverweit; Benutzer muessen sie trotzdem selbst einschalten.</span>
 					</div>
 					<div class="sakuraalbum-field">
 						<label for="ska-auto-debounce">Auto: Wartezeit Sekunden</label>
@@ -222,7 +227,7 @@
     output.innerHTML = "";
     try {
       const response = await fetch(
-        OC.generateUrl("/apps/sakuraalbum/api/v1/admin/logs?limit=50"),
+        `${OC.generateUrl("/apps/sakuraalbum/api/v1/admin/logs")}?limit=50`,
         {
           method: "GET",
           headers: {
@@ -248,7 +253,7 @@
     output.innerHTML = "";
     try {
       const response = await fetch(
-        OC.generateUrl("/apps/sakuraalbum/api/v1/admin/auto-sync/status?limit=12"),
+        `${OC.generateUrl("/apps/sakuraalbum/api/v1/admin/auto-sync/status")}?limit=12`,
         {
           method: "GET",
           headers: {
