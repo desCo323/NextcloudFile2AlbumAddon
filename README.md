@@ -35,6 +35,7 @@ The current development version focuses on safe configuration, preview planning,
 - Debug exception traces intentionally omit function arguments.
 - Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, require a matching recent dry-run plan fingerprint stored by the server, and refuse unsafe plans.
 - Existing Photos albums are not modified unless SakuraAlbum already tracks them as managed albums.
+- Repeated updates are idempotent: an already-linked Photos file is counted as already linked, including Photos versions that report the duplicate through the database layer.
 - File events never perform heavy scans or album writes directly. They only queue dirty paths for a later background job.
 - Background sync is non-parallel and bounded by admin settings for debounce, interval, users per run, runtime, event count, folder count, file count, and album count.
 - Background sync recovers stale processing locks and logs runtime-limit stops so interrupted cron work can be diagnosed.
