@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5
+
+- Fixed admin global enable storage so SakuraAlbum no longer reads or writes Nextcloud's reserved app activation key `enabled`.
+- Added a self-check guard that blocks future use of the reserved app-config key for SakuraAlbum admin settings.
+- Documented that version 0.1.4 must not be used for live testing.
+
 ## 0.1.4
 
 - Added server-side freshness checks for write and managed-delete plan fingerprints.
