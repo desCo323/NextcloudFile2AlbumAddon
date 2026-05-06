@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7
+
+- Added automatic recovery for stale auto-sync queue locks if a cron/background run stops after marking events as processing.
+- Added explicit runtime-limit logging for automatic sync so admins can see when configured limits stop a run.
+- Extended the self-check script to guard stale-lock recovery and runtime-limit diagnostics.
+
 ## 0.1.6
 
 - Added debounced file-event based auto-sync infrastructure with admin controls for mode, debounce, cron interval, users per run, runtime, and queued events per run.
