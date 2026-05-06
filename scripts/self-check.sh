@@ -32,6 +32,12 @@ if rg -n "NoCSRFRequired" lib/Controller appinfo >/dev/null; then
 	exit 1
 fi
 
+echo "Checking admin app-config key isolation"
+if rg -n "AppValue[A-Za-z]*\\('enabled'" lib/Service/SettingsService.php >/dev/null; then
+	echo "Admin settings must not use app config key 'enabled'; Nextcloud reserves it for app activation state" >&2
+	exit 1
+fi
+
 echo "Checking write/delete fingerprint freshness guards"
 if ! rg -n "assertRecentDryRunFingerprint" lib/Service/AlbumSyncService.php >/dev/null; then
 	echo "Album write service must verify a recent server-recorded dry-run fingerprint" >&2
