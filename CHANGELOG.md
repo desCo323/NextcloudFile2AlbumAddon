@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.8
+
+- Fixed Photos duplicate-link handling for Nextcloud/Photos versions where an already-linked album file can surface as an `OCP\DB\Exception` unique-constraint violation instead of `AlreadyInAlbumException`.
+- Re-checks the Photos album/file/owner row before treating a database unique-constraint violation as `already_linked`, so unrelated DB failures still fail loudly.
+
 ## 0.1.7
 
 - Added automatic recovery for stale auto-sync queue locks if a cron/background run stops after marking events as processing.
