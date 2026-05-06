@@ -10,6 +10,7 @@ use OCP\Config\IUserConfig;
 
 class SettingsService {
 	private const USER_SETTINGS_KEY = 'settings';
+	private const ADMIN_GLOBAL_ENABLED_KEY = 'globalEnabled';
 
 	private const ADMIN_DEFAULTS = [
 		'enabled' => false,
@@ -48,7 +49,7 @@ class SettingsService {
 
 	public function getAdminSettings(): array {
 		return [
-			'enabled' => $this->appConfig->getAppValueBool('enabled', self::ADMIN_DEFAULTS['enabled']),
+			'enabled' => $this->appConfig->getAppValueBool(self::ADMIN_GLOBAL_ENABLED_KEY, self::ADMIN_DEFAULTS['enabled']),
 			'defaultIncludePaths' => $this->appConfig->getAppValueArray('defaultIncludePaths', self::ADMIN_DEFAULTS['defaultIncludePaths'], lazy: true),
 			'defaultExcludePatterns' => $this->appConfig->getAppValueArray('defaultExcludePatterns', self::ADMIN_DEFAULTS['defaultExcludePatterns'], lazy: true),
 			'maxScanDepth' => $this->appConfig->getAppValueInt('maxScanDepth', self::ADMIN_DEFAULTS['maxScanDepth']),
@@ -59,7 +60,7 @@ class SettingsService {
 			'maxAlbumsPerRun' => $this->appConfig->getAppValueInt('maxAlbumsPerRun', self::ADMIN_DEFAULTS['maxAlbumsPerRun']),
 			'allowVideos' => $this->appConfig->getAppValueBool('allowVideos', self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->appConfig->getAppValueInt('jobIntervalMinutes', self::ADMIN_DEFAULTS['jobIntervalMinutes']),
-				'requireBulkDeleteConfirmation' => true,
+			'requireBulkDeleteConfirmation' => true,
 			'debugMode' => $this->appConfig->getAppValueBool('debugMode', self::ADMIN_DEFAULTS['debugMode']),
 			'debugRetentionDays' => $this->appConfig->getAppValueInt('debugRetentionDays', self::ADMIN_DEFAULTS['debugRetentionDays']),
 			'debugMaxContextLength' => $this->appConfig->getAppValueInt('debugMaxContextLength', self::ADMIN_DEFAULTS['debugMaxContextLength']),
@@ -79,13 +80,13 @@ class SettingsService {
 			'maxAlbumsPerRun' => $this->intValue($input['maxAlbumsPerRun'] ?? self::ADMIN_DEFAULTS['maxAlbumsPerRun'], 1, 5000),
 			'allowVideos' => $this->boolValue($input['allowVideos'] ?? self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->intValue($input['jobIntervalMinutes'] ?? self::ADMIN_DEFAULTS['jobIntervalMinutes'], 5, 10080),
-				'requireBulkDeleteConfirmation' => true,
+			'requireBulkDeleteConfirmation' => true,
 			'debugMode' => $this->boolValue($input['debugMode'] ?? self::ADMIN_DEFAULTS['debugMode']),
 			'debugRetentionDays' => $this->intValue($input['debugRetentionDays'] ?? self::ADMIN_DEFAULTS['debugRetentionDays'], 1, 365),
 			'debugMaxContextLength' => $this->intValue($input['debugMaxContextLength'] ?? self::ADMIN_DEFAULTS['debugMaxContextLength'], 1000, 100000),
 		];
 
-		$this->appConfig->setAppValueBool('enabled', $settings['enabled']);
+		$this->appConfig->setAppValueBool(self::ADMIN_GLOBAL_ENABLED_KEY, $settings['enabled']);
 		$this->appConfig->setAppValueArray('defaultIncludePaths', $settings['defaultIncludePaths'], lazy: true);
 		$this->appConfig->setAppValueArray('defaultExcludePatterns', $settings['defaultExcludePatterns'], lazy: true);
 		$this->appConfig->setAppValueInt('maxScanDepth', $settings['maxScanDepth']);
