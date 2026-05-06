@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.12
+
+- Load versioned admin and personal JavaScript asset names to avoid stale browser-cached settings scripts during controlled test windows.
+- Admin save feedback now reports the saved automatic mode explicitly.
+- Kept the fixed query-string handling for admin Auto-Status and log calls.
+
 ## 0.1.11
 
 - Fixed admin Auto-Status and log loading URLs by keeping query parameters outside `OC.generateUrl()`, preventing encoded-query 404 responses.

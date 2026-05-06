@@ -87,6 +87,14 @@ if ! rg -n "data-profile" js/admin-settings.js >/dev/null; then
 	echo "Admin load-profile controls are missing" >&2
 	exit 1
 fi
+if ! rg -n "admin-settings-012" lib/Settings/Admin.php >/dev/null; then
+	echo "Admin settings must load the cache-busting versioned JavaScript asset" >&2
+	exit 1
+fi
+if ! rg -n "personal-settings-012" lib/Settings/Personal.php >/dev/null; then
+	echo "Personal settings must load the cache-busting versioned JavaScript asset" >&2
+	exit 1
+fi
 if rg -n "OC\\.generateUrl\\([^)]*\\?" js >/dev/null; then
 	echo "Do not pass query strings directly into OC.generateUrl; append them after URL generation" >&2
 	exit 1
