@@ -79,7 +79,7 @@ Build a clean local package from the app directory:
 ./scripts/build-artifact.sh
 ```
 
-The package is created under `../artifacts/` with a top-level `sakuraalbum/` folder and fails if development-only files such as `node_modules`, `vendor`, `.git`, caches, logs, or nested archives are included.
+The package is created under `../artifacts/` with a top-level `sakuraalbum/` folder and fails if development-only or repository-only files such as `node_modules`, `vendor`, `.git`, `.github`, `releases`, `SOURCE_MANIFEST.txt`, caches, logs, or nested archives are included.
 
 ## Production test rule
 

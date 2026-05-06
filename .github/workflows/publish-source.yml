@@ -1,0 +1,76 @@
+# Publishes the checked SakuraAlbum source tree from a split release artifact.
+name: Publish SakuraAlbum source tree
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'releases/sakuraalbum-0.2.4.tar.gz.base64.part03'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-source:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract checked release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp_dir="$(mktemp -d)"
+          parts=(releases/sakuraalbum-0.2.4.tar.gz.base64.part*)
+          test -f "${parts[0]}"
+          cat "${parts[@]}" | base64 -d > "$tmp_dir/sakuraalbum.tar.gz"
+          expected="85aa755ae372101ca951f2df5865d7b8d3a16657d8545309ba6f7c3476844ef5"
+          actual="$(sha256sum "$tmp_dir/sakuraalbum.tar.gz" | awk '{print $1}')"
+          test "$actual" = "$expected"
+          tar -xzf "$tmp_dir/sakuraalbum.tar.gz" -C "$tmp_dir"
+
+          for path in .gitignore CHANGELOG.md README.md SECURITY.md appinfo composer.json css docs img js lib package.json scripts templates tests; do
+            rm -rf "$path"
+          done
+
+          cp -a "$tmp_dir/sakuraalbum/." .
+          rm -rf lib/Section tests/Unit
+
+      - name: Verify expected source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f appinfo/info.xml
+          test -f appinfo/routes.php
+          test -f lib/Service/AlbumSyncService.php
+          test -f lib/Service/ManagedAlbumDeletionService.php
+          test -f lib/Controller/ManagedAlbumController.php
+          test -f lib/Service/PhotosAlbumAdapter.php
+          test -f lib/BackgroundJob/AutoSyncJob.php
+          test -f lib/Listener/FileChangeListener.php
+          test -f lib/Service/AutoSyncService.php
+          test -f lib/Service/DiagnosticReportService.php
+          test -f lib/Service/FolderBrowserService.php
+          test -f js/personal-settings.js
+          test -f css/settings.css
+          test -f img/app.svg
+          test -f scripts/self-check.sh
+          bash scripts/self-check.sh
+
+      - name: Commit source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .gitignore CHANGELOG.md README.md SECURITY.md appinfo composer.json css docs img js lib package.json scripts templates tests
+          if git diff --cached --quiet; then
+            echo "Source tree is already up to date."
+            exit 0
+          fi
+          git commit -m "Publish SakuraAlbum 0.2.4 source tree"
+          git push

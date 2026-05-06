@@ -21,9 +21,12 @@ mkdir -p "$TMP_DIR/$APP_ID"
 
 tar -C "$APP_DIR" \
 	--exclude='./.git' \
+	--exclude='./.github' \
 	--exclude='./.nextcloud-test-instance' \
+	--exclude='./SOURCE_MANIFEST.txt' \
 	--exclude='./build' \
 	--exclude='./node_modules' \
+	--exclude='./releases' \
 	--exclude='./vendor' \
 	--exclude='./*.log' \
 	--exclude='./*.tar.gz' \
@@ -41,9 +44,9 @@ tar --sort=name \
 	-C "$TMP_DIR" \
 	-czf "$OUT" "$APP_ID"
 
-if tar -tzf "$OUT" | rg -n '(^|/)(node_modules|vendor|build|\.git|\.cache|\.nextcloud-test-instance)(/|$)|\.(log|zip)$|\.tar\.gz$' >/dev/null; then
+if tar -tzf "$OUT" | rg -n '(^|/)(node_modules|vendor|build|releases|\.git|\.github|\.cache|\.nextcloud-test-instance)(/|$)|(^|/)SOURCE_MANIFEST\.txt$|\.(log|zip)$|\.tar\.gz$' >/dev/null; then
 	echo "Artifact contains development-only files" >&2
-	tar -tzf "$OUT" | rg -n '(^|/)(node_modules|vendor|build|\.git|\.cache|\.nextcloud-test-instance)(/|$)|\.(log|zip)$|\.tar\.gz$' >&2
+	tar -tzf "$OUT" | rg -n '(^|/)(node_modules|vendor|build|releases|\.git|\.github|\.cache|\.nextcloud-test-instance)(/|$)|(^|/)SOURCE_MANIFEST\.txt$|\.(log|zip)$|\.tar\.gz$' >&2
 	exit 1
 fi
 
