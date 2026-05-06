@@ -2,6 +2,21 @@
 
 Datum: 2026-05-06 22:55:00 CET
 
+Neueste operative Notiz (2026-05-06 22:05 CET):
+- Neuer Version-1-Block: direkter ZIP-Download fuer einzelne SakuraAlbum-verwaltete Alben.
+- Backup vor Download-Testfenster: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-download-20260506-220450/app/`.
+- Wiederherstellungsprompt fuer Neustart: "Stelle SakuraAlbum aus Backup `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-download-20260506-220450/app/` nach `/var/www/nextcloud/apps/sakuraalbum/` wieder her, setze Eigentümer `www-data:www-data`, importiere bei Bedarf `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-download-20260506-220450/db-relevant-before-test.sql`, pruefe danach `occ app:list`, `occ route:list | grep sakuraalbum` und SakuraAlbum-Logs."
+- Implementiert:
+  - `ManagedAlbumDownloadService` prueft verwaltetes Album, Photos-Album-ID, Besitzer, Name, Datei-Anzahl, Lesbarkeit und Gesamtgroesse vor dem ZIP.
+  - Neue Routen: `POST /api/v1/albums/managed/download/prepare` und `GET /api/v1/albums/managed/download`.
+  - Admin-Limits: `maxDownloadFiles`, `maxDownloadBytes`; UI-Felder `Download: Dateilimit`, `Download: Bytelimit`.
+  - Personal-UI zeigt pro verwaltetem Album eine `ZIP`-Aktion.
+- Tests:
+  - `./scripts/self-check.sh` erfolgreich.
+  - Live-Test mit `albentest`: verwaltete Alben erzeugt, Download-Prepare fuer ein 1-Datei-Album erfolgreich (`fileCount=1`, `totalBytes=221080`), `zipPlan` konnte die Datei lesen.
+  - Limit-Test: `maxDownloadFiles=1` blockiert groesseres Album korrekt mit `album_download_file_limit_exceeded`; danach auf `1000` zurueckgesetzt.
+  - Cleanup: SakuraAlbum-Alben, Photos-Alben, Queue, Cursor und Runs fuer `albentest` wieder auf 0 gesetzt.
+
 Neueste operative Notiz (2026-05-06 21:48 CET):
 - Lokaler Stand wurde erneut gegen die produktive Installation geprueft.
 - Backup vor Live-Deployment angelegt: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-autosync-debug-20260506-214810/app/`.

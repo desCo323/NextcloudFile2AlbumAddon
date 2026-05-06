@@ -115,6 +115,29 @@ class PhotosAlbumAdapter {
 		return array_values(array_unique(array_map('intval', $qb->executeQuery()->fetchFirstColumn())));
 	}
 
+	/**
+	 * @return File[]
+	 */
+	public function listAlbumFiles(string $userId, int $albumId, int $limit): array {
+		$fileIds = $this->listAlbumFileIds($userId, $albumId);
+		if ($limit > 0 && count($fileIds) > $limit) {
+			$fileIds = array_slice($fileIds, 0, $limit);
+		}
+
+		$userFolder = $this->rootFolder->getUserFolder($userId);
+		$files = [];
+		foreach ($fileIds as $fileId) {
+			foreach ($userFolder->getById($fileId) as $node) {
+				if ($node instanceof File && $node->isReadable()) {
+					$files[] = $node;
+					break;
+				}
+			}
+		}
+
+		return $files;
+	}
+
 	public function removeFileFromAlbum(int $albumId, int $fileId): void {
 		$this->albumMapper->removeFile($albumId, $fileId);
 	}

@@ -26,6 +26,8 @@ class SettingsService {
 		'maxAlbumsPerRun' => 500,
 		'maxManagedAlbumsPerUser' => 0,
 		'maxManagedFilesPerUser' => 0,
+		'maxDownloadFiles' => 1000,
+		'maxDownloadBytes' => 2147483648,
 		'allowVideos' => false,
 		'jobIntervalMinutes' => 360,
 		'autoSyncMode' => 'manual',
@@ -77,6 +79,8 @@ class SettingsService {
 			'maxAlbumsPerRun' => $this->appConfig->getAppValueInt('maxAlbumsPerRun', self::ADMIN_DEFAULTS['maxAlbumsPerRun']),
 			'maxManagedAlbumsPerUser' => $this->appConfig->getAppValueInt('maxManagedAlbumsPerUser', self::ADMIN_DEFAULTS['maxManagedAlbumsPerUser']),
 			'maxManagedFilesPerUser' => $this->appConfig->getAppValueInt('maxManagedFilesPerUser', self::ADMIN_DEFAULTS['maxManagedFilesPerUser']),
+			'maxDownloadFiles' => $this->appConfig->getAppValueInt('maxDownloadFiles', self::ADMIN_DEFAULTS['maxDownloadFiles']),
+			'maxDownloadBytes' => $this->appConfig->getAppValueInt('maxDownloadBytes', self::ADMIN_DEFAULTS['maxDownloadBytes']),
 			'allowVideos' => $this->appConfig->getAppValueBool('allowVideos', self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->appConfig->getAppValueInt('jobIntervalMinutes', self::ADMIN_DEFAULTS['jobIntervalMinutes']),
 			'autoSyncMode' => $this->autoSyncMode($this->appConfig->getAppValueString('autoSyncMode', self::ADMIN_DEFAULTS['autoSyncMode'])),
@@ -109,6 +113,8 @@ class SettingsService {
 			'maxAlbumsPerRun' => $this->intValue($input['maxAlbumsPerRun'] ?? self::ADMIN_DEFAULTS['maxAlbumsPerRun'], 1, 5000),
 			'maxManagedAlbumsPerUser' => $this->intValue($input['maxManagedAlbumsPerUser'] ?? self::ADMIN_DEFAULTS['maxManagedAlbumsPerUser'], 0, 100000),
 			'maxManagedFilesPerUser' => $this->intValue($input['maxManagedFilesPerUser'] ?? self::ADMIN_DEFAULTS['maxManagedFilesPerUser'], 0, 5000000),
+			'maxDownloadFiles' => $this->intValue($input['maxDownloadFiles'] ?? self::ADMIN_DEFAULTS['maxDownloadFiles'], 1, 100000),
+			'maxDownloadBytes' => $this->intValue($input['maxDownloadBytes'] ?? self::ADMIN_DEFAULTS['maxDownloadBytes'], 1048576, 2147483647),
 			'allowVideos' => $this->boolValue($input['allowVideos'] ?? self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->intValue($input['jobIntervalMinutes'] ?? self::ADMIN_DEFAULTS['jobIntervalMinutes'], 5, 10080),
 			'autoSyncMode' => $this->autoSyncMode((string)($input['autoSyncMode'] ?? self::ADMIN_DEFAULTS['autoSyncMode'])),
@@ -138,6 +144,8 @@ class SettingsService {
 		$this->appConfig->setAppValueInt('maxAlbumsPerRun', $settings['maxAlbumsPerRun']);
 		$this->appConfig->setAppValueInt('maxManagedAlbumsPerUser', $settings['maxManagedAlbumsPerUser']);
 		$this->appConfig->setAppValueInt('maxManagedFilesPerUser', $settings['maxManagedFilesPerUser']);
+		$this->appConfig->setAppValueInt('maxDownloadFiles', $settings['maxDownloadFiles']);
+		$this->appConfig->setAppValueInt('maxDownloadBytes', $settings['maxDownloadBytes']);
 		$this->appConfig->setAppValueBool('allowVideos', $settings['allowVideos']);
 		$this->appConfig->setAppValueInt('jobIntervalMinutes', $settings['jobIntervalMinutes']);
 		$this->appConfig->setAppValueString('autoSyncMode', $settings['autoSyncMode']);
@@ -233,6 +241,8 @@ class SettingsService {
 			'syncDeleteMissingManagedAlbums' => $admin['syncDeleteMissingManagedAlbums'],
 			'maxManagedAlbumsPerUser' => $admin['maxManagedAlbumsPerUser'],
 			'maxManagedFilesPerUser' => $admin['maxManagedFilesPerUser'],
+			'maxDownloadFiles' => $admin['maxDownloadFiles'],
+			'maxDownloadBytes' => $admin['maxDownloadBytes'],
 		];
 	}
 

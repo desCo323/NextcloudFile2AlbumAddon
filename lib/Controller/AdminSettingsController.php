@@ -54,6 +54,8 @@ class AdminSettingsController extends Controller {
 					'maxAlbumsPerRun' => $settings['maxAlbumsPerRun'],
 					'maxManagedAlbumsPerUser' => $settings['maxManagedAlbumsPerUser'] ?? 0,
 					'maxManagedFilesPerUser' => $settings['maxManagedFilesPerUser'] ?? 0,
+					'maxDownloadFiles' => $settings['maxDownloadFiles'] ?? 0,
+					'maxDownloadBytes' => $settings['maxDownloadBytes'] ?? 0,
 				],
 			], 'Admin settings saved.');
 

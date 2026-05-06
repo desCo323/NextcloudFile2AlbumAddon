@@ -25,6 +25,13 @@ The per-user quota fields are hard server-side write limits:
 
 Quota failures block writes and background chunks before Photos albums are changed.
 
+Direct album ZIP downloads have separate admin limits:
+
+- `Download: Dateilimit` blocks direct ZIP streaming when an album contains too many files.
+- `Download: Bytelimit` blocks direct ZIP streaming when the readable album files are too large in total.
+
+These limits are checked before the ZIP response starts. Larger export queues are intentionally left for a later background-export feature.
+
 ## Load control
 
 Automatic updates are intentionally delayed and bounded. File events only queue affected source roots. The background job later processes due work with these limits:

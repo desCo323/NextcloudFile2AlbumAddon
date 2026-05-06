@@ -241,6 +241,16 @@
 						<span class="sakuraalbum-field-help">Die Quote zaehlt die von SakuraAlbum geplanten Medien pro verwaltetem Album, nicht den Speicherplatz der Originaldateien.</span>
 					</div>
 					<div class="sakuraalbum-field">
+						<label for="ska-download-files">Download: Dateilimit</label>
+						<input id="ska-download-files" type="number" min="1" max="100000" title="Maximale Dateien in einem direkten Album-ZIP. Groessere Alben werden blockiert." value="${escapeAttr(numberValue(settings.maxDownloadFiles, 1000))}">
+						<span class="sakuraalbum-field-help">Schuetzt CPU, Speicher und lange HTTP-Verbindungen.</span>
+					</div>
+					<div class="sakuraalbum-field">
+						<label for="ska-download-bytes">Download: Bytelimit</label>
+						<input id="ska-download-bytes" type="number" min="1048576" max="2147483647" title="Maximale Gesamtgroesse eines direkten Album-ZIPs in Bytes." value="${escapeAttr(numberValue(settings.maxDownloadBytes, 2147483647))}">
+						<span class="sakuraalbum-field-help">Groessere Alben werden vor dem ZIP-Stream blockiert; ein wartender Exportjob bleibt spaetere Ausbaustufe.</span>
+					</div>
+					<div class="sakuraalbum-field">
 						<label for="ska-job-interval">Job-Intervall Minuten</label>
 						<input id="ska-job-interval" type="number" min="5" title="Mindestabstand zwischen SakuraAlbum-Hintergrundlaeufen." value="${escapeAttr(numberValue(settings.jobIntervalMinutes, 360))}">
 					</div>
@@ -339,6 +349,8 @@
       maxAlbumsPerRun: fieldNumber("ska-job-albums"),
       maxManagedAlbumsPerUser: fieldNumber("ska-user-album-quota"),
       maxManagedFilesPerUser: fieldNumber("ska-user-file-quota"),
+      maxDownloadFiles: fieldNumber("ska-download-files"),
+      maxDownloadBytes: fieldNumber("ska-download-bytes"),
       allowVideos: document.getElementById("ska-allow-videos").checked,
       jobIntervalMinutes: fieldNumber("ska-job-interval"),
       autoSyncMode: autoMode,

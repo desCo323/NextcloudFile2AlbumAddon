@@ -27,6 +27,7 @@ The current development version focuses on safe configuration, preview planning,
 - Optional cleanup for SakuraAlbum-managed albums that no longer appear in the current plan; this is disabled by default.
 - Managed-album list and delete dry-run APIs for albums tracked in SakuraAlbum's own database.
 - Confirmed delete API that can delete only Photos albums still matching a SakuraAlbum managed record and a recent server-recorded delete-preview fingerprint.
+- Direct ZIP download for a single SakuraAlbum-managed album, guarded by admin file and byte limits before streaming starts.
 - App-owned tables for future tracking of generated albums and sync runs.
 - App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
 - Admin debug mode with stricter diagnostic logging and a log viewer.
@@ -39,6 +40,8 @@ The current development version focuses on safe configuration, preview planning,
 
 - Generated albums are intended to be tracked in `sakuraalbum_albums`.
 - Bulk deletion must only operate on app-tracked generated albums.
+- Album ZIP downloads must only operate on app-tracked generated albums that still match the Photos album id, owner, and name.
+- Direct ZIP downloads are blocked before streaming if the album exceeds the configured file or byte limit.
 - Deletion requires the exact confirmation text `DELETE_MANAGED_ALBUMS`.
 - Deletion requires a matching plan fingerprint from a recent successful delete dry-run stored by the server.
 - Deletion re-checks the Photos album id, owner, and current name immediately before deleting.

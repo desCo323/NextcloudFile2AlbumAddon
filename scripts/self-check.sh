@@ -164,6 +164,18 @@ if ! rg -n "sourceFolders" lib/Service/SettingsService.php lib/Service/AlbumPlan
 	echo "Structured source folder rules are missing" >&2
 	exit 1
 fi
+if ! rg -n "ManagedAlbumDownloadService" lib/Service/ManagedAlbumDownloadService.php lib/Controller/ManagedAlbumController.php >/dev/null; then
+	echo "Managed album download service/controller is missing" >&2
+	exit 1
+fi
+if ! rg -n "albums/managed/download" appinfo/routes.php js/personal-settings.js >/dev/null; then
+	echo "Managed album download API/UI is missing" >&2
+	exit 1
+fi
+if ! rg -n "maxDownloadFiles|maxDownloadBytes" lib/Service/SettingsService.php js/admin-settings.js >/dev/null; then
+	echo "Managed album download admin limits are missing" >&2
+	exit 1
+fi
 if ! rg -n "overlapping_source_paths" lib/Service/AlbumPlanService.php lib/Service/AlbumSyncService.php js/personal-settings.js >/dev/null; then
 	echo "Overlapping source folder safety guard is missing" >&2
 	exit 1

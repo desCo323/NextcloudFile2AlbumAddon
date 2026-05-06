@@ -37,6 +37,8 @@ return [
 		['name' => 'sync#status', 'url' => '/api/v1/sync/status', 'verb' => 'GET'],
 		['name' => 'sync#queueUpdate', 'url' => '/api/v1/sync/queue-update', 'verb' => 'POST'],
 		['name' => 'managedAlbum#index', 'url' => '/api/v1/albums/managed', 'verb' => 'GET'],
+		['name' => 'managedAlbum#prepareDownload', 'url' => '/api/v1/albums/managed/download/prepare', 'verb' => 'POST'],
+		['name' => 'managedAlbum#download', 'url' => '/api/v1/albums/managed/download', 'verb' => 'GET'],
 		['name' => 'managedAlbum#dryRunDelete', 'url' => '/api/v1/albums/delete/dry-run', 'verb' => 'POST'],
 		['name' => 'managedAlbum#delete', 'url' => '/api/v1/albums/delete', 'verb' => 'POST'],
 	],

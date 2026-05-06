@@ -33,6 +33,8 @@ Administrators may also set low-load time windows and per-user quotas. If a quot
 
 `Verwaltete Alben` lists only albums that SakuraAlbum created or updated and still tracks. Deletion requires a preview and the exact confirmation text, and renamed or foreign albums are blocked.
 
+Each listed managed album has a `ZIP` action. SakuraAlbum first checks that the album is still clearly managed by your account and that it fits the administrator's direct-download limits. If the check passes, the browser receives a ZIP stream of that one album. If the album is too large, the download is blocked before the server starts streaming.
+
 ## Error reports
 
 `Fehlerbericht vorbereiten` creates a redacted diagnostic report with your SakuraAlbum settings, recent runs, queue state, managed-album summary, and recent app logs. Direct mail sending is planned for a later release and is currently disabled.

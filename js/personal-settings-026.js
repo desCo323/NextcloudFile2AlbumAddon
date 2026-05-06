@@ -955,6 +955,7 @@
 							<th>Medien</th>
 							<th>Status</th>
 							<th>Letzter Lauf</th>
+							<th>Download</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -968,6 +969,7 @@
 								<td>${escapeText(album.mediaCount)}</td>
 								<td>${escapeText(album.status)}</td>
 								<td>${escapeText(formatTime(album.lastSyncAt))}</td>
+								<td><button class="ska-managed-download" type="button" data-managed-id="${escapeAttr(album.managedId)}" title="Prueft Limits und laedt dieses verwaltete Album als ZIP herunter.">ZIP</button></td>
 							</tr>
 						`,
               )
@@ -983,7 +985,30 @@
     Array.from(document.querySelectorAll(".ska-managed-check")).forEach((input) =>
       input.addEventListener("change", updateManagedSelectedCount),
     );
+    Array.from(document.querySelectorAll(".ska-managed-download")).forEach((button) =>
+      button.addEventListener("click", () => prepareManagedDownload(Number.parseInt(button.dataset.managedId, 10))),
+    );
     updateManagedSelectedCount();
+  }
+
+  async function prepareManagedDownload(managedId) {
+    const status = document.getElementById("ska-status");
+    if (!Number.isFinite(managedId) || managedId <= 0) {
+      status.textContent = "Ungueltiges verwaltetes Album.";
+      return;
+    }
+
+    status.textContent = "Pruefe Album-Download...";
+    try {
+      const response = await request("/apps/sakuraalbum/api/v1/albums/managed/download/prepare", "POST", {
+        managedId,
+      });
+      status.textContent = `Download startet: ${response.fileCount || 0} Dateien, ${formatBytes(response.totalBytes || 0)}.`;
+      const path = "/apps/sakuraalbum/api/v1/albums/managed/download";
+      window.location.href = `${OC.generateUrl(path)}?managedId=${encodeURIComponent(String(managedId))}`;
+    } catch (error) {
+      status.textContent = `Download blockiert: ${error.message}`;
+    }
   }
 
   function renderDeleteResult(result) {
@@ -1617,6 +1642,21 @@
       return "";
     }
     return new Date(timestamp * 1000).toLocaleString();
+  }
+
+  function formatBytes(bytes) {
+    const value = Number(bytes);
+    if (!Number.isFinite(value) || value <= 0) {
+      return "0 B";
+    }
+    const units = ["B", "KB", "MB", "GB"];
+    let current = value;
+    let unit = 0;
+    while (current >= 1024 && unit < units.length - 1) {
+      current /= 1024;
+      unit++;
+    }
+    return `${current.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
   }
 
   function escapeText(value) {

@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace OCA\SakuraAlbum\Controller;
 
 use OCA\SakuraAlbum\AppInfo\Application;
+use OCA\SakuraAlbum\Service\ManagedAlbumDownloadService;
 use OCA\SakuraAlbum\Service\ManagedAlbumDeletionService;
 use OCA\SakuraAlbum\Service\SyncSafetyException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Response;
+use OCP\AppFramework\Http\ZipResponse;
 use OCP\IRequest;
 
 class ManagedAlbumController extends Controller {
@@ -18,6 +21,7 @@ class ManagedAlbumController extends Controller {
 		IRequest $request,
 		private readonly string $userId,
 		private readonly ManagedAlbumDeletionService $managedAlbumDeletionService,
+		private readonly ManagedAlbumDownloadService $managedAlbumDownloadService,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -43,6 +47,49 @@ class ManagedAlbumController extends Controller {
 		} catch (\Throwable) {
 			return new JSONResponse([
 				'error' => 'managed_album_delete_dry_run_failed',
+			], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	#[NoAdminRequired]
+	public function prepareDownload(): JSONResponse {
+		try {
+			return new JSONResponse($this->managedAlbumDownloadService->prepare(
+				$this->userId,
+				$this->intParam('managedId', 0, 1, PHP_INT_MAX),
+			));
+		} catch (SyncSafetyException $e) {
+			return $this->safetyResponse($e);
+		} catch (\Throwable) {
+			return new JSONResponse([
+				'error' => 'managed_album_download_prepare_failed',
+			], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	#[NoAdminRequired]
+	public function download(): Response {
+		try {
+			$plan = $this->managedAlbumDownloadService->zipPlan(
+				$this->userId,
+				$this->intParam('managedId', 0, 1, PHP_INT_MAX),
+			);
+			$response = new ZipResponse($this->request, (string)$plan['name']);
+			foreach ($plan['files'] as $entry) {
+				$file = $entry['file'];
+				$handle = $file->fopen('rb');
+				if (!is_resource($handle)) {
+					continue;
+				}
+				$response->addResource($handle, (string)$entry['internalName'], (int)$file->getSize(), (int)$file->getMTime());
+			}
+
+			return $response;
+		} catch (SyncSafetyException $e) {
+			return $this->safetyResponse($e);
+		} catch (\Throwable) {
+			return new JSONResponse([
+				'error' => 'managed_album_download_failed',
 			], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}
