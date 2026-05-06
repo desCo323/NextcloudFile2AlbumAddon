@@ -30,9 +30,18 @@ Run from the app directory:
 
 ```bash
 ./scripts/self-check.sh
+php -l scripts/live-smoke.php
 ```
 
 Expected result: `Self-check passed`.
+
+For a minimal controlled server smoke after backup/deploy:
+
+```bash
+sudo -u www-data SAKURAALBUM_LIVE_SMOKE=1 bash /var/www/nextcloud/apps/sakuraalbum/scripts/live-smoke.sh
+```
+
+The smoke creates one tiny PNG under `/Photos/SakuraAlbumV1Smoke` for `albentest`, writes one managed album, prepares the ZIP download, resets SakuraAlbum for `albentest`, removes the smoke folder, and restores previous SakuraAlbum admin settings.
 
 ## Manual checks after activation
 

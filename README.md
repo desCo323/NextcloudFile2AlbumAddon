@@ -102,6 +102,14 @@ php occ sakuraalbum:delete-generated --user albentest --dry-run --all
 
 These helpers are intentionally non-destructive.
 
+Minimal controlled live smoke after backup and deploy:
+
+```bash
+sudo -u www-data SAKURAALBUM_LIVE_SMOKE=1 bash /var/www/nextcloud/apps/sakuraalbum/scripts/live-smoke.sh
+```
+
+The smoke is intentionally small: it uses only `albentest`, creates one tiny PNG in `/Photos/SakuraAlbumV1Smoke`, writes one managed album, checks ZIP preparation, runs the guarded account reset, removes the smoke folder, and restores SakuraAlbum admin settings.
+
 ## Production test rule
 
 Do not enable this app on a production Nextcloud before a backup and restore prompt have been prepared. Live tests may only use the Nextcloud user `albentest`.

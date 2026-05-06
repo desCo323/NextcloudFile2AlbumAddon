@@ -31,10 +31,20 @@ This checklist tracks the publication state for SakuraAlbum.
 ## Packaging
 
 - Run `./scripts/self-check.sh`.
+- Run `php -l scripts/live-smoke.php`.
+- Run `bash -n scripts/live-smoke.sh`.
 - Run `./scripts/build-artifact.sh`.
 - Validate the package self-check after unpacking.
 - Scan source and package for GitHub token patterns and the known test password pattern.
 - Confirm the package contains no `.git`, `node_modules`, `vendor`, caches, logs, nested archives, or local test artifacts.
+
+## Controlled live smoke
+
+- Keep SakuraAlbum globally disabled before and after the window.
+- Deploy only after an app/database backup and restore prompt were written to `docs/SESSION_STATE.md`.
+- Run the live smoke only with `SAKURAALBUM_LIVE_SMOKE=1` and the test user `albentest` through `scripts/live-smoke.sh`.
+- Confirm the smoke uses the isolated source `/Photos/SakuraAlbumV1Smoke`.
+- Confirm cleanup leaves no active SakuraAlbum-managed albums, no dirty paths, no sync cursors, and no Photos albums for the smoke source.
 
 ## Store blocker to re-review
 

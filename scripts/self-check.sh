@@ -192,6 +192,14 @@ if ! rg -n "deleteForUser" lib/Db/DirtyPathMapper.php lib/Db/SyncCursorMapper.ph
 	echo "Account reset queue/cursor cleanup is missing" >&2
 	exit 1
 fi
+if ! rg -n "SAKURAALBUM_LIVE_SMOKE|SakuraAlbumV1Smoke|AccountResetService" scripts/live-smoke.php >/dev/null; then
+	echo "Controlled live smoke test helper is missing" >&2
+	exit 1
+fi
+if ! bash -n scripts/live-smoke.sh || ! rg -n "live-smoke.php" scripts/live-smoke.sh >/dev/null; then
+	echo "Controlled live smoke shell wrapper is invalid" >&2
+	exit 1
+fi
 if ! rg -n "overlapping_source_paths" lib/Service/AlbumPlanService.php lib/Service/AlbumSyncService.php js/personal-settings.js >/dev/null; then
 	echo "Overlapping source folder safety guard is missing" >&2
 	exit 1

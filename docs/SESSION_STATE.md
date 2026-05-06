@@ -2,6 +2,35 @@
 
 Datum: 2026-05-06 23:18:00 CET
 
+Neueste operative Notiz (2026-05-06 22:39 CET):
+- Version-1-Releaseblock gestartet.
+- Lokaler Stand wurde auf `1.0.0` angehoben:
+  - `appinfo/info.xml` und `package.json` auf `1.0.0`.
+  - Neue cache-busting Assets `admin-settings-100.js` und `personal-settings-100.js`; Settings laden diese Dateien.
+  - `CHANGELOG.md`, `CHANGELOG.en.md`, README, Testplan und Store-Checklist aktualisiert.
+  - Neues kontrolliertes Smoke-Test-Hilfsscript `scripts/live-smoke.php`.
+- Lokale Checks vor Live-Fenster:
+  - `php -l scripts/live-smoke.php` erfolgreich.
+  - `./scripts/self-check.sh` erfolgreich.
+  - `node --check js/admin-settings-100.js` und `node --check js/personal-settings-100.js` erfolgreich.
+  - `git diff --check` erfolgreich.
+  - Secret-Scan auf GitHub-Token/Testpasswort/DB-Passwort erfolgreich ohne Treffer.
+  - `./scripts/build-artifact.sh` erfolgreich: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.0.tar.gz`, SHA256 `95dc5824ad1aa6651b18dc64a934db3fe3cd0feb35c0290328d33d627e248099`.
+  - Entpacktes Paket hat `./scripts/self-check.sh` bestanden.
+- Backup vor V1-Smoke-Testfenster: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-v1-smoke-20260506-223925/app/`.
+- Wiederherstellungsprompt fuer Neustart: "Stelle SakuraAlbum aus Backup `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-v1-smoke-20260506-223925/app/` nach `/var/www/nextcloud/apps/sakuraalbum/` wieder her, setze Eigentümer `www-data:www-data`, importiere bei Bedarf `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-v1-smoke-20260506-223925/db-relevant-before-test.sql`, setze danach `occ config:app:set sakuraalbum globalEnabled --value=false`, `occ config:app:set sakuraalbum autoSyncMode --value=manual`, `occ config:app:set sakuraalbum debugMode --value=false`, starte `systemctl restart php8.3-fpm`, pruefe `occ status`, `occ app:list | grep sakuraalbum`, `occ route:list | grep sakuraalbum` und `https://chaosnet.me/status.php`."
+- V1-Live-Testfenster Ergebnis:
+  - Deployment nach `/var/www/nextcloud/apps/sakuraalbum/` durchgefuehrt.
+  - Versionserhoehung loeste erwartbar Nextcloud-Upgrade-Modus aus; `occ upgrade` wurde im Backup-Testfenster zweimal ausgefuehrt. Ergebnis: Maintenance aus, `needsDbUpgrade=false`, SakuraAlbum `1.0.0`.
+  - Nebenbefund: Nextcloud deaktivierte die fremde App `files_bpm` als inkompatibel; nicht automatisch wieder aktiviert.
+  - Erster direkter PHP-Smoke-Aufruf war auf dieser Installation nicht geeignet; Wrapper `scripts/live-smoke.sh` wurde ergaenzt und getestet.
+  - Produktiver Smoke-Befehl erfolgreich: `sudo -u www-data SAKURAALBUM_LIVE_SMOKE=1 bash /var/www/nextcloud/apps/sakuraalbum/scripts/live-smoke.sh`.
+  - Smoke-Ergebnis: 1 Testdatei in `/Photos/SakuraAlbumV1Smoke`, 1 geplantes Album, 1 Link geschrieben, ZIP-Prepare `fileCount=1`, `totalBytes=68`, Reset loeschte 1 verwaltetes Photos-Album.
+  - Cleanup geprueft: 0 aktive SakuraAlbum-Alben, 0 Dirty-Paths, 0 Cursor, 0 Smoke-Photos-Alben, 0 Smoke-Dateien.
+  - Nach Test SakuraAlbum produktiv wieder sicher gestellt: `globalEnabled=0`, `autoSyncMode=manual`, `debugMode=0`.
+  - Nextcloud geprueft: `occ status` sauber, `https://chaosnet.me/status.php` HTTP 200.
+  - Finale Paket-SHA256 nach Wrapper-Korrektur: `46a77f7c639b38d74a15a3744c3074e5ecc8fd8c1497d39e52ed30d5b8758cc5` fuer `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.0.tar.gz`.
+
 Neueste operative Notiz (2026-05-06 23:18 CET):
 - Neuer Version-1-Härtungsblock gestartet: Konto-Reset, bessere Ordnerregel-Erklaerung und Reset-Selbsttests.
 - Backup vor Reset-Testfenster: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-account-reset-20260506-221636/app/`.

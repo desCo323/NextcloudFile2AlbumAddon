@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0
+
+- Marked SakuraAlbum as the first version-1 release candidate.
+- Added guarded direct ZIP download for individual SakuraAlbum-managed albums with admin-controlled file and byte limits.
+- Added a personal account reset flow guarded by a reset preview and exact `RESET_SAKURAALBUM` confirmation.
+- Reset now deletes only clearly SakuraAlbum-managed Photos albums, clears SakuraAlbum queue/cursor state, and removes the user's SakuraAlbum settings.
+- Improved source-folder rule UX with clearer explanations for global defaults, custom depth, and `Alles in ein Album`.
+- Added a controlled live smoke-test helper for tiny `albentest` test windows.
+- Documented post-crash recovery status and the production safety rollback process.
+
 ## 0.2.6
 
 - Added safe OCC commands for controlled test windows:

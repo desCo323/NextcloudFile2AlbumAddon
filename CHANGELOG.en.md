@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0
+
+- Marked SakuraAlbum as the first version-1 release candidate.
+- Added guarded direct ZIP downloads for individual SakuraAlbum-managed albums.
+- Added a guarded personal account reset with preview and exact confirmation.
+- Improved source-folder rule explanations and reset documentation.
+- Added a controlled live smoke-test helper for small `albentest` test windows.
+- Documented the production rollback and safety status after the server reboot during testing.
+
 ## 0.2.6
 
 - Added safe OCC commands for controlled test windows.
