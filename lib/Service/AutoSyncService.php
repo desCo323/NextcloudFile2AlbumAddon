@@ -35,7 +35,7 @@ class AutoSyncService {
 		if ($path === null) {
 			return;
 		}
-		$dirtyPath = $this->affectedIncludePath($userId, $path);
+		$dirtyPath = $this->affectedAutoSyncPath($userId, $path);
 		if ($dirtyPath === null) {
 			return;
 		}
@@ -304,20 +304,54 @@ class AutoSyncService {
 		];
 	}
 
-	private function affectedIncludePath(string $userId, string $path): ?string {
+	private function affectedAutoSyncPath(string $userId, string $path): ?string {
 		$settings = $this->settingsService->getEffectiveUserSettings($userId);
 		if (($settings['enabled'] ?? false) !== true || ($settings['autoSyncActive'] ?? false) !== true) {
 			return null;
 		}
 
-		foreach (($settings['includePaths'] ?? []) as $includePath) {
-			$includePath = trim((string)$includePath, '/');
-			if ($includePath === '' || $path === $includePath || str_starts_with($path, $includePath . '/')) {
-				return $includePath === '' ? '/' : $includePath;
+		$normalPath = PathHelper::normalizeUserPath($path);
+		foreach ($this->autoSyncQueuePaths($settings) as $syncPath) {
+			$normalSyncPath = PathHelper::normalizeUserPath($syncPath);
+			if ($normalSyncPath === '') {
+				return '/';
+			}
+			if ($normalPath === $normalSyncPath || str_starts_with($normalPath, $normalSyncPath . '/')) {
+				return '/' . $normalSyncPath;
 			}
 		}
 
 		return null;
+	}
+
+	private function autoSyncQueuePaths(array $settings): array {
+		$paths = [];
+		foreach (($settings['sourceFolders'] ?? []) as $source) {
+			if (!is_array($source) || (($source['enabled'] ?? true) !== true)) {
+				continue;
+			}
+			$path = (string)($source['path'] ?? '');
+			if ($path === '') {
+				continue;
+			}
+			$paths[] = $path;
+		}
+
+		if ($paths === []) {
+			$paths = array_merge($paths, $settings['includePaths'] ?? []);
+		}
+
+		$unique = [];
+		foreach ($paths as $path) {
+			if (!is_string($path)) {
+				continue;
+			}
+			$normalized = PathHelper::normalizeUserPath($path);
+			$key = mb_strtolower($normalized);
+			$unique[$key] = '/'. $normalized;
+		}
+
+		return array_values($unique);
 	}
 
 	private function relativeUserPath(Node $node, string $userId): ?string {
