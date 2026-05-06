@@ -48,12 +48,17 @@ class AlbumPlanService {
 			return $this->errorPreview('user_folder_unavailable', 'User folder is unavailable.');
 		}
 
-		$includePaths = $settings['includePaths'] ?? [];
-		if ($includePaths === []) {
+		$sources = $this->sourceFolders($settings);
+		if ($sources === []) {
 			$warnings[] = ['code' => 'no_include_paths', 'message' => 'No include folders configured.'];
 		}
+		array_push($warnings, ...$this->sourcePathWarnings($sources));
 
-		foreach ($includePaths as $includePath) {
+		foreach ($sources as $source) {
+			if (($source['enabled'] ?? true) !== true) {
+				continue;
+			}
+			$includePath = (string)($source['path'] ?? '');
 			try {
 				$rootPath = PathHelper::normalizeUserPath((string)$includePath);
 			} catch (\InvalidArgumentException) {
@@ -73,7 +78,8 @@ class AlbumPlanService {
 				continue;
 			}
 
-			$this->scanFolder($rootNode, $rootPath, $rootPath, 0, $settings, $limits, $includeFiles, $albums, $summary, $warnings);
+			$sourceSettings = $this->settingsForSource($settings, $source);
+			$this->scanFolder($rootNode, $rootPath, $rootPath, 0, $sourceSettings, $limits, $includeFiles, $albums, $summary, $warnings, (string)($source['id'] ?? ''));
 			if ($summary['truncated']) {
 				break;
 			}
@@ -102,6 +108,7 @@ class AlbumPlanService {
 		array &$albums,
 		array &$summary,
 		array &$warnings,
+		string $sourceId,
 	): void {
 		if ($summary['truncated']) {
 			return;
@@ -147,11 +154,12 @@ class AlbumPlanService {
 				$summary['mediaFiles']++;
 				$summary['plannedLinks']++;
 				$targetPath = $this->targetAlbumPath($sourceRoot, $currentPath, (int)$settings['albumDepth']);
-				$key = $sourceRoot . "\n" . $targetPath;
+				$key = $sourceId . "\n" . $sourceRoot . "\n" . $targetPath;
 				$filePath = trim($currentPath . '/' . $node->getName(), '/');
 
 				if (!isset($albums[$key])) {
 					$albums[$key] = [
+						'sourceId' => $sourceId,
 						'sourceRoot' => PathHelper::displayPath($sourceRoot),
 						'targetPath' => PathHelper::displayPath($targetPath),
 						'albumName' => $this->albumNameFormatter->format($sourceRoot, $targetPath, $settings),
@@ -180,7 +188,7 @@ class AlbumPlanService {
 				continue;
 			}
 			$childPath = trim($currentPath . '/' . $node->getName(), '/');
-			$this->scanFolder($node, $sourceRoot, $childPath, $depth + 1, $settings, $limits, $includeFiles, $albums, $summary, $warnings);
+			$this->scanFolder($node, $sourceRoot, $childPath, $depth + 1, $settings, $limits, $includeFiles, $albums, $summary, $warnings, $sourceId);
 			if ($summary['truncated']) {
 				return;
 			}
@@ -257,6 +265,76 @@ class AlbumPlanService {
 				$albums[$key]['collision'] = true;
 			}
 		}
+	}
+
+	private function sourceFolders(array $settings): array {
+		if (isset($settings['sourceFolders']) && is_array($settings['sourceFolders']) && $settings['sourceFolders'] !== []) {
+			return array_values($settings['sourceFolders']);
+		}
+
+		return array_map(static fn (string $path): array => [
+			'id' => 'legacy_' . substr(hash('sha256', $path), 0, 16),
+			'path' => $path,
+			'enabled' => true,
+			'effectiveAlbumDepth' => (int)($settings['albumDepth'] ?? 1),
+			'effectiveNamingTemplate' => (string)($settings['namingTemplate'] ?? 'root_relative'),
+			'effectiveSeparator' => (string)($settings['separator'] ?? ' - '),
+		], $settings['includePaths'] ?? []);
+	}
+
+	private function settingsForSource(array $settings, array $source): array {
+		$result = $settings;
+		$result['albumDepth'] = (int)($source['effectiveAlbumDepth'] ?? $settings['albumDepth'] ?? 1);
+		$result['namingTemplate'] = (string)($source['effectiveNamingTemplate'] ?? $settings['namingTemplate'] ?? 'root_relative');
+		$result['separator'] = (string)($source['effectiveSeparator'] ?? $settings['separator'] ?? ' - ');
+		return $result;
+	}
+
+	private function sourcePathWarnings(array $sources): array {
+		$warnings = [];
+		$paths = [];
+
+		foreach ($sources as $source) {
+			if (($source['enabled'] ?? true) !== true) {
+				continue;
+			}
+			try {
+				$path = PathHelper::normalizeUserPath((string)($source['path'] ?? ''));
+			} catch (\InvalidArgumentException) {
+				continue;
+			}
+			$paths[] = [
+				'id' => (string)($source['id'] ?? ''),
+				'path' => $path,
+				'displayPath' => PathHelper::displayPath($path),
+			];
+		}
+
+		for ($i = 0, $count = count($paths); $i < $count; $i++) {
+			for ($j = $i + 1; $j < $count; $j++) {
+				$left = $paths[$i];
+				$right = $paths[$j];
+				if ($this->pathsOverlap($left['path'], $right['path'])) {
+					$warnings[] = [
+						'code' => 'overlapping_source_paths',
+						'path' => $left['displayPath'],
+						'otherPath' => $right['displayPath'],
+					];
+				}
+			}
+		}
+
+		return $warnings;
+	}
+
+	private function pathsOverlap(string $left, string $right): bool {
+		if ($left === $right) {
+			return true;
+		}
+		if ($left === '' || $right === '') {
+			return true;
+		}
+		return str_starts_with($left, $right . '/') || str_starts_with($right, $left . '/');
 	}
 
 	private function errorPreview(string $code, string $message): array {

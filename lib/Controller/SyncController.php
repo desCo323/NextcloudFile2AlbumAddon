@@ -6,6 +6,7 @@ namespace OCA\SakuraAlbum\Controller;
 
 use OCA\SakuraAlbum\AppInfo\Application;
 use OCA\SakuraAlbum\Service\AlbumSyncService;
+use OCA\SakuraAlbum\Service\AutoSyncService;
 use OCA\SakuraAlbum\Service\SyncSafetyException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -18,6 +19,7 @@ class SyncController extends Controller {
 		IRequest $request,
 		private readonly string $userId,
 		private readonly AlbumSyncService $albumSyncService,
+		private readonly AutoSyncService $autoSyncService,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -61,6 +63,19 @@ class SyncController extends Controller {
 		return new JSONResponse([
 			'runs' => $this->albumSyncService->recentRuns($this->userId, $this->intParam('limit', 10, 1, 100)),
 		]);
+	}
+
+	#[NoAdminRequired]
+	public function status(): JSONResponse {
+		return new JSONResponse([
+			'runs' => $this->albumSyncService->recentRuns($this->userId, $this->intParam('limit', 5, 1, 20)),
+			'queue' => $this->autoSyncService->queueStatusForUser($this->userId, $this->intParam('sampleLimit', 8, 1, 20)),
+		]);
+	}
+
+	#[NoAdminRequired]
+	public function queueUpdate(): JSONResponse {
+		return new JSONResponse($this->autoSyncService->queueUserRefresh($this->userId, 'manual_refresh'));
 	}
 
 	private function safetyResponse(SyncSafetyException $e): JSONResponse {

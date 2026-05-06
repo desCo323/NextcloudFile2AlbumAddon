@@ -7,8 +7,10 @@ The current development version focuses on safe configuration, preview planning,
 ## Current scope
 
 - Admin settings for global enablement, default folders, scan limits, job limits, video policy, and automatic update load controls.
-- Personal settings for opt-in, folders, exclusions, naming template, separator, depth, and media type.
+- Personal settings for opt-in, selectable source folders, folder-specific rules, exclusions, naming template, separator, depth, and media type.
+- Source folders can use global defaults, a folder-specific depth, or `Alles in ein Album` so a large subtree can be represented as one Photos album.
 - Personal automatic-update opt-in that is only active when admins allow file-event mode.
+- Personal status view with queue state, recent run details, expandable diagnostics, and a 0-100% progress bar based on the running sync summary.
 - Preview API that scans only the current user folder and returns planned albums without writing album data.
 - Dry-run API that checks generated album names against real Photos albums without writing.
 - Confirmed write API that can create/link albums only when admin and user settings are both enabled and the request matches a recent server-recorded dry-run fingerprint.
@@ -42,8 +44,11 @@ The current development version focuses on safe configuration, preview planning,
 - File events never perform heavy scans or album writes directly. They only queue dirty paths for a later background job.
 - File-event queue rows are collapsed to the affected include root so a large upload inside one selected folder does not create one independent sync job per file.
 - File-event auto-sync requires three gates: global admin enablement, user enablement, and the user's explicit automatic-update opt-in.
+- Settings changes can queue all enabled source folders for the next background run when automatic sync is active.
+- Active source folders must not overlap. A nested source selection such as `/Photos` plus `/Photos/Trip` is blocked before writing so media is not planned twice.
 - Background sync is non-parallel and bounded by admin settings for debounce, interval, users per run, runtime, event count, folder count, file count, and album count.
 - Background sync summaries include seen events, reserved events, and event-limit hits so admins can tune load profiles from real diagnostics.
+- Write runs update the current run summary while processing so the UI can report stage, processed albums, processed links, and error counters.
 - Background sync recovers stale processing locks and logs runtime-limit stops so interrupted cron work can be diagnosed.
 - Automatic updates mean "scheduled as soon as allowed by debounce and load limits", not synchronous writes during uploads or deletes.
 - SakuraAlbum's global admin enable setting is stored under an app-owned key separate from Nextcloud's reserved app activation flag.

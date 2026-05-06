@@ -37,6 +37,17 @@ class SyncRunMapper extends QBMapper {
 		return $this->update($run);
 	}
 
+	public function updateRunningSummary(int $runId, string $userId, array $summary): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->tableName)
+			->set('summary_json', $qb->createNamedParameter(json_encode($summary, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES)))
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($runId)))
+			->andWhere($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->eq('status', $qb->createNamedParameter('running')));
+
+		return $qb->executeStatement();
+	}
+
 	/**
 	 * @return SyncRun[]
 	 */

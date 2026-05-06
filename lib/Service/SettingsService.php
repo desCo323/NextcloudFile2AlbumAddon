@@ -40,6 +40,7 @@ class SettingsService {
 	private const USER_DEFAULTS = [
 		'enabled' => false,
 		'includePaths' => [],
+		'sourceFolders' => [],
 		'excludePatterns' => [],
 		'namingTemplate' => 'root_relative',
 		'separator' => ' - ',
@@ -151,21 +152,32 @@ class SettingsService {
 			$user = $this->normalizeUserSettings(array_merge($user, $overrides), includeAdminDefaults: false);
 		}
 
-		$includePaths = $user['includePaths'] !== [] ? $user['includePaths'] : $admin['defaultIncludePaths'];
+		$sourceFolders = $user['sourceFolders'] !== []
+			? $user['sourceFolders']
+			: $this->sourceFoldersFromPaths(
+				$user['includePaths'] !== [] ? $user['includePaths'] : $admin['defaultIncludePaths'],
+				$user,
+			);
+		$includePaths = array_values(array_map(
+			static fn (array $source): string => (string)$source['path'],
+			array_filter($sourceFolders, static fn (array $source): bool => ($source['enabled'] ?? true) === true),
+		));
 		$excludePatterns = array_values(array_unique(array_merge(
 			$admin['defaultExcludePatterns'],
 			$user['excludePatterns'],
 		)));
+		$defaultAlbumDepth = min($user['albumDepth'], $admin['maxScanDepth']);
 
 		return [
 			'enabled' => $admin['enabled'] && $user['enabled'],
 			'adminEnabled' => $admin['enabled'],
 			'userEnabled' => $user['enabled'],
 			'includePaths' => $includePaths,
+			'sourceFolders' => $this->effectiveSourceFolders($sourceFolders, $user, $admin),
 			'excludePatterns' => $excludePatterns,
 			'namingTemplate' => $user['namingTemplate'],
 			'separator' => $user['separator'],
-			'albumDepth' => min($user['albumDepth'], $admin['maxScanDepth']),
+			'albumDepth' => $defaultAlbumDepth,
 			'includeImages' => $user['includeImages'],
 			'includeVideos' => $admin['allowVideos'] && $user['includeVideos'],
 			'autoSyncEnabled' => $user['autoSyncEnabled'],
@@ -239,6 +251,7 @@ class SettingsService {
 		return [
 			'enabled' => $this->boolValue($input['enabled'] ?? $defaults['enabled']),
 			'includePaths' => $this->pathList($input['includePaths'] ?? $defaults['includePaths']),
+			'sourceFolders' => $this->sourceFolderList($input['sourceFolders'] ?? $defaults['sourceFolders']),
 			'excludePatterns' => $this->stringList($input['excludePatterns'] ?? $defaults['excludePatterns']),
 			'namingTemplate' => $namingTemplate,
 			'separator' => AlbumNameFormatter::sanitizeSeparator((string)($input['separator'] ?? $defaults['separator'])),
@@ -253,12 +266,108 @@ class SettingsService {
 		$paths = $this->stringList($value);
 		$normalized = [];
 		foreach ($paths as $path) {
-			$path = '/' . PathHelper::normalizeUserPath($path);
+			try {
+				$path = '/' . PathHelper::normalizeUserPath($path);
+			} catch (\InvalidArgumentException) {
+				continue;
+			}
 			$path = rtrim($path, '/');
 			$normalized[] = $path === '' ? '/' : $path;
 		}
 
 		return array_values(array_unique($normalized));
+	}
+
+	private function sourceFolderList(mixed $value): array {
+		if (!is_array($value)) {
+			return [];
+		}
+
+		$result = [];
+		$seen = [];
+		foreach ($value as $item) {
+			if (!is_array($item)) {
+				continue;
+			}
+
+			$paths = $this->pathList([$item['path'] ?? '']);
+			if ($paths === []) {
+				continue;
+			}
+			$path = $paths[0];
+			$key = mb_strtolower($path);
+			if (isset($seen[$key])) {
+				continue;
+			}
+			$seen[$key] = true;
+
+			$mode = (string)($item['mode'] ?? 'default');
+			if (!in_array($mode, ['default', 'depth', 'single_album'], true)) {
+				$mode = 'default';
+			}
+			$namingTemplate = (string)($item['namingTemplate'] ?? '');
+			if ($namingTemplate !== '' && !in_array($namingTemplate, AlbumNameFormatter::TEMPLATES, true)) {
+				$namingTemplate = '';
+			}
+
+			$result[] = [
+				'id' => $this->sourceFolderId($path),
+				'path' => $path,
+				'enabled' => $this->boolValue($item['enabled'] ?? true),
+				'mode' => $mode,
+				'albumDepth' => $this->intValue($item['albumDepth'] ?? 1, 0, 20),
+				'namingTemplate' => $namingTemplate,
+				'separator' => $this->optionalSeparator($item['separator'] ?? ''),
+			];
+		}
+
+		return $result;
+	}
+
+	private function sourceFoldersFromPaths(array $paths, array $user): array {
+		return array_map(fn (string $path): array => [
+			'id' => $this->sourceFolderId($path),
+			'path' => $path,
+			'enabled' => true,
+			'mode' => 'default',
+			'albumDepth' => (int)$user['albumDepth'],
+			'namingTemplate' => '',
+			'separator' => '',
+		], $paths);
+	}
+
+	private function effectiveSourceFolders(array $sourceFolders, array $user, array $admin): array {
+		$defaultDepth = min((int)$user['albumDepth'], (int)$admin['maxScanDepth']);
+
+		return array_map(function (array $source) use ($user, $admin, $defaultDepth): array {
+			$mode = (string)($source['mode'] ?? 'default');
+			$depth = match ($mode) {
+				'single_album' => 0,
+				'depth' => min((int)($source['albumDepth'] ?? $defaultDepth), (int)$admin['maxScanDepth']),
+				default => $defaultDepth,
+			};
+			$namingTemplate = (string)($source['namingTemplate'] ?? '');
+			$separator = (string)($source['separator'] ?? '');
+
+			return array_merge($source, [
+				'effectiveAlbumDepth' => $depth,
+				'effectiveNamingTemplate' => $namingTemplate !== '' ? $namingTemplate : $user['namingTemplate'],
+				'effectiveSeparator' => $separator !== '' ? $separator : $user['separator'],
+				'usesDefaultRules' => $mode === 'default' && $namingTemplate === '' && $separator === '',
+			]);
+		}, $sourceFolders);
+	}
+
+	private function sourceFolderId(string $path): string {
+		return 'src_' . substr(hash('sha256', PathHelper::displayPath($path)), 0, 20);
+	}
+
+	private function optionalSeparator(mixed $value): string {
+		if (!is_scalar($value)) {
+			return '';
+		}
+		$value = trim((string)$value);
+		return $value === '' ? '' : AlbumNameFormatter::sanitizeSeparator($value);
 	}
 
 	private function stringList(mixed $value): array {

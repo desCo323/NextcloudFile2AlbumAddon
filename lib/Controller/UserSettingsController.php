@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\SakuraAlbum\Controller;
 
 use OCA\SakuraAlbum\AppInfo\Application;
+use OCA\SakuraAlbum\Service\AutoSyncService;
 use OCA\SakuraAlbum\Service\LogService;
 use OCA\SakuraAlbum\Service\SettingsService;
 use OCP\AppFramework\Controller;
@@ -18,6 +19,7 @@ class UserSettingsController extends Controller {
 		IRequest $request,
 		private readonly string $userId,
 		private readonly SettingsService $settingsService,
+		private readonly AutoSyncService $autoSyncService,
 		private readonly LogService $logService,
 	) {
 		parent::__construct(Application::APP_ID, $request);
@@ -37,20 +39,25 @@ class UserSettingsController extends Controller {
 	public function update(): JSONResponse {
 		try {
 			$settings = $this->settingsService->saveUserSettings($this->userId, $this->request->getParam('settings', $this->request->getParams()));
+			$effectiveSettings = $this->settingsService->getEffectiveUserSettings($this->userId);
+			$queuedRefresh = $this->autoSyncService->queueUserRefresh($this->userId, 'settings_update');
 			$this->logService->success('user_settings_updated', $this->userId, [
 				'summary' => [
 					'enabled' => $settings['enabled'],
 					'includePaths' => count($settings['includePaths']),
+					'sourceFolders' => count($settings['sourceFolders']),
 					'excludePatterns' => count($settings['excludePatterns']),
 					'namingTemplate' => $settings['namingTemplate'],
 					'albumDepth' => $settings['albumDepth'],
 					'autoSyncEnabled' => $settings['autoSyncEnabled'],
+					'queuedRefresh' => $queuedRefresh['queued'] ?? false,
 				],
 			], 'User settings saved.');
 
 			return new JSONResponse([
 				'settings' => $settings,
-				'effectiveSettings' => $this->settingsService->getEffectiveUserSettings($this->userId),
+				'effectiveSettings' => $effectiveSettings,
+				'queuedRefresh' => $queuedRefresh,
 			]);
 		} catch (\Throwable $e) {
 			$this->logService->exception('user_settings_update_failed', $e, $this->userId);

@@ -87,11 +87,11 @@ if ! rg -n "data-profile" js/admin-settings.js >/dev/null; then
 	echo "Admin load-profile controls are missing" >&2
 	exit 1
 fi
-if ! rg -n "admin-settings-012" lib/Settings/Admin.php >/dev/null; then
+if ! rg -n "admin-settings-020" lib/Settings/Admin.php >/dev/null; then
 	echo "Admin settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
-if ! rg -n "personal-settings-012" lib/Settings/Personal.php >/dev/null; then
+if ! rg -n "personal-settings-020" lib/Settings/Personal.php >/dev/null; then
 	echo "Personal settings must load the cache-busting versioned JavaScript asset" >&2
 	exit 1
 fi
@@ -105,6 +105,26 @@ if ! rg -n "autoSyncEnabled" lib/Service/SettingsService.php js/personal-setting
 fi
 if ! rg -n "autoSyncActive" lib/Service/SettingsService.php lib/Service/AutoSyncService.php >/dev/null; then
 	echo "Automatic sync must require the user's effective opt-in state" >&2
+	exit 1
+fi
+if ! rg -n "sourceFolders" lib/Service/SettingsService.php lib/Service/AlbumPlanService.php js/personal-settings.js >/dev/null; then
+	echo "Structured source folder rules are missing" >&2
+	exit 1
+fi
+if ! rg -n "overlapping_source_paths" lib/Service/AlbumPlanService.php lib/Service/AlbumSyncService.php js/personal-settings.js >/dev/null; then
+	echo "Overlapping source folder safety guard is missing" >&2
+	exit 1
+fi
+if ! rg -n "FolderBrowserService" lib/Controller/FolderController.php lib/Service/FolderBrowserService.php >/dev/null; then
+	echo "Folder picker backend is missing" >&2
+	exit 1
+fi
+if ! rg -n "queueUserRefresh" lib/Service/AutoSyncService.php lib/Controller/UserSettingsController.php lib/Controller/SyncController.php >/dev/null; then
+	echo "User background refresh queue is missing" >&2
+	exit 1
+fi
+if ! rg -n "progressPercent" lib/Service/AlbumSyncService.php js/personal-settings.js >/dev/null; then
+	echo "User sync progress reporting is missing" >&2
 	exit 1
 fi
 if ! rg -n "REASON_UNIQUE_CONSTRAINT_VIOLATION" lib/Service/PhotosAlbumAdapter.php >/dev/null; then

@@ -23,6 +23,7 @@ class AlbumSyncService {
 		'max_files_reached',
 		'storage_unavailable',
 		'user_folder_unavailable',
+		'overlapping_source_paths',
 	];
 
 	public function __construct(
@@ -246,10 +247,20 @@ class AlbumSyncService {
 	}
 
 	private function writePlan(string $userId, array $plan, array $settings, string $configHash, int $runId): array {
+		$writableAlbums = array_values(array_filter(
+			$plan['albums'] ?? [],
+			static fn (array $album): bool => in_array($album['writeAction'] ?? '', ['create', 'update_managed'], true),
+		));
+		$plannedWritableLinks = array_sum(array_map(
+			static fn (array $album): int => count($album['files'] ?? []),
+			$writableAlbums,
+		));
 		$summary = [
 			'createdAlbums' => 0,
 			'updatedManagedAlbums' => 0,
 			'processedAlbums' => 0,
+			'plannedWritableAlbums' => count($writableAlbums),
+			'plannedWritableLinks' => $plannedWritableLinks,
 			'linkedFiles' => 0,
 			'alreadyLinkedFiles' => 0,
 			'missingFiles' => 0,
@@ -262,16 +273,16 @@ class AlbumSyncService {
 			'missingManagedAlbumCleanupTruncated' => false,
 			'fileErrors' => 0,
 			'albumErrors' => 0,
+			'progressPercent' => count($writableAlbums) === 0 && $plannedWritableLinks === 0 ? 100 : 0,
+			'progressStage' => 'preparing',
 		];
 		$fileErrorLogs = 0;
 		$removeErrorLogs = 0;
 		$currentTargetPaths = [];
+		$this->persistWriteProgress($runId, $userId, $plan, $summary, 'preparing');
+		$lastProgressUpdate = microtime(true);
 
-		foreach ($plan['albums'] as $album) {
-			if (!in_array($album['writeAction'] ?? '', ['create', 'update_managed'], true)) {
-				continue;
-			}
-
+		foreach ($writableAlbums as $album) {
 			try {
 				$albumInfo = $this->prepareWritableAlbum($userId, $album);
 				if (($albumInfo['created'] ?? false) === true) {
@@ -314,6 +325,12 @@ class AlbumSyncService {
 							], $runId);
 						}
 					}
+
+					$processedLinks = $this->processedLinks($summary);
+					if ($processedLinks % 50 === 0 || (microtime(true) - $lastProgressUpdate) >= 2.0) {
+						$this->persistWriteProgress($runId, $userId, $plan, $summary, 'linking_files');
+						$lastProgressUpdate = microtime(true);
+					}
 				}
 
 				if (($settings['syncRemoveMissingFiles'] ?? true) === true && ($album['writeAction'] ?? '') === 'update_managed') {
@@ -336,17 +353,21 @@ class AlbumSyncService {
 					'mediaCount' => $album['mediaCount'],
 					'action' => $album['writeAction'],
 				], '', $runId);
+				$this->persistWriteProgress($runId, $userId, $plan, $summary, 'album_completed');
+				$lastProgressUpdate = microtime(true);
 			} catch (\Throwable $e) {
 				$summary['albumErrors']++;
 				$this->logService->exception('album_write_failed', $e, $userId, [
 					'albumName' => $album['albumName'] ?? '',
 					'writeAction' => $album['writeAction'] ?? '',
 				], $runId);
+				$this->persistWriteProgress($runId, $userId, $plan, $summary, 'album_error');
 			}
 		}
 
 		if (($settings['syncDeleteMissingManagedAlbums'] ?? false) === true) {
 			if ($summary['albumErrors'] === 0 && $summary['fileErrors'] === 0) {
+				$this->persistWriteProgress($runId, $userId, $plan, $summary, 'cleanup_missing_albums');
 				$missingCleanup = $this->deleteMissingManagedAlbums($userId, $configHash, $currentTargetPaths, $summary['processedAlbums'], $runId);
 				$summary['deletedMissingManagedAlbums'] += $missingCleanup['deletedMissingManagedAlbums'];
 				$summary['cleanedMissingTrackingRecords'] += $missingCleanup['cleanedMissingTrackingRecords'];
@@ -360,7 +381,43 @@ class AlbumSyncService {
 			}
 		}
 
+		$summary['progressPercent'] = 100;
+		$summary['progressStage'] = 'completed';
+		$this->persistWriteProgress($runId, $userId, $plan, $summary, 'completed');
+
 		return $summary;
+	}
+
+	private function persistWriteProgress(int $runId, string $userId, array $plan, array &$summary, string $stage): void {
+		$totalUnits = max(1, (int)$summary['plannedWritableAlbums'] + (int)$summary['plannedWritableLinks']);
+		$doneUnits = min($totalUnits, (int)$summary['processedAlbums'] + $this->processedLinks($summary));
+		$percent = $stage === 'completed' ? 100 : min(99, (int)floor(($doneUnits / $totalUnits) * 100));
+		$summary['progressPercent'] = $percent;
+		$summary['progressStage'] = $stage;
+
+		$this->syncRunMapper->updateRunningSummary($runId, $userId, [
+			'plannedAlbums' => (int)($plan['summary']['plannedAlbums'] ?? 0),
+			'plannedLinks' => (int)($plan['summary']['plannedLinks'] ?? 0),
+			'plannedWritableAlbums' => (int)$summary['plannedWritableAlbums'],
+			'plannedWritableLinks' => (int)$summary['plannedWritableLinks'],
+			'processedAlbums' => (int)$summary['processedAlbums'],
+			'processedLinks' => $this->processedLinks($summary),
+			'linkedFiles' => (int)$summary['linkedFiles'],
+			'alreadyLinkedFiles' => (int)$summary['alreadyLinkedFiles'],
+			'missingFiles' => (int)$summary['missingFiles'],
+			'fileErrors' => (int)$summary['fileErrors'],
+			'albumErrors' => (int)$summary['albumErrors'],
+			'progressPercent' => $percent,
+			'progressStage' => $stage,
+			'updatedAt' => time(),
+		]);
+	}
+
+	private function processedLinks(array $summary): int {
+		return (int)$summary['linkedFiles']
+			+ (int)$summary['alreadyLinkedFiles']
+			+ (int)$summary['missingFiles']
+			+ (int)$summary['fileErrors'];
 	}
 
 	private function removeStaleAlbumFiles(
@@ -612,6 +669,7 @@ class AlbumSyncService {
 		return hash('sha256', json_encode([
 			'namingSchemaVersion' => Application::NAMING_SCHEMA_VERSION,
 			'includePaths' => $includePaths,
+			'sourceFolders' => $this->configSourceFolders($settings['sourceFolders'] ?? []),
 			'excludePatterns' => $excludePatterns,
 			'namingTemplate' => $settings['namingTemplate'] ?? '',
 			'separator' => $settings['separator'] ?? '',
@@ -621,9 +679,24 @@ class AlbumSyncService {
 			], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
 	}
 
+	private function configSourceFolders(array $sourceFolders): array {
+		$result = array_map(static fn (array $source): array => [
+			'id' => (string)($source['id'] ?? ''),
+			'path' => (string)($source['path'] ?? ''),
+			'enabled' => (bool)($source['enabled'] ?? true),
+			'mode' => (string)($source['mode'] ?? 'default'),
+			'effectiveAlbumDepth' => (int)($source['effectiveAlbumDepth'] ?? 0),
+			'effectiveNamingTemplate' => (string)($source['effectiveNamingTemplate'] ?? ''),
+			'effectiveSeparator' => (string)($source['effectiveSeparator'] ?? ''),
+		], $sourceFolders);
+		usort($result, static fn (array $a, array $b): int => [$a['path'], $a['id']] <=> [$b['path'], $b['id']]);
+		return $result;
+	}
+
 	private function planFingerprint(array $plan, string $configHash): string {
 		$albums = array_map(
 			static fn (array $album): array => [
+				'sourceId' => (string)($album['sourceId'] ?? ''),
 				'sourceRoot' => (string)($album['sourceRoot'] ?? ''),
 				'targetPath' => (string)($album['targetPath'] ?? ''),
 				'albumName' => (string)($album['albumName'] ?? ''),
@@ -637,7 +710,7 @@ class AlbumSyncService {
 		);
 
 		return hash('sha256', json_encode([
-			'version' => 1,
+			'version' => 2,
 			'configHash' => $configHash,
 			'summary' => [
 				'plannedAlbums' => (int)($plan['summary']['plannedAlbums'] ?? 0),
@@ -658,6 +731,7 @@ class AlbumSyncService {
 
 	private function publicAlbums(array $albums): array {
 		$publicKeys = array_flip([
+			'sourceId',
 			'sourceRoot',
 			'targetPath',
 			'albumName',

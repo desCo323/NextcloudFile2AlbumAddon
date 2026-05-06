@@ -40,6 +40,29 @@
   background: color-mix(in srgb, var(--color-main-background) 96%, #fff0f4);
 }
 
+.sakuraalbum-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.sakuraalbum-panel-head h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.sakuraalbum-panel-head p {
+  max-width: 760px;
+  margin: 4px 0 0;
+  color: var(--color-text-maxcontrast);
+}
+
+.sakuraalbum-source-panel {
+  border-left-color: #2f7d72;
+}
+
 .sakuraalbum-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -182,6 +205,88 @@
   margin: 8px 0;
 }
 
+.sakuraalbum-progress-panel {
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid #7357c8;
+  border-radius: 8px;
+  background: var(--color-main-background);
+}
+
+.sakuraalbum-progress-head,
+.sakuraalbum-progress-meta,
+.sakuraalbum-folder-toolbar,
+.sakuraalbum-folder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sakuraalbum-progress-head {
+  margin-bottom: 8px;
+}
+
+.sakuraalbum-progress {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-background-darker);
+}
+
+.sakuraalbum-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d94f70, #2f7d72 55%, #7357c8);
+  transition: width 180ms ease;
+}
+
+.sakuraalbum-progress-meta {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: 8px;
+  color: var(--color-text-maxcontrast);
+  font-size: 13px;
+}
+
+.sakuraalbum-details {
+  margin-top: 12px;
+}
+
+.sakuraalbum-details summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.sakuraalbum-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1.2fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.sakuraalbum-mini-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sakuraalbum-mini-table div {
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-main-background);
+}
+
+.sakuraalbum-mini-table span,
+.sakuraalbum-folder-row span {
+  display: block;
+  color: var(--color-text-maxcontrast);
+  font-size: 13px;
+}
+
 .sakuraalbum-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -223,6 +328,36 @@
   text-align: left;
   vertical-align: top;
   word-break: break-word;
+}
+
+.sakuraalbum-source-table select,
+.sakuraalbum-source-table input[type="text"],
+.sakuraalbum-source-table input[type="number"] {
+  width: 100%;
+  min-width: 120px;
+}
+
+.sakuraalbum-folder-browser {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+.sakuraalbum-folder-toolbar {
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.sakuraalbum-folder-list {
+  display: grid;
+  gap: 8px;
+}
+
+.sakuraalbum-folder-row {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-main-background);
 }
 
 .sakuraalbum-log-table pre {
@@ -321,5 +456,16 @@
 
   .sakuraalbum-summary {
     grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  }
+
+  .sakuraalbum-panel-head,
+  .sakuraalbum-folder-row,
+  .sakuraalbum-folder-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sakuraalbum-detail-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -70,6 +70,30 @@ class DirtyPathMapper extends QBMapper {
 		return (int)$qb->executeQuery()->fetchOne();
 	}
 
+	public function countByStatusForUser(string $userId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('status')
+			->selectAlias($qb->func()->count('*'), 'row_count')
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->groupBy('status');
+
+		$counts = [
+			'pending' => 0,
+			'processing' => 0,
+			'failed' => 0,
+		];
+		foreach ($qb->executeQuery()->fetchAllAssociative() as $row) {
+			$status = (string)($row['status'] ?? '');
+			if ($status !== '') {
+				$counts[$status] = (int)($row['row_count'] ?? 0);
+			}
+		}
+
+		$counts['total'] = array_sum($counts);
+		return $counts;
+	}
+
 	public function countDueUsers(int $notAfter): int {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('user_id')
@@ -114,8 +138,24 @@ class DirtyPathMapper extends QBMapper {
 		return $value !== false && $value !== null ? (int)$value : null;
 	}
 
+	public function oldestPendingAtForUser(string $userId): ?int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->selectAlias($qb->func()->min('last_seen_at'), 'oldest_pending_at')
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->andWhere($qb->expr()->eq('status', $qb->createNamedParameter('pending')));
+
+		$value = $qb->executeQuery()->fetchOne();
+		return $value !== false && $value !== null ? (int)$value : null;
+	}
+
 	public function nextPendingDueAt(int $debounceSeconds): ?int {
 		$oldest = $this->oldestPendingAt();
+		return $oldest !== null ? $oldest + max(30, $debounceSeconds) : null;
+	}
+
+	public function nextPendingDueAtForUser(string $userId, int $debounceSeconds): ?int {
+		$oldest = $this->oldestPendingAtForUser($userId);
 		return $oldest !== null ? $oldest + max(30, $debounceSeconds) : null;
 	}
 
@@ -126,6 +166,29 @@ class DirtyPathMapper extends QBMapper {
 			->orderBy('status', 'ASC')
 			->addOrderBy('last_seen_at', 'ASC')
 			->setMaxResults(max(1, min(100, $limit)));
+
+		return array_map(static fn (array $row): array => [
+			'userId' => (string)($row['user_id'] ?? ''),
+			'path' => (string)($row['path'] ?? ''),
+			'eventType' => (string)($row['event_type'] ?? ''),
+			'status' => (string)($row['status'] ?? ''),
+			'changeCount' => (int)($row['change_count'] ?? 0),
+			'attempts' => (int)($row['attempts'] ?? 0),
+			'firstSeenAt' => (int)($row['first_seen_at'] ?? 0),
+			'lastSeenAt' => (int)($row['last_seen_at'] ?? 0),
+			'lockedAt' => $row['locked_at'] !== null ? (int)$row['locked_at'] : null,
+			'lastError' => $row['last_error'] !== null ? mb_substr((string)$row['last_error'], 0, 240) : null,
+		], $qb->executeQuery()->fetchAllAssociative());
+	}
+
+	public function findQueueSamplesForUser(string $userId, int $limit): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('user_id', 'path', 'event_type', 'status', 'change_count', 'attempts', 'first_seen_at', 'last_seen_at', 'locked_at', 'last_error')
+			->from($this->tableName)
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)))
+			->orderBy('status', 'ASC')
+			->addOrderBy('last_seen_at', 'ASC')
+			->setMaxResults(max(1, min(50, $limit)));
 
 		return array_map(static fn (array $row): array => [
 			'userId' => (string)($row['user_id'] ?? ''),

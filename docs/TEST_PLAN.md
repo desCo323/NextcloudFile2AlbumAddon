@@ -41,9 +41,19 @@ Expected result: `Self-check passed`.
 - Admin Auto-Status loads without error and shows pending, processing, failed, due-user, and next-due values.
 - Debug setting remains enabled after reload.
 - Personal settings page opens for `albentest`.
+- Personal settings show a source-folder overview table and an `Ordner hinzufuegen` picker.
+- The folder picker lists only folders from `albentest`'s files area and never asks for a raw path.
+- Adding multiple independent source folders persists after saving and reloading.
+- Selecting nested active sources, for example `/Photos` and `/Photos/Subfolder`, produces an overlap warning and the write dry-run is blocked.
+- A source folder can be set to `Alles in ein Album`; preview then aggregates its subfolders into the source-root album.
+- A source folder can be set to `Eigene Tiefe`; preview uses that depth only for this source while other sources keep the global default.
+- The same source folder cannot be added twice from the picker.
 - Personal settings show `Automatisch aktuell halten`.
 - If admin `Automatik` is `Manuell`, the personal automatic-update switch is disabled and explains that an administrator must enable it.
 - If admin `Automatik` is `Bei Dateiaenderungen`, the personal automatic-update switch can be turned on/off and saving persists it.
+- Saving settings with user Auto-Sync active queues an initial/background refresh and the personal status panel shows pending work.
+- The `Update vormerken` action queues enabled source folders for the next background run without directly writing albums.
+- The personal status panel shows a progress bar, queue counters, latest run details, and expandable activity details.
 - Preview can run against a small test folder.
 - Dry-run can run against a small test folder and reports:
   - planned albums

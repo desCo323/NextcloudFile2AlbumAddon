@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0
+
+- Added structured multi-source folder settings with stable source ids and legacy `includePaths` fallback.
+- Added per-folder rule modes: use global defaults, use a custom album depth, or treat the selected folder and all subfolders as one album.
+- Added source-folder overlap detection so nested active sources are blocked before writes can duplicate work or create confusing albums.
+- Added an authenticated folder picker API for selecting folders from the current user's file area instead of typing raw paths.
+- Added personal background update controls: saving settings can queue a refresh, and users can explicitly queue an update for the next Auto-Sync run.
+- Added personal sync status API and UI with a progress bar, queue state, recent run details, and expandable activity diagnostics.
+- Write runs now publish running progress summaries with processed album/link counters and progress stage.
+- Added cache-busting `admin-settings-020` and `personal-settings-020` assets.
+
 ## 0.1.12
 
 - Load versioned admin and personal JavaScript asset names to avoid stale browser-cached settings scripts during controlled test windows.

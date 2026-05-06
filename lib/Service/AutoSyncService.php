@@ -184,6 +184,79 @@ class AutoSyncService {
 		];
 	}
 
+	public function queueStatusForUser(string $userId, int $sampleLimit = 8): array {
+		$auto = $this->settingsService->getAutoSyncSettings();
+		$now = time();
+		$oldestPendingAt = $this->dirtyPathMapper->oldestPendingAtForUser($userId);
+		$nextDueAt = $this->dirtyPathMapper->nextPendingDueAtForUser($userId, (int)$auto['debounceSeconds']);
+
+		return [
+			'mode' => $auto['mode'],
+			'enabled' => $auto['mode'] === 'file_events',
+			'now' => $now,
+			'debounceSeconds' => (int)$auto['debounceSeconds'],
+			'nextDueAt' => $nextDueAt !== null ? max($now, $nextDueAt) : null,
+			'oldestPendingAt' => $oldestPendingAt,
+			'counts' => $this->dirtyPathMapper->countByStatusForUser($userId),
+			'samples' => $this->dirtyPathMapper->findQueueSamplesForUser($userId, $sampleLimit),
+		];
+	}
+
+	public function queueUserRefresh(string $userId, string $eventType = 'settings_update'): array {
+		$auto = $this->settingsService->getAutoSyncSettings();
+		$settings = $this->settingsService->getEffectiveUserSettings($userId);
+		if ($auto['mode'] !== 'file_events') {
+			return [
+				'queued' => false,
+				'reason' => 'admin_auto_sync_disabled',
+				'queuedPaths' => [],
+			];
+		}
+		if (($settings['enabled'] ?? false) !== true || ($settings['autoSyncActive'] ?? false) !== true) {
+			return [
+				'queued' => false,
+				'reason' => 'user_auto_sync_disabled',
+				'queuedPaths' => [],
+			];
+		}
+
+		$paths = [];
+		foreach (($settings['sourceFolders'] ?? []) as $source) {
+			if (($source['enabled'] ?? true) !== true) {
+				continue;
+			}
+			$paths[] = (string)($source['path'] ?? '');
+		}
+		if ($paths === []) {
+			$paths = $settings['includePaths'] ?? [];
+		}
+
+		$queuedPaths = [];
+		$now = time();
+		foreach ($paths as $path) {
+			try {
+				$path = PathHelper::normalizeUserPath((string)$path);
+			} catch (\InvalidArgumentException) {
+				continue;
+			}
+			$storedPath = $path === '' ? '/' : $path;
+			$this->dirtyPathMapper->markDirty($userId, $storedPath, $eventType, $now);
+			$queuedPaths[] = PathHelper::displayPath($storedPath);
+		}
+
+		$this->logService->debug('auto_sync_user_refresh_queued', $userId, [
+			'eventType' => $eventType,
+			'queuedPaths' => $queuedPaths,
+		]);
+
+		return [
+			'queued' => $queuedPaths !== [],
+			'reason' => $queuedPaths === [] ? 'no_source_folders' : '',
+			'queuedPaths' => $queuedPaths,
+			'queue' => $this->queueStatusForUser($userId),
+		];
+	}
+
 	private function affectedIncludePath(string $userId, string $path): ?string {
 		$settings = $this->settingsService->getEffectiveUserSettings($userId);
 		if (($settings['enabled'] ?? false) !== true || ($settings['autoSyncActive'] ?? false) !== true) {
