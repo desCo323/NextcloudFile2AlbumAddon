@@ -52,6 +52,7 @@ Expected result: `Self-check passed`.
 - Write endpoint rejects while global admin setting or personal user setting is disabled.
 - In the controlled write test, only use files owned by `albentest`.
 - Updating a managed album removes file links for media that was moved or deleted only after a clean plan and only for SakuraAlbum-managed albums.
+- Re-running an update on an unchanged managed album must count existing Photos links as `alreadyLinkedFiles`, not as `fileErrors`.
 - Optional missing-managed-album cleanup stays disabled unless explicitly enabled for a small isolated test folder.
 - If missing-managed-album cleanup is enabled, it deletes only SakuraAlbum-managed Photos albums whose tracked id, owner, and name still match.
 - Automatic sync file-event test:
