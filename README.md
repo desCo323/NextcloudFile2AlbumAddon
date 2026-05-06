@@ -32,6 +32,7 @@ The current development version focuses on safe configuration, preview planning,
 - Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, require a matching recent dry-run plan fingerprint stored by the server, and refuse unsafe plans.
 - Existing Photos albums are not modified unless SakuraAlbum already tracks them as managed albums.
 - Background cron execution is still a later feature; the current write path is a bounded on-demand job.
+- SakuraAlbum's global admin enable setting is stored under an app-owned key separate from Nextcloud's reserved app activation flag.
 
 ## Local checks
 
