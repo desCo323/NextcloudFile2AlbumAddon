@@ -46,6 +46,7 @@ class SettingsService {
 		'albumDepth' => 1,
 		'includeImages' => true,
 		'includeVideos' => false,
+		'autoSyncEnabled' => false,
 	];
 
 	public function __construct(
@@ -167,6 +168,11 @@ class SettingsService {
 			'albumDepth' => min($user['albumDepth'], $admin['maxScanDepth']),
 			'includeImages' => $user['includeImages'],
 			'includeVideos' => $admin['allowVideos'] && $user['includeVideos'],
+			'autoSyncEnabled' => $user['autoSyncEnabled'],
+			'autoSyncAvailable' => $admin['autoSyncMode'] === 'file_events',
+			'autoSyncActive' => $admin['autoSyncMode'] === 'file_events' && $user['autoSyncEnabled'],
+			'autoSyncMode' => $admin['autoSyncMode'],
+			'autoSyncDebounceSeconds' => $admin['autoSyncDebounceSeconds'],
 			'namingSchemaVersion' => Application::NAMING_SCHEMA_VERSION,
 			'syncRemoveMissingFiles' => $admin['syncRemoveMissingFiles'],
 			'syncDeleteMissingManagedAlbums' => $admin['syncDeleteMissingManagedAlbums'],
@@ -239,6 +245,7 @@ class SettingsService {
 			'albumDepth' => $this->intValue($input['albumDepth'] ?? $defaults['albumDepth'], 0, 20),
 			'includeImages' => $this->boolValue($input['includeImages'] ?? $defaults['includeImages']),
 			'includeVideos' => $this->boolValue($input['includeVideos'] ?? $defaults['includeVideos']),
+			'autoSyncEnabled' => $this->boolValue($input['autoSyncEnabled'] ?? $defaults['autoSyncEnabled']),
 		];
 	}
 

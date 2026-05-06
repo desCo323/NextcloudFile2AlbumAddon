@@ -44,6 +44,7 @@ class UserSettingsController extends Controller {
 					'excludePatterns' => count($settings['excludePatterns']),
 					'namingTemplate' => $settings['namingTemplate'],
 					'albumDepth' => $settings['albumDepth'],
+					'autoSyncEnabled' => $settings['autoSyncEnabled'],
 				],
 			], 'User settings saved.');
 

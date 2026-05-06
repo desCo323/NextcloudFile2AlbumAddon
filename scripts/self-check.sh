@@ -87,6 +87,14 @@ if ! rg -n "data-profile" js/admin-settings.js >/dev/null; then
 	echo "Admin load-profile controls are missing" >&2
 	exit 1
 fi
+if ! rg -n "autoSyncEnabled" lib/Service/SettingsService.php js/personal-settings.js >/dev/null; then
+	echo "Personal automatic-update opt-in setting is missing" >&2
+	exit 1
+fi
+if ! rg -n "autoSyncActive" lib/Service/SettingsService.php lib/Service/AutoSyncService.php >/dev/null; then
+	echo "Automatic sync must require the user's effective opt-in state" >&2
+	exit 1
+fi
 if ! rg -n "REASON_UNIQUE_CONSTRAINT_VIOLATION" lib/Service/PhotosAlbumAdapter.php >/dev/null; then
 	echo "Photos duplicate-link DB unique constraint handling is missing" >&2
 	exit 1

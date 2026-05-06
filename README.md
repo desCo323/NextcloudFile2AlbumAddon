@@ -8,6 +8,7 @@ The current development version focuses on safe configuration, preview planning,
 
 - Admin settings for global enablement, default folders, scan limits, job limits, video policy, and automatic update load controls.
 - Personal settings for opt-in, folders, exclusions, naming template, separator, depth, and media type.
+- Personal automatic-update opt-in that is only active when admins allow file-event mode.
 - Preview API that scans only the current user folder and returns planned albums without writing album data.
 - Dry-run API that checks generated album names against real Photos albums without writing.
 - Confirmed write API that can create/link albums only when admin and user settings are both enabled and the request matches a recent server-recorded dry-run fingerprint.
@@ -40,6 +41,7 @@ The current development version focuses on safe configuration, preview planning,
 - Repeated updates are idempotent: an already-linked Photos file is counted as already linked, including Photos versions that report the duplicate through the database layer.
 - File events never perform heavy scans or album writes directly. They only queue dirty paths for a later background job.
 - File-event queue rows are collapsed to the affected include root so a large upload inside one selected folder does not create one independent sync job per file.
+- File-event auto-sync requires three gates: global admin enablement, user enablement, and the user's explicit automatic-update opt-in.
 - Background sync is non-parallel and bounded by admin settings for debounce, interval, users per run, runtime, event count, folder count, file count, and album count.
 - Background sync summaries include seen events, reserved events, and event-limit hits so admins can tune load profiles from real diagnostics.
 - Background sync recovers stale processing locks and logs runtime-limit stops so interrupted cron work can be diagnosed.

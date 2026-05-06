@@ -186,7 +186,7 @@ class AutoSyncService {
 
 	private function affectedIncludePath(string $userId, string $path): ?string {
 		$settings = $this->settingsService->getEffectiveUserSettings($userId);
-		if (($settings['enabled'] ?? false) !== true) {
+		if (($settings['enabled'] ?? false) !== true || ($settings['autoSyncActive'] ?? false) !== true) {
 			return null;
 		}
 

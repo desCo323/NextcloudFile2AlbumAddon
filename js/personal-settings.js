@@ -53,6 +53,10 @@
 					<input id="ska-videos" type="checkbox" title="Beruecksichtigt Videos, falls der Administrator das erlaubt." ${settings.includeVideos ? "checked" : ""} ${adminSettings.allowVideos ? "" : "disabled"}>
 					Videos
 				</label>
+				<label class="sakuraalbum-toggle">
+					<input id="ska-auto-sync" type="checkbox" title="Aktualisiert deine SakuraAlbum-Alben nach Datei-Aenderungen automatisch, sobald der Administrator diese Funktion erlaubt." ${settings.autoSyncEnabled ? "checked" : ""} ${adminSettings.autoSyncMode === "file_events" ? "" : "disabled"}>
+					Automatisch aktuell halten
+				</label>
 			</div>
 			<div class="sakuraalbum-grid sakuraalbum-panel">
 				<div class="sakuraalbum-field">
@@ -126,7 +130,7 @@
 			<div class="sakuraalbum-meta-grid">
 				<div class="sakuraalbum-meta"><strong>${adminSettings.enabled ? "Freigegeben" : "Zentral gesperrt"}</strong>Admin-Freigabe</div>
 				<div class="sakuraalbum-meta"><strong>${settings.enabled ? "Aktiv" : "Aus"}</strong>Dein Konto</div>
-				<div class="sakuraalbum-meta"><strong>${autoModeLabel(adminSettings.autoSyncMode)}</strong>Automatische Aktualisierung</div>
+				<div class="sakuraalbum-meta"><strong>${autoStateLabel()}</strong>Automatische Aktualisierung</div>
 				<div class="sakuraalbum-meta"><strong>${escapeText(includePaths)}</strong>Wirksame Ordner</div>
 			</div>
 			<div class="sakuraalbum-note">
@@ -143,10 +147,13 @@
     if (!settings.enabled) {
       return "Aktiviere SakuraAlbum fuer dein Konto und speichere, bevor Alben geschrieben werden.";
     }
-    if (adminSettings.autoSyncMode === "file_events") {
-      return `Dateiaenderungen werden gesammelt und nach mindestens ${escapeText(adminSettings.autoSyncDebounceSeconds || 0)} Sekunden per Hintergrundjob aktualisiert.`;
+    if (adminSettings.autoSyncMode !== "file_events") {
+      return "Automatische Aktualisierung ist zentral auf manuell gestellt; ein Administrator muss sie zuerst freigeben.";
     }
-    return "Automatische Aktualisierung ist zentral auf manuell gestellt; nutze Dry-Run und Alben erzeugen fuer Updates.";
+    if (!settings.autoSyncEnabled) {
+      return "Automatische Aktualisierung ist vom Administrator erlaubt. Aktiviere den Schalter, wenn deine Alben bei Datei-Aenderungen automatisch nachgezogen werden sollen.";
+    }
+    return `Deine Alben werden nach Datei-Aenderungen automatisch vorgemerkt und nach mindestens ${escapeText(adminSettings.autoSyncDebounceSeconds || 0)} Sekunden per Hintergrundjob aktualisiert.`;
   }
 
   function collect() {
@@ -159,6 +166,7 @@
       albumDepth: number("ska-depth"),
       includeImages: document.getElementById("ska-images").checked,
       includeVideos: document.getElementById("ska-videos").checked,
+      autoSyncEnabled: document.getElementById("ska-auto-sync").checked,
     };
   }
 
@@ -765,8 +773,11 @@
     return `${code || "Blockiert"} ${issue.message || issue.count || ""}`.trim();
   }
 
-  function autoModeLabel(mode) {
-    return mode === "file_events" ? "Dateiaenderungen" : "Manuell";
+  function autoStateLabel() {
+    if (adminSettings.autoSyncMode !== "file_events") {
+      return "Zentral manuell";
+    }
+    return settings.autoSyncEnabled ? "Aktiv" : "Aus";
   }
 
   function formatTime(timestamp) {

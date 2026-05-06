@@ -41,6 +41,9 @@ Expected result: `Self-check passed`.
 - Admin Auto-Status loads without error and shows pending, processing, failed, due-user, and next-due values.
 - Debug setting remains enabled after reload.
 - Personal settings page opens for `albentest`.
+- Personal settings show `Automatisch aktuell halten`.
+- If admin `Automatik` is `Manuell`, the personal automatic-update switch is disabled and explains that an administrator must enable it.
+- If admin `Automatik` is `Bei Dateiaenderungen`, the personal automatic-update switch can be turned on/off and saving persists it.
 - Preview can run against a small test folder.
 - Dry-run can run against a small test folder and reports:
   - planned albums
@@ -60,6 +63,8 @@ Expected result: `Self-check passed`.
 - Automatic sync file-event test:
   - create one visible image in an included folder for `albentest`;
   - confirm a dirty-path log entry is recorded for the affected include root and no synchronous write happens during upload;
+  - confirm no dirty-path row is recorded while the user's `Automatisch aktuell halten` switch is off;
+  - enable the user's `Automatisch aktuell halten` switch and repeat the file change;
   - run Nextcloud cron once after the debounce window;
   - confirm SakuraAlbum logs `auto_sync_user_completed` and the managed album is updated;
   - move or delete the image, run cron after debounce, and confirm stale links are removed from the managed album;

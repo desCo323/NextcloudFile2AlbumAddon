@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.10
+
+- Added a personal `Automatisch aktuell halten` opt-in toggle.
+- Automatic file-event sync now requires admin file-event mode, the user account being enabled, and the user's automatic-update opt-in.
+- Personal settings now explain whether automatic updates are centrally unavailable, available but off, or active for the current user.
+- Kept admin load controls as the server-side limit authority while making the user-facing automatic-update state explicit.
+
 ## 0.1.9
 
 - Added an admin Auto-Sync status API and UI view showing pending, processing, failed, due-user, and next-due queue state.
