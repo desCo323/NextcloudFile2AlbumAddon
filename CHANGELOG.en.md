@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.14
+
+- Improved the admin settings page with an `Admin cockpit` overview for rollout, load protection, automation, and diagnostics.
+- Added clearer Auto-Sync operating-state lanes for queue, Cron, maintenance window, and active limits.
+- Improved accessibility by marking admin status updates as an ARIA live region and moving focus to refreshed diagnostic output.
+- Added cache-busting assets `admin-settings-1014` and `personal-settings-1014`.
+
 ## 1.0.13
 
 - Added a wizard-like `Visual setup` section that guides users through activation, source folders, rules, preview, and background processing.

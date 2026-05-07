@@ -1,6 +1,16 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-08 00:45:00 CEST
+Datum: 2026-05-08 01:02:00 CEST
+
+Neueste operative Notiz (2026-05-08 01:02 CEST):
+- Benutzerauftrag: naechsten Block fuer finale Version umsetzen, Schwerpunkt Accessibility, Admin-UX und Update-Haertung.
+- Umsetzung lokal als `1.0.14` begonnen:
+  - Neue Cache-Busting-Assets `admin-settings-1014.js` und `personal-settings-1014.js`.
+  - Admin-UI bekommt ein `Admin-Cockpit` mit vier Betriebsbereichen: Freigabe, Lastschutz, Automatik, Diagnose.
+  - Auto-Status-Ausgabe bekommt klare Status-Lanes fuer Queue, Cron, Wartungsfenster und Limits.
+  - Admin-Status ist jetzt eine ARIA-Live-Region; dynamische Admin-Ausgaben sind als Region beschriftet und erhalten Fokus nach Aktualisierung.
+  - Neue statische Browserpruefung fuer Admin-Cockpit-Lesbarkeit, ARIA-Attribute und mobile Ueberlaufkontrolle.
+- Noch nicht deployed. Naechste Schritte: Syntax/Self-check/Browser-Tests, Commit, Production-Preflight, frisches Backup, kontrolliertes Live-Testfenster mit `albentest`, Nachkontrolle und Push.
 
 Neueste operative Notiz (2026-05-08 00:45 CEST):
 - Benutzerauftrag: groesseren Backlog-Block selbststaendig umsetzen, testen/debuggen, Backup beachten und GitHub-README mit Screenshots/Produktbeschreibung verbessern.

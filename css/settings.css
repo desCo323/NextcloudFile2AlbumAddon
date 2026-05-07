@@ -262,6 +262,58 @@
   margin-bottom: 0;
 }
 
+.sakuraalbum-admin-guide {
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid #7357c8;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-main-background) 96%, #ece8ff);
+}
+
+.sakuraalbum-status-lanes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.sakuraalbum-status-lanes div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-main-background);
+}
+
+.sakuraalbum-status-lanes span,
+.sakuraalbum-status-lanes strong,
+.sakuraalbum-status-lanes small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.sakuraalbum-status-lanes span {
+  color: var(--color-text-maxcontrast);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sakuraalbum-status-lanes strong {
+  margin-top: 4px;
+}
+
+.sakuraalbum-status-lanes small {
+  margin-top: 4px;
+  color: var(--color-text-maxcontrast);
+  line-height: 1.35;
+}
+
+#ska-log-output:focus-visible {
+  outline: 2px solid #7357c8;
+  outline-offset: 2px;
+}
+
 .sakuraalbum-advanced-tools {
   margin: 4px 0 18px;
   padding: 10px 12px;
