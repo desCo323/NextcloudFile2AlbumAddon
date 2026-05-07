@@ -134,7 +134,7 @@ Covered backlog items:
 
 Not covered:
 
-- Browser UI usability, mobile layout, folder-rule UX, auto-sync event tests, CSV endpoint tests, and 1.0.6-specific Health CSV UI. These require a controlled deployment of the 1.0.6 build or a browser test window.
+- Browser UI usability, mobile layout, folder-rule UX, CSV endpoint tests, and 1.0.7-specific Health CSV UI remain open for a browser test window. Server-side auto-sync event tests passed in the controlled 1.0.6/1.0.7 test window.
 
 ## Result template
 

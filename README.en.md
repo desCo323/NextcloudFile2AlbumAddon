@@ -16,7 +16,7 @@
 <p align="center">
   <img alt="Nextcloud" src="https://img.shields.io/badge/Nextcloud-33-0082c9?logo=nextcloud&logoColor=white">
   <img alt="PHP" src="https://img.shields.io/badge/PHP-8.3%2B-777bb4?logo=php&logoColor=white">
-  <img alt="Version" src="https://img.shields.io/badge/SakuraAlbum-1.0.6-dc4f7b">
+  <img alt="Version" src="https://img.shields.io/badge/SakuraAlbum-1.0.7-dc4f7b">
   <img alt="License" src="https://img.shields.io/badge/License-Preview%20Non--Commercial-b83280">
 </p>
 
@@ -178,7 +178,7 @@ SakuraAlbum is built defensively:
 
 ## Diagnostics that help development
 
-SakuraAlbum 1.0.6 adds operational health diagnostics that evaluate common failure modes:
+SakuraAlbum 1.0.7 adds operational health diagnostics that evaluate common failure modes:
 
 | Diagnostic area | Detects |
 | --- | --- |
@@ -205,7 +205,7 @@ SakuraAlbum can prepare albums as ZIP files:
 
 | Area | State |
 | --- | --- |
-| Current development version | `1.0.6` |
+| Current development version | `1.0.7` |
 | Target platform | Nextcloud 33, PHP 8.3+ |
 | License | Preliminary Development and Evaluation License, non-commercial |
 | Store preparation | Technical metadata, docs, changelogs, checks, and release process are present; license is currently a store blocker |
@@ -227,7 +227,7 @@ SakuraAlbum is not yet intended as a regular Nextcloud App Store app. Manual ins
 
 ```bash
 sudo mkdir -p /var/www/nextcloud/apps/sakuraalbum
-sudo tar -xzf /path/to/sakuraalbum-1.0.6.tar.gz -C /var/www/nextcloud/apps
+sudo tar -xzf /path/to/sakuraalbum-1.0.7.tar.gz -C /var/www/nextcloud/apps
 sudo chown -R www-data:www-data /var/www/nextcloud/apps/sakuraalbum
 ```
 

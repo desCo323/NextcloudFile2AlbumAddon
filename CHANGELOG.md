@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.7
+
+- Fixed `info`-level SakuraAlbum diagnostic log writes on MySQL/MariaDB by ensuring the `level` field is always persisted and by adding a database default for existing installations.
+- Added this fix after the controlled 1.0.6 test window exposed `SakuraAlbum failed to write app log` entries in the Nextcloud server log.
+
 ## 1.0.6
 
 - Added the preliminary non-commercial development and evaluation license in `LICENSE.md` and marked the current license as a blocker for public app-store release.

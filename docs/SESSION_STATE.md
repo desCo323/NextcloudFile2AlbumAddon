@@ -14,6 +14,22 @@ Neueste operative Notiz (2026-05-07 19:40 CEST):
   - SHA256-Pruefung des Backups erfolgreich.
 - Naechster Schritt im Testfenster: Deploy von lokalem Stand `1.0.6`, danach `occ upgrade/status`, Reset von `albentest`, Auto-Sync-Test und Debuglog-Auswertung.
 
+Neueste operative Notiz (2026-05-07 19:49 CEST):
+- Ergebnis nach Deploy/Test von `1.0.6`:
+  - Deploy erfolgreich; Nextcloud danach gesund (`maintenance=false`, `needsDbUpgrade=false`), Live-App `1.0.6`.
+  - Live-Regressionslauf mit `albentest` bestanden: Dry-Run 3 Alben/3 Links, Auto-Sync initial erfolgreich, fehlendes verwaltetes Photos-Album automatisch neu aufgebaut, Album-Export abgeschlossen, finaler Reset sauber.
+  - Echter Dateievent-Test bestanden: Datei erstellt/geschrieben/umbenannt/geloescht, Queue `pending=1` mit `changeCount=10`, AutoSyncJob per Nextcloud Background-Job-Executor verarbeitet, danach `pending=0`, `failed=0`, 1 verwaltetes Album mit 1 Medium.
+  - Nach Cleanup: `albentest` hat 0 aktive SakuraAlbum-Alben, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 Photos-Alben und keine Testordner.
+- Debuglog-Auswertung:
+  - SakuraAlbum-App-Logs fuer das Testfenster enthalten keine neuen Fehler; eine Warnung `auto_sync_missing_managed_album_refresh_queued` ist erwarteter Testfall fuer Wiederaufbau geloeschter verwalteter Alben.
+  - Nextcloud-Serverlog zeigte jedoch neue Fehler `SakuraAlbum failed to write app log` mit `Field 'level' doesn't have a default value`.
+  - Ursache: `AppLog::$level` hatte PHP-Default `info`; bei `info`-Logs markiert der Entity-Mapper das Feld nicht als geaendert und insertet es nicht.
+- Fix vorbereitet als `1.0.7`:
+  - `AppLog::$level` Default auf leer geaendert, damit jeder gesetzte Level persistiert.
+  - Neue Migration `Version100700Date20260507180000` setzt DB-Default `level=info` fuer bestehende Installationen.
+  - Version/Assets/Doku auf `1.0.7` angehoben; lokale `./scripts/self-check.sh` und `git diff --check` erfolgreich.
+  - Naechster Schritt: 1.0.7 deployen, Info-Log-Schreibtest wiederholen, Nextcloud-Serverlog erneut auf SakuraAlbum-Fehler pruefen.
+
 Neueste operative Notiz (2026-05-07 19:35 CEST):
 - Nacharbeit zum Lizenz-/GitHub-/Testbacklog-Block:
   - `./scripts/production-update.sh --preflight` erneut erfolgreich: PHP/JS-Syntax, `appinfo/info.xml` gegen offizielles Nextcloud-Schema, Sicherheits-Smokes, Nextcloud-Status und Artefaktbau gruen.

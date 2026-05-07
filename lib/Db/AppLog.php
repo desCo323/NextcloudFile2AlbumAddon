@@ -24,7 +24,7 @@ use OCP\DB\Types;
  * @method void setCreatedAt(int $createdAt)
  */
 class AppLog extends Entity {
-	protected string $level = 'info';
+	protected string $level = '';
 	protected string $event = '';
 	protected ?string $userId = null;
 	protected ?int $runId = null;
