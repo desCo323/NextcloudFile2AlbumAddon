@@ -2,6 +2,12 @@
 
 Datum: 2026-05-07 19:35:46 CEST
 
+Neueste operative Notiz (2026-05-07 20:00 CEST):
+- Benutzer-UX-Befund fuer spaeteres Update aufgenommen:
+  - Buttontexte wie `Alle verwalteten pruefen` und `Konto-Reset pruefen` sind in der UI zu blass und kaum lesbar.
+  - Backlog-Eintrag `UI-11` in `docs/TEST_BACKLOG.md` ergaenzt: alle SakuraAlbum-Buttons auf Kontrast pruefen und Textfarben fuer normale, Hover-, Fokus-, Disabled-, Light- und Dark-Theme-Zustaende korrigieren.
+  - Prioritaet `P0`, weil schlechte Lesbarkeit besonders bei Sicherheits-/Reset-Aktionen riskant ist.
+
 Neueste operative Notiz (2026-05-07 19:56 CEST):
 - Abschluss kontrolliertes Testfenster/Hotfix:
   - Finaler Production-Preflight auf sauberem Git-Stand erfolgreich; Live-Nextcloud gesund und SakuraAlbum `1.0.7` installiert.

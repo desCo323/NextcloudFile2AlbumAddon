@@ -85,6 +85,7 @@ This backlog defines the next functional, security, usability, and readability c
 | UI-08 | Add copyable support bundle summary | Admins should get one concise block with health, queue, and recent errors. | P2 |
 | UI-09 | Add accessibility pass | Keyboard focus, contrast, button labels, and screen-reader order need a dedicated review. | P1 |
 | UI-10 | Add screenshot/demo assets for GitHub | The project page will be stronger with real UI screenshots after the design stabilizes. | P2 |
+| UI-11 | Fix low-contrast button text everywhere | User reported that actions such as `Alle verwalteten pruefen` and `Konto-Reset pruefen` are barely readable because the text is too pale; audit all SakuraAlbum buttons, especially danger/secondary buttons, and enforce readable contrast in normal, hover, focus, disabled, light-theme, and dark-theme states. | P0 |
 
 ## Operational improvement backlog
 
