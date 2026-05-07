@@ -1,6 +1,19 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-07 19:01:38 CEST
+Datum: 2026-05-07 19:13:20 CEST
+
+Neueste operative Notiz (2026-05-07 19:13 CEST):
+- Benutzerauftrag: GitHub-Projektseite werbewirksam und informativ gestalten, deutsch als Hauptseite und separate englische Version, Funktionen/Ablaufe bei Bedarf illustrieren.
+- Umsetzung:
+  - `README.md` wurde zur deutschen GitHub-Startseite umgebaut: Logo, Badges, klare Produktpositionierung, Nutzenvergleich, Feature-Tabelle, Mermaid-Ablaufdiagramme, Benutzer-/Admin-Erlebnis, Sicherheitsmodell, Diagnose, Album-Downloads, Status, Installation, Dokumentationslinks und Roadmap.
+  - Neue `README.en.md` als eigenstaendige englische Version mit gleicher Struktur und Link zur deutschen Hauptseite.
+  - Die Darstellung nutzt vorhandenes `img/app.svg` und GitHub-kompatible Mermaid-Diagramme; keine Live-Nextcloud-Aenderung.
+- Checks:
+  - `./scripts/self-check.sh` erfolgreich.
+  - `git diff --check` erfolgreich.
+  - Secret-Scan auf GitHub-Token/Testpasswortmuster ohne Treffer.
+- Naechster Schritt:
+  - README-Aenderungen committen und nach GitHub pushen; optional danach GitHub-Repository-Beschreibung/Topics passend zur neuen Projektseite aktualisieren.
 
 Neueste operative Notiz (2026-05-07 19:01 CEST):
 - Benutzerauftrag: Debug-/Diagnose-Logging so erweitern, dass Fehler, haengende Verarbeitung, Queue-/Cron-/Cursor-/Export-Probleme und Betriebsstoerungen aus Logs sicher erkannt werden koennen; Logging in der aktuellen Live-Version aktiv halten; Logs fuer Tests immer nutzen und als CSV herunterladbar/serverseitig verfuegbar machen.

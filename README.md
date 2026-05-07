@@ -1,105 +1,193 @@
 # SakuraAlbum
 
-SakuraAlbum is a Nextcloud app for creating managed Photos albums from existing folder structures.
+<p align="center">
+  <img src="img/app.svg" width="128" height="128" alt="SakuraAlbum Logo">
+</p>
 
-The current development version focuses on safe configuration, preview planning, guarded dry-run/write paths, guarded deletion of generated albums, automatic background updates, and store-ready release documentation. It must not be enabled against production Photos albums until a controlled backup test window is prepared.
+<p align="center">
+  <strong>Automatisch gepflegte Nextcloud Photos-Alben aus bestehenden Ordnern.</strong><br>
+  SakuraAlbum verwandelt gewachsene Fotoordner in sichere, nachvollziehbare und laufend aktualisierte Alben.
+</p>
 
-## Current scope
+<p align="center">
+  <a href="README.en.md">English version</a>
+</p>
 
-- Admin settings for global enablement, group-limited rollout, default folders, scan limits, job limits, user quotas, video policy, and automatic update load controls.
-- Personal settings for opt-in, selectable source folders, folder-specific rules, exclusions, naming template, separator, depth, and media type.
-- Source folders can use global defaults, a folder-specific depth, or `Alles in ein Album` so a large subtree can be represented as one Photos album.
-- Folder-specific exception rules can override a subtree inside a source folder with a custom depth, one combined album, or complete exclusion.
-- Personal automatic-update opt-in that is only active when admins allow file-event mode.
-- Personal status view with queue state, recent run details, resumable cursor details, expandable diagnostics, and a 0-100% progress bar based on running sync or chunk cursor state.
-- Personal one-step automation action that enables SakuraAlbum plus automatic background generation when the administrator has allowed file-event mode.
-- Resumable background generation for large first runs: automatic sync writes bounded chunks and continues from a stored cursor over later cron runs.
-- Preview API that scans only the current user folder and returns planned albums without writing album data.
-- Dry-run API that checks generated album names against real Photos albums without writing.
-- Confirmed write API that can create/link albums only when admin and user settings are both enabled and the request matches a recent server-recorded dry-run fingerprint.
-- Optional debounced file-event auto-sync: file create/write/delete/rename events queue dirty paths, and a non-parallel cron job processes due users within admin budgets.
-- Admin Auto-Sync status view for queued, processing, failed, due-user, and next-due queue state.
-- Admin-controlled "process due Auto-Sync now" action that respects the same saved user/runtime/event limits as the scheduled background job.
-- Admin load-profile buttons for conservative, balanced, and fast scan/job/event budgets.
-- Optional Auto-Sync maintenance windows so queued work only runs during configured low-load hours.
-- Optional per-user quotas for SakuraAlbum-managed album count and managed media-link count.
-- Recovery for stale auto-sync queue locks if a background run stops after reserving work.
-- Reconciliation for SakuraAlbum-managed albums so removed or moved media can be removed from generated albums during a later sync.
-- Optional cleanup for SakuraAlbum-managed albums that no longer appear in the current plan; this is disabled by default.
-- Managed-album list and delete dry-run APIs for albums tracked in SakuraAlbum's own database.
-- Confirmed delete API that can delete only Photos albums still matching a SakuraAlbum managed record and a recent server-recorded delete-preview fingerprint.
-- Confirmed personal account reset that previews all managed-album cleanup first, then clears SakuraAlbum queue/cursor state and resets personal SakuraAlbum settings.
-- Direct ZIP download for a single SakuraAlbum-managed album, guarded by admin file and byte limits before streaming starts.
-- Background album export jobs for SakuraAlbum-managed and native Photos albums. Large exports are written into the user's Files area under `SakuraAlbum Exports`; exports above 1 GiB are split into part ZIP files.
-- App-owned tables for future tracking of generated albums and sync runs.
-- App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
-- Admin debug mode with stricter diagnostic logging and a log viewer.
-- Redacted diagnostic report preparation for users and admins, including an operational health section for stale locks, overdue queues, stuck runs, failed cursors, failed exports, Cron problems, missing managed Photos albums, and recent warning/error logs.
-- Diagnostic logs can be downloaded as CSV by users and admins; each CSV export is also saved under SakuraAlbum AppData for later server-side analysis.
-- Direct email sending is intentionally left for a later release.
-- Safe OCC commands for controlled test windows: preview, sync dry-run, and generated-album delete dry-run.
-- User, admin, developer, privacy, and store-release documentation linked from `appinfo/info.xml`.
-- SVG branding with a sakura blossom falling onto a dog.
+<p align="center">
+  <img alt="Nextcloud" src="https://img.shields.io/badge/Nextcloud-33-0082c9?logo=nextcloud&logoColor=white">
+  <img alt="PHP" src="https://img.shields.io/badge/PHP-8.3%2B-777bb4?logo=php&logoColor=white">
+  <img alt="Version" src="https://img.shields.io/badge/SakuraAlbum-1.0.6-dc4f7b">
+  <img alt="License" src="https://img.shields.io/badge/License-AGPL--3.0--or--later-2f855a">
+</p>
 
-## Safety model
+## Die Idee
 
-- Generated albums are intended to be tracked in `sakuraalbum_albums`.
-- Bulk deletion must only operate on app-tracked generated albums.
-- Album ZIP downloads must only operate on app-tracked generated albums that still match the Photos album id, owner, and name.
-- Direct ZIP downloads are blocked before streaming if the album exceeds the configured file or byte limit.
-- Background export jobs re-check album ownership, write only into the requesting user's Files area, and create `.nomedia`/`.noimage` markers in export folders so exported ZIPs are not picked up by SakuraAlbum scans.
-- Deletion requires the exact confirmation text `DELETE_MANAGED_ALBUMS`.
-- Deletion requires a matching plan fingerprint from a recent successful delete dry-run stored by the server.
-- Deletion re-checks the Photos album id, owner, and current name immediately before deleting.
-- Renamed or owner-mismatched Photos albums are blocked instead of deleted.
-- Account reset requires the exact confirmation text `RESET_SAKURAALBUM`, wraps the same managed-album delete safety checks, and keeps diagnostic logs available.
-- Preview has strict folder/file limits from admin settings.
-- Debug logs redact common secret keys before storing context.
-- Debug exception traces intentionally omit function arguments.
-- Diagnostic reports reuse redacted app logs, add machine-readable operational health findings, and explicitly mark mail sending as disabled until a future mail sender is added.
-- Diagnostic CSV exports persist a server-side copy under Nextcloud AppData (`appdata_*/sakuraalbum/diagnostics/csv`) so test evidence remains available after browser downloads.
-- Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, require a matching recent dry-run plan fingerprint stored by the server, and refuse unsafe plans.
-- Existing Photos albums are not modified unless SakuraAlbum already tracks them as managed albums.
-- Repeated updates are idempotent: an already-linked Photos file is counted as already linked, including Photos versions that report the duplicate through the database layer.
-- File events never perform heavy scans or album writes directly. They only queue dirty paths for a later background job.
-- File-event queue rows are collapsed to the affected include root so a large upload inside one selected folder does not create one independent sync job per file.
-- File-event auto-sync requires three gates: global admin enablement, user enablement, and the user's explicit automatic-update opt-in.
-- Admins can further restrict SakuraAlbum to selected Nextcloud groups; users outside those groups cannot queue or write generated albums.
-- Per-user managed album and managed media-link quotas are enforced on the server before dry-run-approved writes or background chunks can write.
-- Optional Auto-Sync maintenance windows prevent background queue processing outside configured low-load hours.
-- Queued automatic work is skipped if the user disables SakuraAlbum or automatic updates before the background job processes the queue.
-- Settings changes can queue all enabled source folders for the next background run when automatic sync is active.
-- If SakuraAlbum-managed Photos albums are deleted outside SakuraAlbum, the background job detects the missing managed album ids and queues a rebuild for the affected user.
-- Active source folders must not overlap. A nested source selection such as `/Photos` plus `/Photos/Trip` is blocked before writing so media is not planned twice.
-- Background sync is non-parallel and bounded by admin settings for debounce, interval, users per run, runtime, event count, folder count, file count, and album count.
-- Background sync summaries include seen events, reserved events, and event-limit hits so admins can tune load profiles from real diagnostics.
-- Write runs update the current run summary while processing so the UI can report stage, processed albums, processed links, and error counters.
-- Background chunk writes store a per-user/config cursor and requeue themselves while more media remains.
-- Chunk cursors expose an estimated progress percent for user-visible status; it is intentionally an estimate while the total remaining scan size is still unknown.
-- During chunked background writes, SakuraAlbum never removes stale file links or missing managed albums, because a partial plan must not be treated as the full desired album state.
-- Background sync recovers stale processing locks and logs runtime-limit stops so interrupted cron work can be diagnosed.
-- Automatic updates mean "scheduled as soon as allowed by debounce and load limits", not synchronous writes during uploads or deletes.
-- SakuraAlbum's global admin enable setting is stored under an app-owned key separate from Nextcloud's reserved app activation flag.
+Viele Nextcloud-Installationen enthalten ueber Jahre gewachsene Fotoordner: Familienfotos, Reisen, Projekte, Haustiere, Veranstaltungen, Scans und Handy-Uploads. In Nextcloud Photos sind diese Dateien zwar vorhanden, aber nicht automatisch als sinnvolle Alben gepflegt.
 
-## Local checks
+SakuraAlbum schliesst diese Luecke. Die App liest ausgewaehlte Quellordner, plant daraus Photos-Alben, zeigt vorab eine klare Vorschau und erstellt oder aktualisiert die Alben kontrolliert im Hintergrund. Der Benutzer arbeitet weiter mit seinen Dateien; SakuraAlbum sorgt dafuer, dass die Alben dazu passen.
 
-Run from the app directory:
+## Warum SakuraAlbum?
+
+| Ohne SakuraAlbum | Mit SakuraAlbum |
+| --- | --- |
+| Alben muessen manuell gepflegt werden. | Ordnerstrukturen werden automatisch zu Photos-Alben. |
+| Neue, verschobene oder geloeschte Bilder machen Alben schnell inkonsistent. | Datei-Events merken Updates vor; Cron verarbeitet sie serverfreundlich. |
+| Grosse Sammlungen erzeugen schnell zu viele Alben. | Tiefe, Ordnerregeln und "alles in ein Album" steuern die Struktur. |
+| Aufraeumen ist riskant. | Loesch- und Reset-Funktionen arbeiten nur auf eindeutig verwalteten SakuraAlbum-Alben. |
+| Fehleranalyse ist muehsam. | Diagnoseberichte, Health Checks und CSV-Logs zeigen, was wirklich passiert. |
+
+## Highlights
+
+| Funktion | Nutzen |
+| --- | --- |
+| **Automatische Albumaktualisierung** | Neue, geaenderte, verschobene, umbenannte oder geloeschte Dateien loesen keinen schweren Sofort-Scan aus, sondern werden sicher fuer den Hintergrund vorgemerkt. |
+| **Quellordner per Auswahlmenue** | Benutzer waehlen Ordner aus ihrer Nextcloud-Dateistruktur statt rohe Pfade einzutippen. |
+| **Ordnerregeln** | Einzelne Unterordner koennen eine eigene Tiefe bekommen, komplett ausgelassen oder zu einem einzigen Album zusammengefasst werden. |
+| **Vorschau und Dry-Run** | Vor Schreibaktionen sieht der Benutzer, welche Alben und Links entstehen wuerden. |
+| **Sichere Loeschung** | SakuraAlbum loescht nur Alben, die es eindeutig selbst verwaltet und erneut gegen Besitzer, Name und Photos-ID geprueft hat. |
+| **Grosse Album-Downloads** | SakuraAlbum- und native Photos-Alben koennen als Hintergrund-Export vorbereitet werden; ab 1 GiB werden ZIP-Teile erzeugt. |
+| **Betriebsdiagnose** | Health Checks finden stale Locks, haengende Runs, fehlerhafte Cursor, Exportfehler, Cron-Probleme und aktuelle Warn-/Fehlerlogs. |
+| **CSV-Fehlerlogs** | Admins und Benutzer koennen Diagnose-CSV herunterladen; eine Kopie bleibt serverseitig im SakuraAlbum-AppData erhalten. |
+
+## So funktioniert es
+
+```mermaid
+flowchart LR
+    A[Benutzer waehlt Quellordner] --> B[SakuraAlbum erstellt Vorschau]
+    B --> C{Regeln passen?}
+    C -- Nein --> D[Tiefe, Ausnahmen oder Zusammenfassung anpassen]
+    D --> B
+    C -- Ja --> E[Auto-Sync vormerken]
+    E --> F[Debounce und Lastlimits]
+    F --> G[Nextcloud Cron]
+    G --> H[Alben chunkweise erstellen oder aktualisieren]
+    H --> I[Status, Fortschritt und Diagnose]
+```
+
+Datei-Events werden bewusst leichtgewichtig behandelt:
+
+```mermaid
+sequenceDiagram
+    participant Files as Nextcloud Files
+    participant Sakura as SakuraAlbum
+    participant Queue as Dirty Queue
+    participant Cron as Background Job
+    participant Photos as Nextcloud Photos
+
+    Files->>Sakura: Datei erstellt, verschoben, geloescht oder umbenannt
+    Sakura->>Queue: Betroffenen Quellordner vormerken
+    Note over Sakura,Queue: Kein schwerer Scan im Datei-Event
+    Cron->>Queue: Faellige Arbeit nach Debounce abholen
+    Cron->>Sakura: Mit Admin-Limits verarbeiten
+    Sakura->>Photos: Verwaltete Alben sicher aktualisieren
+    Sakura->>Sakura: Logs, Health-Daten und Fortschritt speichern
+```
+
+## Benutzererlebnis
+
+SakuraAlbum ist fuer normale Benutzer einfach gehalten:
+
+- App fuer das eigene Konto aktivieren.
+- Einen oder mehrere Quellordner auswaehlen.
+- Bei Bedarf Unterordner-Regeln setzen.
+- Vorschau ansehen.
+- Automatik laufen lassen.
+- Fortschritt, letzte Laeufe und Details bei Bedarf aufklappen.
+
+Der Benutzer muss keine Cronjobs, Pfade oder Datenbankdetails verstehen. Wenn viele Bilder verarbeitet werden, zeigt SakuraAlbum Status und Fortschritt statt den Browser zu blockieren.
+
+## Admin-Kontrolle
+
+Admins behalten die Kontrolle ueber Ressourcen und Risiko:
+
+- globale Freigabe,
+- optionaler Rollout nur fuer bestimmte Nextcloud-Gruppen,
+- Standard-Quellordner und Standard-Ausnahmen,
+- Scan-, Datei-, Album- und Laufzeitlimits,
+- Benutzerquoten fuer verwaltete Alben und Medienlinks,
+- Wartungsfenster fuer automatische Verarbeitung,
+- Debug-Logging und Log-Aufbewahrung,
+- Health-Diagnose und CSV-Export.
+
+Damit eignet sich SakuraAlbum auch fuer produktive Server, auf denen Foto-Sammlungen gross sind und Hintergrundarbeit planbar bleiben muss.
+
+## Sicherheit und Nachvollziehbarkeit
+
+SakuraAlbum ist defensiv gebaut:
+
+- Schreibaktionen benoetigen serverseitig gespeicherte Dry-Run-Fingerprints.
+- Direkte Loeschungen verlangen exakte Bestaetigungen.
+- Fremde oder umbenannte Photos-Alben werden blockiert statt geloescht.
+- Verwaltete Alben werden in SakuraAlbum-eigenen Tabellen verfolgt.
+- Datei-Events schreiben nie direkt in Photos-Alben.
+- Hintergrundjobs laufen nicht parallel und respektieren Admin-Limits.
+- Debug-Kontexte werden vor dem Speichern redigiert.
+- Diagnose-CSV bleibt serverseitig verfuegbar, damit Tests spaeter nachvollziehbar bleiben.
+
+## Diagnose, die beim Entwickeln wirklich hilft
+
+SakuraAlbum 1.0.6 fuehrt Betriebsdiagnosen ein, die nicht nur Logs anzeigen, sondern typische Stoerungen aktiv bewerten:
+
+| Diagnose | Erkennt |
+| --- | --- |
+| Queue Health | wartende, fehlgeschlagene oder ueberfaellige Auto-Sync-Eintraege |
+| Lock Health | haengende Processing-Locks nach abgebrochenen Jobs |
+| Run Health | Sync-Laeufe, die zu lange auf `running` stehen |
+| Cursor Health | fehlgeschlagene oder stale Chunk-Fortsetzungen |
+| Export Health | haengende oder fehlgeschlagene Album-Exportjobs |
+| Cron Health | fehlende oder zu alte Nextcloud-Cron-Ausfuehrung |
+| Log Health | Warnungen und Fehler aus den letzten 24 Stunden |
+
+CSV-Exports enthalten Health-Befunde, Queue-Samples, Sync-Runs und App-Logs. Das macht kontrollierte Tests reproduzierbarer und spart Zeit bei Fehleranalysen.
+
+## Album-Downloads
+
+SakuraAlbum kann Alben als ZIP vorbereiten:
+
+- einzelne verwaltete Alben direkt, solange Admin-Limits eingehalten werden,
+- SakuraAlbum-verwaltete Alben und native Photos-Alben als Hintergrundjob,
+- grosse Exporte mit Teil-ZIP-Dateien ab 1 GiB,
+- Exportordner mit `.nomedia` und `.noimage`, damit erzeugte ZIPs nicht wieder in Album-Scans landen.
+
+## Status
+
+| Bereich | Stand |
+| --- | --- |
+| Aktuelle Entwicklungsversion | `1.0.6` |
+| Zielplattform | Nextcloud 33, PHP 8.3+ |
+| Lizenz | AGPL-3.0-or-later |
+| Store-Vorbereitung | App-Metadaten, Docs, Changelogs, Checks und Release-Prozess vorhanden |
+| Produktionsregel | Live-Updates nur mit Backup, Preflight und dokumentiertem Rollback |
+
+SakuraAlbum wird als produktiv nutzbare Nextcloud-App entwickelt. Trotzdem gilt: neue Versionen sollten erst nach kontrolliertem Backup-/Updatefenster auf produktiven Servern aktiviert werden.
+
+## Installation und Tests
+
+Lokale Pruefung im App-Verzeichnis:
 
 ```bash
 ./scripts/self-check.sh
 ```
 
-The check runs PHP syntax checks, JavaScript syntax checks, XML metadata validation, pure naming smoke tests, and a basic secret-pattern scan.
-
-Build a clean local package from the app directory:
+Paket bauen:
 
 ```bash
 ./scripts/build-artifact.sh
 ```
 
-The package is created under `../artifacts/` with a top-level `sakuraalbum/` folder and fails if development-only or repository-only files such as `node_modules`, `vendor`, `.git`, `.github`, `releases`, `SOURCE_MANIFEST.txt`, caches, logs, or nested archives are included.
+Produktions-Preflight vor jedem Live-Update:
 
-Dry-run OCC helpers for controlled test windows:
+```bash
+./scripts/production-update.sh --preflight
+```
+
+Bewusst geschuetzter Deploy:
+
+```bash
+SAKURAALBUM_PRODUCTION_UPDATE=1 ./scripts/production-update.sh --deploy
+```
+
+OCC-Helfer fuer kontrollierte Testfenster:
 
 ```bash
 php occ sakuraalbum:preview --user albentest
@@ -107,38 +195,24 @@ php occ sakuraalbum:sync --user albentest --dry-run
 php occ sakuraalbum:delete-generated --user albentest --dry-run --all
 ```
 
-These helpers are intentionally non-destructive.
+## Dokumentation
 
-Minimal controlled live smoke after backup and deploy:
+- [Benutzerhandbuch](docs/USER_GUIDE.md)
+- [Admin-Handbuch](docs/ADMIN_GUIDE.md)
+- [Entwicklernotizen](docs/DEVELOPER_NOTES.md)
+- [Datenschutz](docs/PRIVACY.md)
+- [Update-Policy](docs/UPDATE_POLICY.md)
+- [Store-Release-Checkliste](docs/STORE_RELEASE_CHECKLIST.md)
+- [Changelog](CHANGELOG.md)
+- [English version](README.en.md)
 
-```bash
-sudo -u www-data SAKURAALBUM_LIVE_SMOKE=1 bash /var/www/nextcloud/apps/sakuraalbum/scripts/live-smoke.sh
-```
+## Roadmap
 
-The smoke is intentionally small: it uses only `albentest`, creates one tiny PNG in `/Photos/SakuraAlbumV1Smoke`, writes one managed album, checks ZIP preparation, runs the guarded account reset, removes the smoke folder, and restores SakuraAlbum admin settings.
+- Diagnoseberichte optional per Mail versenden.
+- Store-Einreichung nach erneuter Pruefung der aktuellen Nextcloud-/Photos-APIs.
+- Kompatibilitaet fuer weitere Nextcloud-Versionen nach gezielten Tests erweitern.
+- UI-Screenshots und kurze Demo-Grafiken ergaenzen, sobald das finale Design auf dem Zielsystem stabil ist.
 
-## Production test rule
+## Projektidentitaet
 
-Do not enable this app on a production Nextcloud before a backup and restore prompt have been prepared. Live tests may only use the Nextcloud user `albentest`.
-
-During controlled tests, enable admin setting `debugMode` so preview requests, successes, warnings, and failures are stored with enough context for diagnosis. Before and after every live test, create or download a SakuraAlbum diagnostic CSV and review the health section for stale queues, locks, failed jobs, and recent warning/error logs.
-
-## Production updates
-
-SakuraAlbum is maintained as a production Nextcloud app. Versioned releases, hotfixes, database migrations, backups, deployment, rollback, and documentation requirements are defined in `docs/UPDATE_POLICY.md`.
-
-Run the production preflight before every release or live deployment:
-
-```bash
-./scripts/production-update.sh --preflight
-```
-
-Deploy mode is intentionally guarded and requires an explicit environment flag:
-
-```bash
-SAKURAALBUM_PRODUCTION_UPDATE=1 ./scripts/production-update.sh --deploy
-```
-
-## Publication notes
-
-SakuraAlbum includes app-store metadata, changelogs, background-job declaration, documentation links, and a release checklist. Before a public app-store submission, re-review `PhotosAlbumAdapter` against the then-current Nextcloud and Photos APIs because it is the intentionally isolated Photos integration point.
+SakuraAlbum steht fuer leise Automatisierung statt harter Massenoperationen: eine Kirschbluete faellt auf einen Hund, und im Hintergrund werden grosse Fotoarchive geordnet, ohne den Server aus dem Tritt zu bringen.
