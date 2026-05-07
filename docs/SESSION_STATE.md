@@ -2,6 +2,18 @@
 
 Datum: 2026-05-07 19:35:46 CEST
 
+Neueste operative Notiz (2026-05-07 19:40 CEST):
+- Kontrolliertes Testfenster SakuraAlbum 1.0.6 gestartet.
+- Live-Ausgangszustand:
+  - Nextcloud gesund: `maintenance=false`, `needsDbUpgrade=false`.
+  - Live-App vor Deploy: `sakuraalbum 1.0.4`, aktiviert.
+  - Admin-Automatik vor Deploy: `autoSyncMode=file_events`, `debugMode=1`.
+- Backup vor Live-Aenderung:
+  - Pfad: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-106-test-20260507-193858`.
+  - Enthalten: Live-App-Verzeichnis, `occ`-Status/App-Liste, SakuraAlbum-Tabellenliste, SQL-Dump fuer `oc_sakuraalbum_*` plus relevante Nextcloud-Konfiguration/Jobs/Photos-Tabellen, `SHA256SUMS`, `RESTORE_PROMPT.txt`.
+  - SHA256-Pruefung des Backups erfolgreich.
+- Naechster Schritt im Testfenster: Deploy von lokalem Stand `1.0.6`, danach `occ upgrade/status`, Reset von `albentest`, Auto-Sync-Test und Debuglog-Auswertung.
+
 Neueste operative Notiz (2026-05-07 19:35 CEST):
 - Nacharbeit zum Lizenz-/GitHub-/Testbacklog-Block:
   - `./scripts/production-update.sh --preflight` erneut erfolgreich: PHP/JS-Syntax, `appinfo/info.xml` gegen offizielles Nextcloud-Schema, Sicherheits-Smokes, Nextcloud-Status und Artefaktbau gruen.
