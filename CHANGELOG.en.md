@@ -10,6 +10,7 @@
 - Added periodic SakuraAlbum log retention pruning using the configured debug retention period.
 - Changed preview debug logging to store only a compact settings summary instead of raw user-provided settings.
 - Documented the SakuraAlbum security model with concrete attack scenarios and added matching security backlog checks.
+- Added a guarded live security smoke helper for path hardening, export limits, diagnostic CSV hardening, export success, and reset cleanup.
 
 ## 1.0.7
 

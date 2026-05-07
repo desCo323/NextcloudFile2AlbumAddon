@@ -515,3 +515,32 @@ Abschluss Sicherheitsblock (2026-05-07 22:28 CEST):
   - `git remote -v` enthaelt nur `https://github.com/desCo323/NextcloudFile2AlbumAddon.git`, kein Token.
   - Secret-Scan nach GitHub-PAT-Mustern und Testpasswort-Muster fand keine Treffer.
 - Kein Live-Deploy ausgefuehrt; naechster sicherer Schritt ist ein kontrolliertes 1.0.8 Backup-/Deploy-/Smoke-Testfenster mit `albentest`.
+
+Kontrolliertes Testfenster SakuraAlbum 1.0.8 (2026-05-07 22:25-22:34 CEST):
+- Pre-Status:
+  - Arbeitsstand vor Deploy: Git-clean auf `161032c`.
+  - Live vor Deploy: SakuraAlbum `1.0.7`.
+  - Nextcloud vor Deploy: `maintenance=false`, `needsDbUpgrade=false`.
+- Backups:
+  - Manuelles App-/DB-Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-108-security-test-20260507-222556`.
+  - DB-Dump SHA256: `534ec6bef46954489e6dea2b2e3ccc974508f989de8411d619589d1f6c80ebd3`.
+  - Production-update App-Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.8-20260507-222621/app`.
+- Deploy:
+  - Befehl: `SAKURAALBUM_PRODUCTION_UPDATE=1 bash scripts/production-update.sh --deploy`.
+  - App-Upgrade lief durch, SakuraAlbum wurde auf `1.0.8` aktualisiert.
+  - Nextcloud nach Upgrade: `maintenance=false`, `needsDbUpgrade=false`.
+  - Live-App-Liste zeigt `sakuraalbum: 1.0.8`.
+- Tests mit `albentest`:
+  - Live-Smoke: Dry-run 1 Album/1 Link, Write 1 Album/1 Link, direkter ZIP-Check 1 Datei/68 Bytes, Account-Reset erfolgreich.
+  - Live-Regression: Ordnerregeln, Exclude, Auto-Sync-Verarbeitung, missing-managed-album-Reparatur, Hintergrundexport, downloadbarer ZIP-Part und finaler Reset erfolgreich.
+  - Live-Security-Smoke: Pfad-Haertung, Exportlimit-Blockade (`max_export_files_exceeded` bei 2 Dateien und Limit 1), Export unter Limit, Diagnose-CSV-Formelschutz und Reset erfolgreich.
+  - Live deployed self-check: bestanden.
+  - Live `tests/Smoke/SecuritySmokeTest.php`: bestanden.
+- Nachkontrolle:
+  - `albentest`: active managed albums 0, dirty paths 0, sync cursors 0, download jobs 0, Photos albums 0, Photos album links 0.
+  - Testordner `/Photos/SakuraAlbum108Smoke`, `/Photos/SakuraAlbum108Regression`, `/Photos/SakuraAlbum108Security`, `/Photos/SakuraAlbum108SecurityLive` und `/SakuraAlbum Exports` sind entfernt.
+  - Nextcloud-Log-Tail enthaelt keine SakuraAlbum/PHP Fatal/Error-Eintraege.
+  - SakuraAlbum-Logs letzte 30 Minuten: 0 Fehler; 1 erwartete Warnung `auto_sync_missing_managed_album_refresh_queued` aus dem absichtlich geloeschten Photos-Album im Reparaturtest.
+  - Admin-Settings nach Restore: `enabled=true`, `autoSyncMode=file_events`, `debugMode=true`, `defaultIncludePaths=["/Photos"]`, `maxExportFiles=100000`, `maxExportBytes=1099511627776`.
+- Wiederherstellungsprompt:
+  - "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.8-20260507-222621/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind. Falls auch DB-Testdaten zurueckgesetzt werden muessen, liegt der Dump unter `/home/cloud/sakuraalbum-backups/sakuraalbum-108-security-test-20260507-222556/db-before-test.sql.gz`."

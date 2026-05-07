@@ -26,6 +26,9 @@ if command -v curl >/dev/null 2>&1; then
 fi
 
 echo "Running naming smoke tests"
+php -l scripts/live-smoke.php >/dev/null
+php -l scripts/live-regression-104.php >/dev/null
+php -l scripts/live-security-smoke.php >/dev/null
 php tests/Smoke/NamingSmokeTest.php >/dev/null
 php tests/Smoke/ReleaseMetadataSmokeTest.php >/dev/null
 php tests/Smoke/UiSmokeTest.php >/dev/null
