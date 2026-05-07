@@ -1,6 +1,16 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-07 19:13:20 CEST
+Datum: 2026-05-07 19:17:18 CEST
+
+Neueste operative Notiz (2026-05-07 19:17 CEST):
+- Benutzerauftrag: pruefen, ob die SakuraAlbum-Debuglogs auf der Live-Installation arbeiten.
+- Live-Pruefung ohne Album-/Dateiaenderung:
+  - Nextcloud gesund: `maintenance=false`, `needsDbUpgrade=false`.
+  - Live-Debug-Konfiguration: `debugMode=1`, `debugRetentionDays=14`, `debugMaxContextLength=8000`.
+  - Vorhandene Debug-Aktivitaet bestaetigt: aktuelle `auto_sync_process_completed`-Eintraege werden regelmaessig in `sakuraalbum_logs` geschrieben.
+  - Harmloser Testeintrag ueber `LogService::debug()` fuer Benutzer `albentest` erzeugt und direkt aus der Datenbank gelesen: Log-ID `1508`, Event `debug_logging_self_test_1778174225`, Level `debug`, Message `Debug logging self-test.`
+  - Redaction funktioniert: Kontextfeld `token` wurde als `"[redacted]"` gespeichert, normales Feld `plain` blieb sichtbar.
+  - Letzte Stunde enthaelt 8 SakuraAlbum-`debug`-Logs; keine Aenderung an Alben, Dateien, Queue oder Benutzerkonfiguration.
 
 Neueste operative Notiz (2026-05-07 19:13 CEST):
 - Benutzerauftrag: GitHub-Projektseite werbewirksam und informativ gestalten, deutsch als Hauptseite und separate englische Version, Funktionen/Ablaufe bei Bedarf illustrieren.
