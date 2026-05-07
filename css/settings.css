@@ -121,7 +121,8 @@
 .sakuraalbum-field input:focus-visible,
 .sakuraalbum-field select:focus-visible,
 .sakuraalbum-field textarea:focus-visible,
-.sakuraalbum-actions button:focus-visible {
+.sakuraalbum-settings button:focus-visible,
+.sakuraalbum-settings .button:focus-visible {
   outline: 2px solid #d94f70;
   outline-offset: 2px;
 }
@@ -255,14 +256,77 @@
   align-items: center;
 }
 
-.sakuraalbum-button-danger {
-  border-color: var(--color-error) !important;
-  color: var(--color-error) !important;
+.sakuraalbum-settings button,
+.sakuraalbum-settings .button {
+  min-height: 34px;
+  max-width: 100%;
+  padding: 7px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, var(--color-main-text));
+  border-radius: 6px;
+  color: var(--color-main-text) !important;
   background: color-mix(
     in srgb,
-    var(--color-main-background) 94%,
-    var(--color-error)
+    var(--color-main-background) 88%,
+    var(--color-background-darker)
   ) !important;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+}
+
+.sakuraalbum-settings button:hover,
+.sakuraalbum-settings .button:hover {
+  border-color: #2f7d72;
+  color: var(--color-main-text) !important;
+  background: color-mix(
+    in srgb,
+    var(--color-main-background) 78%,
+    #b7eadf
+  ) !important;
+}
+
+.sakuraalbum-settings button:active,
+.sakuraalbum-settings .button:active {
+  transform: translateY(1px);
+}
+
+.sakuraalbum-settings button.primary,
+.sakuraalbum-settings .button.primary {
+  border-color: var(--color-primary-element) !important;
+  color: var(--color-primary-element-text) !important;
+  background: var(--color-primary-element) !important;
+}
+
+.sakuraalbum-settings button.primary:hover,
+.sakuraalbum-settings .button.primary:hover {
+  color: var(--color-primary-element-text) !important;
+  background: var(--color-primary-element-hover, var(--color-primary-element)) !important;
+}
+
+.sakuraalbum-settings button:disabled,
+.sakuraalbum-settings .button:disabled,
+.sakuraalbum-settings button[disabled],
+.sakuraalbum-settings .button[aria-disabled="true"] {
+  border-color: var(--color-border) !important;
+  color: color-mix(in srgb, var(--color-main-text) 68%, var(--color-main-background)) !important;
+  background: var(--color-background-darker) !important;
+  opacity: 1;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sakuraalbum-button-danger {
+  border-color: #8f1d15 !important;
+  color: #ffffff !important;
+  background: #b42318 !important;
+}
+
+.sakuraalbum-button-danger:hover,
+.sakuraalbum-button-danger:focus-visible {
+  border-color: #71170f !important;
+  color: #ffffff !important;
+  background: #921b13 !important;
 }
 
 .sakuraalbum-meta-grid {

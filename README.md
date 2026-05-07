@@ -207,7 +207,7 @@ SakuraAlbum kann Alben als ZIP vorbereiten:
 
 | Bereich | Stand |
 | --- | --- |
-| Aktuelle Entwicklungsversion | `1.0.8` |
+| Aktuelle Entwicklungsversion | `1.0.9` |
 | Zielplattform | Nextcloud 33, PHP 8.3+ |
 | Lizenz | Vorlaeufige Entwicklungs- und Evaluierungslizenz, nichtkommerziell |
 | Store-Vorbereitung | Technische Metadaten, Docs, Changelogs, Checks und Release-Prozess vorhanden; Lizenz ist aktuell ein Store-Blocker |

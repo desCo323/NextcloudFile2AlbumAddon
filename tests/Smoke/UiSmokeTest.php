@@ -89,6 +89,9 @@ foreach ([
 	'sakuraalbum-automation-card',
 	'sakuraalbum-report-json',
 	'sakuraalbum-group-picker',
+	'sakuraalbum-button-danger:hover',
+	'.sakuraalbum-settings button:disabled',
+	'color: #ffffff',
 ] as $needle) {
 	assertUiContains($css, $needle, 'css/settings.css');
 }

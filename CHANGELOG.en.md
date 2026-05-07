@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.9
+
+- Improved SakuraAlbum button readability across Nextcloud themes by adding app-scoped high-contrast styles for normal, primary, disabled, and dangerous buttons.
+- Fixed the reported low-contrast danger actions such as `Alle verwalteten pruefen` and `Konto-Reset pruefen` without changing their safety behavior.
+- Kept the 1.0.8 security hardening unchanged and versioned cache-busting assets as `admin-settings-109` and `personal-settings-109`.
+
 ## 1.0.8
 
 - Hardened user path normalization with length, segment, nesting, traversal, NUL, and control-character guards.

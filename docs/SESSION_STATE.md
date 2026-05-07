@@ -544,3 +544,13 @@ Kontrolliertes Testfenster SakuraAlbum 1.0.8 (2026-05-07 22:25-22:34 CEST):
   - Admin-Settings nach Restore: `enabled=true`, `autoSyncMode=file_events`, `debugMode=true`, `defaultIncludePaths=["/Photos"]`, `maxExportFiles=100000`, `maxExportBytes=1099511627776`.
 - Wiederherstellungsprompt:
   - "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.8-20260507-222621/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind. Falls auch DB-Testdaten zurueckgesetzt werden muessen, liegt der Dump unter `/home/cloud/sakuraalbum-backups/sakuraalbum-108-security-test-20260507-222556/db-before-test.sql.gz`."
+
+Arbeitsblock Richtung finale Version 1.0.9 (2026-05-07 23:02 CEST):
+- Auftrag: UI/UX weiter finalisieren, besonders den gemeldeten Button-Kontrast bei Aktionen wie `Alle verwalteten pruefen` und `Konto-Reset pruefen`.
+- Umsetzung im Arbeitsstand:
+  - SakuraAlbum-eigene Button-Grundlinie in `css/settings.css` fuer normale, primaere, deaktivierte und gefaehrliche Buttons.
+  - Danger-Buttons haben nun dunklen roten Hintergrund und weisse Schrift statt blasser roter Schrift auf hellem Hintergrund.
+  - Hover-/Focus-Zustaende bleiben sichtbar und sind auf `.sakuraalbum-settings` begrenzt, damit keine globalen Nextcloud-Buttons veraendert werden.
+  - Version auf `1.0.9` vorbereitet: `appinfo/info.xml`, `package.json`, `lib/Settings/Admin.php`, `lib/Settings/Personal.php`, neue Assets `admin-settings-109.js` und `personal-settings-109.js`.
+  - `tests/Smoke/UiSmokeTest.php` prueft jetzt, dass die Kontrast-Haertung im CSS vorhanden bleibt.
+- Noch offen: Self-Check, Build, Backup/Deploy und Live-Testfenster 1.0.9.

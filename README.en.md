@@ -207,7 +207,7 @@ SakuraAlbum can prepare albums as ZIP files:
 
 | Area | State |
 | --- | --- |
-| Current development version | `1.0.8` |
+| Current development version | `1.0.9` |
 | Target platform | Nextcloud 33, PHP 8.3+ |
 | License | Preliminary Development and Evaluation License, non-commercial |
 | Store preparation | Technical metadata, docs, changelogs, checks, and release process are present; license is currently a store blocker |
