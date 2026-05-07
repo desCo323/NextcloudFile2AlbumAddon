@@ -35,7 +35,8 @@ Neueste operative Notiz (2026-05-07 23:25 CEST):
   - SakuraAlbum-Logs letzte 30 Minuten: 0 Fehler; 2 Warnungen `auto_sync_missing_managed_album_refresh_queued`, beide erwartete Reparaturtests.
   - Nextcloud-Log-Tail: 0 SakuraAlbum-relevante Eintraege mit Level >= 2; nur bekannte Level-0 Debug-/Deprecation-Hinweise aus Nextcloud.
   - Wiederherstellungsprompt: "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.10-20260507-232747/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind. Falls DB-Testdaten zurueckgesetzt werden muessen, liegt der Dump unter `/home/cloud/sakuraalbum-backups/sakuraalbum-1010-playwright-test-20260507-232725/db-before-test.sql.gz`."
-- Noch offen in diesem Block: Dokumentations-Commit und GitHub-Sync.
+  - GitHub-Sync: Commits `4532231 Add Playwright browser smoke tests` und `3be0080 Document Playwright live test window` auf `origin/main` gepusht; Remote enthaelt kein eingebettetes Token.
+  - Abschlusschecks nach Push: Arbeitsbaum sauber, Secret-Scan ohne Treffer, `npm run test:browser` bestanden, Live-App `sakuraalbum: 1.0.10`, Nextcloud weiter `maintenance=false` und `needsDbUpgrade=false`.
 
 Neueste operative Notiz (2026-05-07 20:00 CEST):
 - Benutzer-UX-Befund fuer spaeteres Update aufgenommen:
