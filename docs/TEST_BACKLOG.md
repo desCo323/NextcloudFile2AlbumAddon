@@ -113,6 +113,49 @@ This backlog defines the next functional, security, usability, and readability c
 
 ## Latest executed baseline
 
+Date: 2026-05-07 23:05 CEST
+
+Environment:
+
+- SakuraAlbum 1.0.9 deployed through `scripts/production-update.sh --deploy`.
+- Nextcloud stayed healthy before and after testing: `maintenance=false`, `needsDbUpgrade=false`.
+- Manual DB/app backup before deploy/test: `/home/cloud/sakuraalbum-backups/sakuraalbum-109-ux-test-20260507-230349`.
+- Production-update app backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.9-20260507-230405`.
+- Test user: `albentest`.
+
+Executed:
+
+- Local source self-check and live deployed self-check both passed.
+- Live CSS verification confirmed app-scoped button rules, danger hover contrast, white danger text, and disabled button styling in the deployed app.
+- `scripts/live-smoke.php` covered dry-run, write, direct managed ZIP preparation, account reset, and cleanup.
+- `scripts/live-security-smoke.php` covered path hardening, background export file-limit blocking, background export success under limits, diagnostic CSV formula protection, and reset cleanup.
+- `scripts/live-regression-104.php` covered folder rules, exclude rule, Auto-Sync processing, missing managed album repair, background album export, downloadable ZIP part, and reset cleanup.
+
+Post-check:
+
+- `albentest` active managed albums: 0.
+- `albentest` dirty paths: 0.
+- `albentest` sync cursors: 0.
+- `albentest` download jobs: 0.
+- `albentest` Photos albums: 0.
+- `albentest` Photos album links: 0.
+- Test folders and `SakuraAlbum Exports`: absent.
+- Nextcloud log tail contained no SakuraAlbum/PHP fatal/error entries.
+- SakuraAlbum recent errors in the last 30 minutes: 0.
+- One warning remained by design from the missing-managed-album repair test: `auto_sync_missing_managed_album_refresh_queued`.
+
+Covered backlog items:
+
+- `FUN-01`, `FUN-04`, `FUN-05`, `FUN-06`, `FUN-07`, `FUN-09`, `FUN-11`, `FUN-12`, `FUN-13`.
+- `SEC-01`, `SEC-04`, `SEC-08`, `SEC-11`, `SEC-12`, `SEC-13`.
+- `UI-11` contrast fix verified server-side in deployed CSS and UI smoke checks.
+
+Residual manual UX check:
+
+- Browser automation is not installed on this server (`playwright:no`, `selenium:no`), so a human visual browser pass should still confirm the final look in the actual Nextcloud theme.
+
+## Previous executed baseline
+
 Date: 2026-05-07 22:34 CEST
 
 Environment:

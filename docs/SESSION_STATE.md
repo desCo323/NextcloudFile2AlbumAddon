@@ -554,3 +554,36 @@ Arbeitsblock Richtung finale Version 1.0.9 (2026-05-07 23:02 CEST):
   - Version auf `1.0.9` vorbereitet: `appinfo/info.xml`, `package.json`, `lib/Settings/Admin.php`, `lib/Settings/Personal.php`, neue Assets `admin-settings-109.js` und `personal-settings-109.js`.
   - `tests/Smoke/UiSmokeTest.php` prueft jetzt, dass die Kontrast-Haertung im CSS vorhanden bleibt.
 - Noch offen: Self-Check, Build, Backup/Deploy und Live-Testfenster 1.0.9.
+
+Kontrolliertes Testfenster SakuraAlbum 1.0.9 (2026-05-07 23:03-23:08 CEST):
+- Lokale Pruefungen vor Deploy:
+  - `git diff --check`: bestanden.
+  - `bash scripts/self-check.sh`: bestanden.
+  - JS-Asset-Vergleich: `admin-settings.js == admin-settings-109.js`, `personal-settings.js == personal-settings-109.js`.
+  - Artefakt: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.9.tar.gz`, SHA256 `48f1b9668cbdcafa9832d3cdcdfb89d974016eb77a301331496ae298812d0c51`.
+- Commit vor Deploy: `1237fb2 Improve SakuraAlbum button contrast`.
+- Production Preflight: bestanden; Nextcloud vor Deploy `maintenance=false`, `needsDbUpgrade=false`.
+- Backups:
+  - Manuelles App-/DB-Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-109-ux-test-20260507-230349`.
+  - DB-Dump SHA256: `1782a9c42f2371cd839a9767ea0cc3aa10312b4daec25091ff909d95f5124d88`.
+  - Production-update App-Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.9-20260507-230405/app`.
+- Deploy:
+  - `SAKURAALBUM_PRODUCTION_UPDATE=1 bash scripts/production-update.sh --deploy`.
+  - App-Upgrade lief durch, SakuraAlbum wurde auf `1.0.9` aktualisiert.
+  - Nextcloud nach Upgrade: `maintenance=false`, `needsDbUpgrade=false`; Live-App-Liste zeigt `sakuraalbum: 1.0.9`.
+- Tests mit `albentest`:
+  - Live deployed self-check: bestanden.
+  - Live-CSS-Pruefung bestaetigt `.sakuraalbum-settings button`, `.sakuraalbum-settings button:disabled`, `.sakuraalbum-button-danger:hover` und weisse Danger-Button-Schrift.
+  - Live-Smoke: Dry-run, Write, direkter ZIP-Check und Account-Reset erfolgreich.
+  - Live-Security-Smoke: Pfad-Haertung, Exportlimit-Blockade, Export unter Limit, Diagnose-CSV-Formelschutz und Reset erfolgreich.
+  - Live-Regression: Ordnerregeln, Exclude, Auto-Sync-Verarbeitung, missing-managed-album-Reparatur, Hintergrundexport, downloadbarer ZIP-Part und finaler Reset erfolgreich.
+- Nachkontrolle:
+  - `albentest`: active managed albums 0, dirty paths 0, sync cursors 0, download jobs 0, Photos albums 0, Photos album links 0.
+  - Testordner `/Photos/SakuraAlbum109Smoke`, `/Photos/SakuraAlbum109Security`, `/Photos/SakuraAlbum109Regression` und `/SakuraAlbum Exports` sind entfernt.
+  - Nextcloud-Log-Tail enthaelt keine SakuraAlbum/PHP Fatal/Error-Eintraege.
+  - SakuraAlbum-Logs letzte 30 Minuten: 0 Fehler; 1 erwartete Warnung `auto_sync_missing_managed_album_refresh_queued` aus dem absichtlich geloeschten Photos-Album im Reparaturtest.
+  - Admin-Settings nach Restore: `enabled=true`, `autoSyncMode=file_events`, `debugMode=true`, `defaultIncludePaths=["/Photos"]`.
+- Browser-Automation:
+  - Auf diesem Server ist keine Browser-Automation installiert (`playwright:no`, `selenium:no`). Ein finaler visueller Browserpass durch einen Menschen bleibt sinnvoll, auch wenn die serverseitigen UI-/CSS-Pruefungen bestanden sind.
+- Wiederherstellungsprompt:
+  - "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.9-20260507-230405/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind. Falls DB-Testdaten zurueckgesetzt werden muessen, liegt der Dump unter `/home/cloud/sakuraalbum-backups/sakuraalbum-109-ux-test-20260507-230349/db-before-test.sql.gz`."
