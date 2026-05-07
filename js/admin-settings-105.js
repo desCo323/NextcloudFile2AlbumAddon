@@ -932,6 +932,8 @@
     const logs = report.logs || [];
     const autoSync = report.autoSync || {};
     const counts = autoSync.counts || {};
+    const health = report.health || {};
+    const healthSummary = health.summary || {};
     const json = JSON.stringify(report, null, 2);
     output.innerHTML = `
 			<div class="sakuraalbum-summary">
@@ -939,13 +941,15 @@
 				<div><strong>${escapeText(formatTime(meta.createdAt))}</strong><br>Erstellt</div>
 				<div><strong>${escapeText(logs.length)}</strong><br>Logs</div>
 				<div><strong>${escapeText(counts.pending || 0)}</strong><br>Wartend</div>
-				<div><strong>${escapeText(counts.failed || 0)}</strong><br>Fehler</div>
+				<div><strong>${escapeText(health.status || "unbekannt")}</strong><br>Betrieb</div>
+				<div><strong>${escapeText(healthSummary.issueCount || 0)}</strong><br>Befunde</div>
 				<div><strong>${report.sendMailReady ? "Ja" : "Nein"}</strong><br>Mail aktiv</div>
 			</div>
 			<div class="sakuraalbum-note">
 				<strong>Redigierter Diagnosebericht</strong>
-				<span>Bekannte Geheimnisse werden vor dem Speichern von Log-Kontext redigiert. Der direkte Mailversand ist noch nicht aktiv.</span>
+				<span>Bekannte Geheimnisse werden vor dem Speichern von Log-Kontext redigiert. Der Bereich Betrieb bewertet Queue, Cron, laufende Jobs, Exporte, Cursor und Fehlerlogs automatisch.</span>
 			</div>
+			${renderHealthIssues(health)}
 			<div class="sakuraalbum-actions">
 				<button id="ska-copy-admin-diagnostic-report" type="button" title="Kopiert den sichtbaren JSON-Bericht in die Zwischenablage.">Bericht kopieren</button>
 			</div>
@@ -955,6 +959,61 @@
     if (copy) {
       copy.addEventListener("click", () => copyDiagnosticReport(json));
     }
+  }
+
+  function renderHealthIssues(health) {
+    const issues = (health && health.issues) || [];
+    if (!issues.length) {
+      return '<div class="sakuraalbum-success"><strong>Betriebsdiagnose unauffaellig</strong><span>Es wurden keine haengenden SakuraAlbum-Jobs, stale Locks, fehlgeschlagenen Exporte oder kritischen Fehlerlogs erkannt.</span></div>';
+    }
+    return `
+			<div class="sakuraalbum-table-wrap">
+				<table class="sakuraalbum-preview-table">
+					<thead><tr><th>Schwere</th><th>Befund</th><th>Details</th></tr></thead>
+					<tbody>
+						${issues
+              .map(
+                (issue) => `
+							<tr>
+								<td><span class="sakuraalbum-level sakuraalbum-level-${healthLevelClass(issue.severity || "warning")}">${escapeText(issue.severity || "warning")}</span></td>
+								<td>${escapeText(healthIssueText(issue.code || "", issue.message || ""))}</td>
+								<td><pre class="sakuraalbum-log-context">${escapeText(JSON.stringify(issue.context || {}, null, 2))}</pre></td>
+							</tr>
+						`,
+              )
+              .join("")}
+					</tbody>
+				</table>
+			</div>
+		`;
+  }
+
+  function healthIssueText(code, fallback) {
+    const labels = {
+      debug_disabled: "Debug-Logging ist ausgeschaltet; fuer Fehleranalyse fehlen Details.",
+      auto_sync_global_disabled: "Automatische Albumaktualisierung ist global deaktiviert.",
+      auto_sync_manual_mode: "Automatische Albumaktualisierung steht auf manuell.",
+      auto_sync_window_closed: "Automatik wartet auf das Wartungsfenster.",
+      failed_auto_sync_queue_entries: "Auto-Sync hat fehlgeschlagene Warteschlangeneintraege.",
+      stale_auto_sync_processing_lock: "Ein Auto-Sync-Lock haengt zu lange in Verarbeitung.",
+      overdue_auto_sync_queue: "Auto-Sync-Arbeit wartet laenger als erwartet.",
+      stale_running_sync_run: "Ein SakuraAlbum-Lauf steht zu lange auf laufend.",
+      recent_failed_sync_runs: "In den letzten 24 Stunden sind SakuraAlbum-Laeufe fehlgeschlagen.",
+      failed_sync_cursors: "Hintergrund-Fortsetzungscursor sind fehlgeschlagen.",
+      stale_pending_sync_cursor: "Ein Hintergrundcursor macht laenger keinen Fortschritt.",
+      recent_failed_album_exports: "Album-Export-Jobs sind fehlgeschlagen.",
+      stale_album_export_job: "Ein Album-Export wartet oder laeuft zu lange.",
+      recent_error_logs: "SakuraAlbum hat Fehlerlogs in den letzten 24 Stunden geschrieben.",
+      recent_warning_logs: "SakuraAlbum hat Warnlogs in den letzten 24 Stunden geschrieben.",
+      missing_managed_photos_albums: "Verwaltete SakuraAlbum-Alben fehlen in Photos und muessen neu aufgebaut werden.",
+      nextcloud_cron_not_recorded: "Nextcloud hat keinen Cron-Lauf protokolliert.",
+      nextcloud_cron_stale: "Nextcloud Cron ist zu alt; Hintergrundjobs koennen haengen.",
+    };
+    return labels[code] || fallback || code || "";
+  }
+
+  function healthLevelClass(severity) {
+    return severity === "critical" ? "error" : levelClass(severity || "warning");
   }
 
   async function copyDiagnosticReport(json) {

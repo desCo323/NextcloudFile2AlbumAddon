@@ -100,12 +100,36 @@ if ! rg -n "auto_sync_runtime_limit_reached" lib/Service/AutoSyncService.php >/d
 	echo "Automatic sync runtime-limit logging is missing" >&2
 	exit 1
 fi
+if ! rg -n "OperationalHealthService" lib/Service/DiagnosticReportService.php lib/Service/OperationalHealthService.php >/dev/null; then
+	echo "Operational health diagnostics are missing" >&2
+	exit 1
+fi
+if ! rg -n "diagnostic_health_issues_detected|admin_diagnostic_health_issues_detected" lib/Controller/DiagnosticsController.php >/dev/null; then
+	echo "Diagnostic health issue logging is missing" >&2
+	exit 1
+fi
+if ! rg -n "DiagnosticCsvExportService" lib/Service/DiagnosticCsvExportService.php lib/Controller/DiagnosticsController.php >/dev/null; then
+	echo "Diagnostic CSV export service is missing" >&2
+	exit 1
+fi
+if ! rg -n "diagnostics/logs\\.csv" appinfo/routes.php js/admin-settings.js js/personal-settings.js >/dev/null; then
+	echo "Diagnostic CSV routes or UI buttons are missing" >&2
+	exit 1
+fi
+if ! rg -n "appdata://.*diagnostics/csv" lib/Service/DiagnosticCsvExportService.php >/dev/null; then
+	echo "Diagnostic CSV exports must persist a server-side AppData copy" >&2
+	exit 1
+fi
 if ! rg -n "pendingEventsSeen" lib/Service/AutoSyncService.php js/admin-settings.js >/dev/null; then
 	echo "Automatic sync load-summary counters are missing" >&2
 	exit 1
 fi
 if ! rg -n "affectedAutoSyncPath|affectedIncludePath|autoSyncQueuePaths" lib/Service/AutoSyncService.php >/dev/null; then
 	echo "Automatic sync must collapse file events to the affected include root" >&2
+	exit 1
+fi
+if ! rg -n "safeNodePath|userIdFromNodePath" lib/Service/AutoSyncService.php >/dev/null; then
+	echo "Automatic sync must handle non-existing rename/delete source nodes without generic event failures" >&2
 	exit 1
 fi
 if ! rg -n "auto-sync/status" appinfo/routes.php js/admin-settings.js >/dev/null; then

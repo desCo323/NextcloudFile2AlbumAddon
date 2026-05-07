@@ -7,8 +7,6 @@ namespace OCA\SakuraAlbum\Service;
 use OCA\SakuraAlbum\BackgroundJob\AutoSyncJob;
 use OCA\SakuraAlbum\Db\DirtyPathMapper;
 use OCA\SakuraAlbum\Db\ManagedAlbumMapper;
-use OCP\Files\Events\Node\NodeRenamedEvent;
-use OCP\Files\FileInfo;
 use OCP\Files\Node;
 use OCP\IDBConnection;
 use OCP\BackgroundJob\IJobList;
@@ -56,24 +54,32 @@ class AutoSyncService {
 			return;
 		}
 
-		$user = $node->getOwner();
-		if (!$user instanceof IUser) {
+		$nodePath = $this->safeNodePath($node);
+		$user = null;
+		try {
+			$user = $node->getOwner();
+		} catch (\Throwable) {
+			$user = null;
+		}
+		$userId = $user instanceof IUser ? $user->getUID() : $this->userIdFromNodePath($nodePath);
+		$ownerSource = $user instanceof IUser ? 'node_owner' : 'path_prefix';
+		if ($userId === null) {
 			$this->logService->debug('auto_sync_file_event_ignored', null, [
 				'reason' => 'missing_owner',
 				'eventType' => $eventType,
-				'nodePath' => $node->getPath(),
+				'nodePath' => $nodePath,
+				'nodeClass' => $node::class,
 			]);
 			return;
 		}
 
-		$userId = $user->getUID();
-		$path = $this->relativeUserPath($node, $userId);
+		$path = $this->relativeUserPath($node, $userId, $nodePath);
 		if ($path === null) {
 			$this->logService->debug('auto_sync_file_event_ignored', $userId, [
 				'reason' => 'outside_user_files',
 				'eventType' => $eventType,
-				'nodePath' => $node->getPath(),
-				'internalPath' => $node->getInternalPath(),
+				'nodePath' => $nodePath,
+				'internalPath' => $this->safeInternalPath($node),
 			]);
 			return;
 		}
@@ -95,6 +101,7 @@ class AutoSyncService {
 			'path' => $dirtyPath,
 			'sourcePath' => $path,
 			'eventType' => $eventType,
+			'ownerSource' => $ownerSource,
 		]);
 	}
 
@@ -674,19 +681,43 @@ class AutoSyncService {
 		return array_values($unique);
 	}
 
-	private function relativeUserPath(Node $node, string $userId): ?string {
-		$path = $node->getPath();
+	private function relativeUserPath(Node $node, string $userId, ?string $path = null): ?string {
+		$path ??= $this->safeNodePath($node);
 		$prefix = '/' . $userId . '/files/';
 		if (str_starts_with($path, $prefix)) {
 			return trim(substr($path, strlen($prefix)), '/');
 		}
 
-		$internalPath = trim($node->getInternalPath(), '/');
+		$internalPath = trim($this->safeInternalPath($node), '/');
 		if ($internalPath === '' || str_starts_with($internalPath, 'files_trashbin/')) {
 			return null;
 		}
 
 		return $internalPath;
+	}
+
+	private function safeNodePath(Node $node): string {
+		try {
+			return $node->getPath();
+		} catch (\Throwable) {
+			return '';
+		}
+	}
+
+	private function safeInternalPath(Node $node): string {
+		try {
+			return $node->getInternalPath();
+		} catch (\Throwable) {
+			return '';
+		}
+	}
+
+	private function userIdFromNodePath(string $path): ?string {
+		if (preg_match('#^/([^/]+)/files(?:/|$)#', $path, $matches) !== 1) {
+			return null;
+		}
+
+		return $matches[1] !== '' ? $matches[1] : null;
 	}
 
 	private function autoSyncJobHealth(): array {

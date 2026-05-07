@@ -34,7 +34,9 @@ The current development version focuses on safe configuration, preview planning,
 - App-owned tables for future tracking of generated albums and sync runs.
 - App-owned log table for errors, successes, warnings, future cron/sync events, and optional debug context.
 - Admin debug mode with stricter diagnostic logging and a log viewer.
-- Redacted diagnostic report preparation for users and admins; direct email sending is intentionally left for a later release.
+- Redacted diagnostic report preparation for users and admins, including an operational health section for stale locks, overdue queues, stuck runs, failed cursors, failed exports, Cron problems, missing managed Photos albums, and recent warning/error logs.
+- Diagnostic logs can be downloaded as CSV by users and admins; each CSV export is also saved under SakuraAlbum AppData for later server-side analysis.
+- Direct email sending is intentionally left for a later release.
 - Safe OCC commands for controlled test windows: preview, sync dry-run, and generated-album delete dry-run.
 - User, admin, developer, privacy, and store-release documentation linked from `appinfo/info.xml`.
 - SVG branding with a sakura blossom falling onto a dog.
@@ -54,7 +56,8 @@ The current development version focuses on safe configuration, preview planning,
 - Preview has strict folder/file limits from admin settings.
 - Debug logs redact common secret keys before storing context.
 - Debug exception traces intentionally omit function arguments.
-- Diagnostic reports reuse redacted app logs and explicitly mark mail sending as disabled until a future mail sender is added.
+- Diagnostic reports reuse redacted app logs, add machine-readable operational health findings, and explicitly mark mail sending as disabled until a future mail sender is added.
+- Diagnostic CSV exports persist a server-side copy under Nextcloud AppData (`appdata_*/sakuraalbum/diagnostics/csv`) so test evidence remains available after browser downloads.
 - Write runs are blocked by default, require the exact confirmation text `CREATE_ALBUMS`, require a matching recent dry-run plan fingerprint stored by the server, and refuse unsafe plans.
 - Existing Photos albums are not modified unless SakuraAlbum already tracks them as managed albums.
 - Repeated updates are idempotent: an already-linked Photos file is counted as already linked, including Photos versions that report the duplicate through the database layer.
@@ -118,7 +121,7 @@ The smoke is intentionally small: it uses only `albentest`, creates one tiny PNG
 
 Do not enable this app on a production Nextcloud before a backup and restore prompt have been prepared. Live tests may only use the Nextcloud user `albentest`.
 
-During controlled tests, enable admin setting `debugMode` so preview requests, successes, warnings, and failures are stored with enough context for diagnosis.
+During controlled tests, enable admin setting `debugMode` so preview requests, successes, warnings, and failures are stored with enough context for diagnosis. Before and after every live test, create or download a SakuraAlbum diagnostic CSV and review the health section for stale queues, locks, failed jobs, and recent warning/error logs.
 
 ## Production updates
 

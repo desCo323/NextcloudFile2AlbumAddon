@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.6
+
+- Added operational health diagnostics that evaluate stale Auto-Sync locks, overdue queue work, stuck runs, failed cursors, failed exports, recent warning/error logs, missing managed Photos albums, and stale Nextcloud Cron state.
+- Diagnostic reports now log summarized health findings so recurring failures can be found from SakuraAlbum logs without manually interpreting every raw entry.
+- Added CSV downloads for user and admin diagnostic logs; each CSV export is also persisted in the SakuraAlbum AppData diagnostic folder for later server-side analysis.
+- Hardened Auto-Sync rename/delete event handling when Nextcloud provides a non-existing source node by deriving the user from the file path instead of logging a generic event failure.
+
 ## 1.0.5
 
 - Reduced personal-settings status polling load: no overlapping status requests, hidden tabs pause polling, idle tabs poll less often, and active background work still updates promptly.

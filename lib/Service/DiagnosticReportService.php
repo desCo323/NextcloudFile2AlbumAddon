@@ -12,6 +12,7 @@ class DiagnosticReportService {
 		private readonly AutoSyncService $autoSyncService,
 		private readonly AlbumSyncService $albumSyncService,
 		private readonly ManagedAlbumDeletionService $managedAlbumDeletionService,
+		private readonly OperationalHealthService $operationalHealthService,
 		private readonly LogService $logService,
 	) {
 	}
@@ -37,6 +38,7 @@ class DiagnosticReportService {
 				'cursor' => $this->albumSyncService->cursorStatus($userId, 5),
 				'runs' => $this->albumSyncService->recentRuns($userId, min(20, $limit)),
 			],
+			'health' => $this->operationalHealthService->userHealth($userId),
 			'managedAlbums' => [
 				'total' => $managed['total'] ?? 0,
 				'truncated' => $managed['truncated'] ?? false,
@@ -59,6 +61,7 @@ class DiagnosticReportService {
 			'sendMailLater' => true,
 			'adminSettings' => $this->publicAdminSettings($this->settingsService->getAdminSettings()),
 			'autoSync' => $this->autoSyncService->queueStatus(min(100, $limit)),
+			'health' => $this->operationalHealthService->adminHealth($userId),
 			'logs' => $this->logService->recentLogs($limit, null, $userId),
 		];
 

@@ -9,6 +9,7 @@ This plan is for a later controlled Nextcloud test window. Do not run it on prod
 - In the SakuraAlbum admin settings, enable:
   - `Global aktiv`
   - `Debug-Logging`
+- Download or generate a SakuraAlbum diagnostic CSV before and after each controlled test. Review `health_issue`, `queue_sample`, `sync_run`, and `app_log` rows for stale locks, overdue queues, failed jobs, and recent warnings/errors.
 - After enabling the app with `occ app:enable sakuraalbum`, confirm that SakuraAlbum still reports `Global aktiv` as disabled until an admin explicitly enables it in the app settings.
 - Keep folder/file limits low for the first test:
   - preview folders: 100

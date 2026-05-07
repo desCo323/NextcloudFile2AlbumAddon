@@ -62,7 +62,20 @@ If a user deletes SakuraAlbum-managed Photos albums directly in Photos, no file 
 
 Enable debug logging during test windows. The admin log viewer and `Diagnosebericht` expose recent SakuraAlbum events, queue status, run summaries, and redacted context. Known secret keys are redacted before log context is stored, and exception traces omit function arguments.
 
-Direct diagnostic email sending is not implemented yet. Reports are prepared locally and can be copied from the UI.
+The diagnostic report contains a `Betrieb` section that evaluates common operational failures automatically:
+
+- stale Auto-Sync processing locks,
+- overdue pending queue entries,
+- sync runs still marked as running after the safe threshold,
+- failed or stale background cursors,
+- failed or stale album export jobs,
+- warning/error logs from the last 24 hours,
+- missing Photos albums that SakuraAlbum still tracks as managed,
+- missing or stale Nextcloud Cron runs.
+
+Use `CSV herunterladen` in the admin settings or `Fehlerlog CSV` in the personal settings before and after controlled tests. The downloaded CSV contains health findings, queue samples, recent runs, and app logs. SakuraAlbum also stores a copy under Nextcloud AppData at `appdata_*/sakuraalbum/diagnostics/csv`, so the server-side test evidence remains available for later development analysis.
+
+Direct diagnostic email sending is not implemented yet. Reports are prepared locally and can be copied or downloaded from the UI.
 
 ## OCC dry-run helpers
 

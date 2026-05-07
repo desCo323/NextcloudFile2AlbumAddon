@@ -1,6 +1,26 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-07 00:34:00 CEST
+Datum: 2026-05-07 19:01:38 CEST
+
+Neueste operative Notiz (2026-05-07 19:01 CEST):
+- Benutzerauftrag: Debug-/Diagnose-Logging so erweitern, dass Fehler, haengende Verarbeitung, Queue-/Cron-/Cursor-/Export-Probleme und Betriebsstoerungen aus Logs sicher erkannt werden koennen; Logging in der aktuellen Live-Version aktiv halten; Logs fuer Tests immer nutzen und als CSV herunterladbar/serverseitig verfuegbar machen.
+- Live-Status ohne Code-Deployment:
+  - Nextcloud gesund: `maintenance=false`, `needsDbUpgrade=false`.
+  - SakuraAlbum Live-Debug ist aktiv: `debugMode=1`, `debugRetentionDays=14`, `debugMaxContextLength=8000`; `debugMode` wurde idempotent erneut gesetzt (`Config value were not updated`).
+  - Live-Logauswertung fand Debug-Aktivitaet und konkrete Warn-/Fehlerhistorie: u.a. `auto_sync_file_event_failed` bei `renamed_source`/`OC\Files\Node\NonExistingFile`, fruehere `album_export_job_failed` aus Tests und erwartete Warnungen fuer fehlende verwaltete Testalben. Diese Befunde muessen bei jedem Test vor/nachher geprueft werden.
+- Lokaler Entwicklungsstand `1.0.6`:
+  - Neuer `OperationalHealthService` bewertet Debug-Status, globale Auto-Sync-Gates, Wartungsfenster, fehlgeschlagene/ueberfaellige Queue-Eintraege, stale Processing-Locks, haengende Runs, fehlgeschlagene/stale Cursor, fehlgeschlagene/stale Album-Exports, aktuelle Warn-/Fehlerlogs, fehlende verwaltete Photos-Alben und Nextcloud-Cron-Alter.
+  - Diagnoseberichte fuer Admins und Benutzer enthalten jetzt `health`; Controller loggen zusammengefasste Health-Befunde maschinenlesbar, ohne Health-Warnungen durch eigene Health-Logs dauerhaft selbst zu erzeugen.
+  - Neue CSV-Exports: `/api/v1/admin/diagnostics/logs.csv` und `/api/v1/diagnostics/logs.csv`; UI-Buttons `CSV herunterladen` und `Fehlerlog CSV`. Jeder Export enthaelt Health-Befunde, Queue-Samples, Runs und App-Logs und speichert zusaetzlich eine Kopie in Nextcloud AppData unter `appdata_*/sakuraalbum/diagnostics/csv`.
+  - Auto-Sync-File-Events wurden gegen nicht mehr existierende Rename/Delete-Source-Nodes gehaertet: der Benutzer wird bei Bedarf aus dem Pfad `/user/files/...` abgeleitet, damit `renamed_source` nicht mehr als generischer Eventfehler endet.
+  - Version/Assets auf `1.0.6`: `admin-settings-106.js`, `personal-settings-106.js`, `appinfo/info.xml`, `package.json`, Changelogs, README, Admin Guide, Testplan und Self-Check aktualisiert.
+- Checks bisher:
+  - `php -l` fuer neue/geaenderte Services/Controller erfolgreich.
+  - `node --check` fuer Admin-/Personal-JS erfolgreich.
+  - `git diff --check` erfolgreich.
+  - `./scripts/self-check.sh` erfolgreich.
+- Naechster Schritt:
+  - Abschliessenden Self-Check nach Dokumentationsabschluss erneut laufen lassen, committen, GitHub ohne gespeicherten Token aktualisieren, danach `./scripts/production-update.sh --preflight` auf sauberem Worktree ausfuehren. Live-Deployment von `1.0.6` erst in einem kontrollierten Backup-/Updatefenster.
 
 Neueste operative Notiz (2026-05-07 00:59 CEST):
 - Benutzerauftrag: alle Photos-Alben des Nextcloud-Benutzers `frithjofe` loeschen.
