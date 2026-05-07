@@ -2,6 +2,28 @@
 
 Datum: 2026-05-07 19:35:46 CEST
 
+Neueste operative Notiz (2026-05-07 19:54 CEST):
+- Kontrolliertes Testfenster abgeschlossen und wegen gefundenem Logging-Bug auf Hotfix `1.0.7` erweitert.
+- Live-Status final:
+  - Nextcloud gesund: `maintenance=false`, `needsDbUpgrade=false`.
+  - SakuraAlbum live: `1.0.7`.
+  - Admin-Automatik wieder aktiv: `autoSyncMode=file_events`, `debugMode=1`.
+- 1.0.7-Backup:
+  - Pfad: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-107-logfix-20260507-195033`.
+  - Enthalten: Live-App vor 1.0.7, SQL-Dump, `occ`-Status/App-Liste, Restore-Prompt, SHA256SUMS.
+- Tests nach 1.0.7:
+  - `info`-Level-Log-Selbsttest erfolgreich: Log-ID `1631`, Event `info_log_write_self_test_1778176335`, Level `info`.
+  - DB-Spalte `oc_sakuraalbum_logs.level` hat jetzt Default `info`.
+  - Auto-Sync-Dateievent-Test erneut erfolgreich: Queue nach Dateioperationen `pending=1`, `changeCount=10`; Nextcloud BackgroundJob verarbeitet; danach `pending=0`, `failed=0`, 1 verwaltetes Album mit 1 Medium; Cleanup erfolgreich.
+  - Abschlusspruefung `albentest`: 0 aktive SakuraAlbum-Alben, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 Photos-Alben, keine Testordner.
+  - Nextcloud-Serverlog nach 1.0.7: keine `SakuraAlbum failed to write app log`-Eintraege mehr.
+  - Nicht-SakuraAlbum-Befund: `files_versions`/Trashbin-Warnung zu `/mnt/clouddata/files_trashbin/versions` sowie Level-0 Deprecation/Lazy-Config-Notices waehrend UI-Polling; als operative Nacharbeit in `docs/TEST_BACKLOG.md` aufgenommen.
+- Lokaler Git-Stand:
+  - Hotfix-Commit `665bc2a Fix info-level diagnostic log writes` erstellt.
+  - `./scripts/self-check.sh`, `git diff --check`, Secret-Scan und `./scripts/production-update.sh --preflight` erfolgreich.
+  - Artefakt: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.7.tar.gz`, SHA256 `7f306b0845f729def039db5165e8f3808a07dafe8c67e4224d053f338e58be37`.
+  - Naechster Schritt: Dokumentation committen und GitHub pushen.
+
 Neueste operative Notiz (2026-05-07 19:40 CEST):
 - Kontrolliertes Testfenster SakuraAlbum 1.0.6 gestartet.
 - Live-Ausgangszustand:

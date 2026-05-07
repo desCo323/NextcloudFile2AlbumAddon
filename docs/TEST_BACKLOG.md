@@ -86,6 +86,15 @@ This backlog defines the next functional, security, usability, and readability c
 | UI-09 | Add accessibility pass | Keyboard focus, contrast, button labels, and screen-reader order need a dedicated review. | P1 |
 | UI-10 | Add screenshot/demo assets for GitHub | The project page will be stronger with real UI screenshots after the design stabilizes. | P2 |
 
+## Operational improvement backlog
+
+| ID | Improvement | Reason | Priority |
+| --- | --- | --- | --- |
+| OPS-01 | Split health status into active blockers vs. recent history | The diagnostic report can be `critical` because of older resolved warnings/errors even when the current queue is clean. | P1 |
+| OPS-02 | Remove deprecated container aliases from request paths | Nextcloud logs level-0 deprecation notices for `OCP\\IServerContainer`/`OCP\\AppFramework\\IAppContainer` during SakuraAlbum UI polling. | P1 |
+| OPS-03 | Reduce lazy AppConfig/UserConfig debug noise | Debug logs can contain level-0 lazy-loading notices during status polling; this makes operational review noisier. | P2 |
+| OPS-04 | Track external Nextcloud storage/versioning warnings separately | The 1.0.7 event test exposed a non-SakuraAlbum `files_versions`/trashbin warning that should not be confused with SakuraAlbum health. | P2 |
+
 ## Next controlled test window proposal
 
 1. Back up live SakuraAlbum app directory and relevant tables.
@@ -135,6 +144,56 @@ Covered backlog items:
 Not covered:
 
 - Browser UI usability, mobile layout, folder-rule UX, CSV endpoint tests, and 1.0.7-specific Health CSV UI remain open for a browser test window. Server-side auto-sync event tests passed in the controlled 1.0.6/1.0.7 test window.
+
+## Latest controlled update test
+
+Date: 2026-05-07 19:40-19:54 CEST
+
+Builds:
+
+- Started from live SakuraAlbum `1.0.4`.
+- Deployed `1.0.6` for the requested controlled test window.
+- Found and fixed a diagnostic logging defect; deployed hotfix `1.0.7`.
+
+Backups:
+
+- Pre-1.0.6 backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-106-test-20260507-193858`.
+- Pre-1.0.7 backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-107-logfix-20260507-195033`.
+
+Executed:
+
+- Production preflight before deployment.
+- `occ upgrade` from 1.0.4 to 1.0.6 and then 1.0.7.
+- Live regression with `albentest`: dry-run, auto-sync processing, missing managed album repair, background export, reset.
+- Real file-event auto-sync test: create, write, rename, delete, due queue, forced Nextcloud background-job execution, verification, cleanup.
+- Diagnostic JSON and CSV export.
+- Direct `info`-level log write self-test after 1.0.7.
+- Nextcloud server-log review for SakuraAlbum failures after the hotfix.
+
+Passed:
+
+- Auto-sync queue processed from `pending=1` to `pending=0` and `failed=0`.
+- Background job created 1 managed album with 1 media file in the event test.
+- Reset removed generated Photos album, queue row, cursor, and test folders.
+- `info`-level diagnostic logs now persist with `level=info`.
+- No `SakuraAlbum failed to write app log` entries after 1.0.7.
+- Final Nextcloud status: `maintenance=false`, `needsDbUpgrade=false`, live SakuraAlbum `1.0.7`.
+
+Findings:
+
+- 1.0.6 exposed a real logging bug for `info`-level app logs on MySQL/MariaDB; fixed in 1.0.7.
+- The first 1.0.7 migration attempt failed because Doctrine `changeColumn()` received a string `type`; corrected migration and reran `occ upgrade` successfully.
+- Nextcloud server log still contains non-SakuraAlbum level-0 deprecation/lazy-loading notices during UI polling.
+- One external `files_versions`/trashbin warning appeared during the 1.0.7 event test; this is not a SakuraAlbum app-log failure but should be tracked separately.
+
+Covered backlog items:
+
+- `FUN-07` pass.
+- `FUN-08` pass.
+- `FUN-09` pass.
+- `FUN-12` server-side pass for small export job.
+- `SEC-08` pass for stored app-log behavior already verified earlier; 1.0.7 additionally fixed `info`-level persistence.
+- `UX-05` partially pass server-side: status fields are stable after processing; browser wording still needs manual review.
 
 ## Result template
 
