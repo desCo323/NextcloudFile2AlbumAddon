@@ -284,3 +284,24 @@ Sicherheits-/Stabilitaetshinweis:
 - Keine Änderung an produktiv kritischen Systemkomponenten ausser der App-Struktur.
 - Keine sensiblen Secrets im Code ergänzt.
 - Debug-Logging bleibt auf `debugMode` begrenzt; sensible Werte werden via `LogService` redacted.
+
+Neueste operative Notiz (2026-05-07):
+- Anlass: Benutzer meldete, dass das Oeffnen von Alben im Browser bei `frithjofe` sehr lange dauert.
+- Befund aus Logs/DB:
+  - `/var/www/nextcloud/data/nextcloud.log` ist leer; SakuraAlbum-App-Logs zeigen keine harten Fehler fuer diesen Vorgang.
+  - PHP-FPM meldete in der Vergangenheit Lastspitzen und `pm.max_children`, aktuell aber keinen neuen PHP-Fatal-Fehler.
+  - Apache-Access-Log zeigt beim Photos-Albumaufruf viele `/apps/photos/api/v1/preview/...`-Requests.
+  - Photos-Alben von `frithjofe` enthalten sehr grosse SakuraAlbum-Alben, u.a. `S - Lebensabschnitte` mit 9470 Medien, `S - Freunde und Kollegen` mit 6073 Medien und `S - Kunst` mit 3309 Medien. Solche Alben laden in Nextcloud Photos langsam, weil sehr viele Vorschaubilder angefragt werden.
+  - SakuraAlbum-Einstellungsseite erzeugte zusaetzlich starres Statuspolling alle 5 Sekunden; bei mehreren offenen Tabs entstanden parallele Statusanfragen.
+- Umsetzung im Arbeitsstand 1.0.5:
+  - `js/personal-settings-104.js` und das cache-busting Release-Asset `js/personal-settings-105.js` verhindern ueberlappende Statusanfragen, pausieren bei unsichtbaren Tabs und pollen im Idle nur noch alle 30 Sekunden statt alle 5 Sekunden.
+  - Grosse verwaltete Alben werden im Benutzer-UI als `gross` ab 1000 Medien bzw. `sehr gross` ab 5000 Medien markiert.
+  - Die verwaltete-Alben-Ansicht zeigt einen Performance-Hinweis mit Empfehlung, Album-Tiefe oder Ordner-Regeln zu nutzen, damit Nextcloud Photos kleinere Alben laden muss.
+  - `appinfo/info.xml`, `package.json`, `CHANGELOG.md`, `CHANGELOG.en.md`, `lib/Settings/Admin.php`, `lib/Settings/Personal.php` und die JS-Assets `admin-settings-105.js`/`personal-settings-105.js` auf 1.0.5 vorbereitet.
+- Live-Hotfix:
+  - Backup vor Deployment: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-performance-105-20260507-123710/app`.
+  - Geaenderte Live-Dateien: `js/personal-settings-104.js`, `css/settings.css`, `CHANGELOG.md`, `CHANGELOG.en.md`.
+  - Die zunaechst mitkopierte Versionserhoehung auf 1.0.5 hat Nextcloud korrekt als ausstehenden App-Upgrade-Zustand erkannt (`needsDbUpgrade: true`). Zur Stabilisierung wurde die Live-Version in `appinfo/info.xml` und `package.json` sofort wieder auf 1.0.4 gesetzt.
+  - Nach Ruecksetzung: `occ status` meldet `maintenance: false` und `needsDbUpgrade: false`; `occ app:list` zeigt `sakuraalbum: 1.0.4`.
+- Wiederherstellungsprompt fuer Neustart:
+  - "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-performance-105-20260507-123710/app` nach `/var/www/nextcloud/apps/sakuraalbum/` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind."

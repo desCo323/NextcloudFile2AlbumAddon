@@ -494,6 +494,22 @@
   font-weight: 600;
 }
 
+.sakuraalbum-load-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: #8a5600;
+  background: color-mix(in srgb, var(--color-main-background) 82%, #ffb100);
+  font-size: 0.82em;
+  font-weight: 700;
+}
+
+.sakuraalbum-load-badge-heavy {
+  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-main-background) 86%, var(--color-error));
+}
+
 .sakuraalbum-empty {
   padding: 14px;
   border: 1px solid var(--color-border);

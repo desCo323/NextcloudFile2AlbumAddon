@@ -19,7 +19,7 @@ class Admin implements IDelegatedSettings {
 	#[\Override]
 	public function getForm(): TemplateResponse {
 		Util::addStyle(Application::APP_ID, 'settings');
-		Util::addScript(Application::APP_ID, 'admin-settings-104');
+		Util::addScript(Application::APP_ID, 'admin-settings-105');
 
 		return new TemplateResponse(Application::APP_ID, 'settings/admin', [
 			'settings' => $this->settingsService->getAdminSettings(),

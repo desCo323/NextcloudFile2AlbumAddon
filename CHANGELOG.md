@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.5
+
+- Reduced personal-settings status polling load: no overlapping status requests, hidden tabs pause polling, idle tabs poll less often, and active background work still updates promptly.
+- Added visible performance warnings for large SakuraAlbum-managed albums so users can identify albums that will load slowly in Nextcloud Photos and adjust album depth or folder rules.
+
 ## 1.0.4
 
 - Added folder-specific exception rules inside source folders for custom depth, one combined album, or exclusion.
