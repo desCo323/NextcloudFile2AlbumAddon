@@ -19,8 +19,12 @@ Neueste operative Notiz (2026-05-07 19:01 CEST):
   - `node --check` fuer Admin-/Personal-JS erfolgreich.
   - `git diff --check` erfolgreich.
   - `./scripts/self-check.sh` erfolgreich.
+  - `./scripts/production-update.sh --preflight` erfolgreich; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.6.tar.gz`, SHA256 `53cc325a74c1ca0adbffcd9f6dcb3eed25a9deed9ef45b3f5008c7f15fbf923a`.
+- GitHub:
+  - Code-Commit `9eca259 Add operational diagnostic exports` wurde auf `main` gepusht.
+  - `origin` enthaelt keinen Token, Secret-Scan auf GitHub-Tokenmuster bleibt ohne Treffer.
 - Naechster Schritt:
-  - Abschliessenden Self-Check nach Dokumentationsabschluss erneut laufen lassen, committen, GitHub ohne gespeicherten Token aktualisieren, danach `./scripts/production-update.sh --preflight` auf sauberem Worktree ausfuehren. Live-Deployment von `1.0.6` erst in einem kontrollierten Backup-/Updatefenster.
+  - Live-Deployment von `1.0.6` erst in einem kontrollierten Backup-/Updatefenster. Danach sofort Admin-/Personal-Diagnosebericht und CSV ziehen und die Health-Befunde gegen Live-Logs pruefen.
 
 Neueste operative Notiz (2026-05-07 00:59 CEST):
 - Benutzerauftrag: alle Photos-Alben des Nextcloud-Benutzers `frithjofe` loeschen.
