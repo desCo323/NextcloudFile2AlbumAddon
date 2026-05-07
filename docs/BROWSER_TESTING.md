@@ -45,3 +45,25 @@ Rules:
 - The folder picker opens and lists available folders without saving settings.
 
 Future browser tests should add authenticated flows for preview-only planning, read-only download-center rendering, mobile/narrow layout, and eventually write/reset flows inside a controlled backup test window.
+
+## Live authenticated user journey
+
+The full journey test writes temporary test files and generated albums for `albentest`. Run it only inside a documented backup/reset window.
+
+```bash
+export SAKURAALBUM_BASE_URL="https://chaosnet.me"
+export SAKURAALBUM_TEST_USER="albentest"
+export SAKURAALBUM_TEST_PASSWORD="..."
+export SAKURAALBUM_SCREENSHOT_DIR="/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-$(date +%Y%m%d-%H%M%S)"
+npm run test:browser:journey
+```
+
+The test covers:
+
+- temporary source folder creation below `/Photos`;
+- folder rules for custom depth, single-album grouping, and exclusion;
+- preview, first generation, managed-album overview, download-center view, reset preview, and reset;
+- image content updates, file moves, folder renames, and file deletion through WebDAV;
+- screenshots for each major UI state.
+
+After the run, verify that `albentest` has no active managed albums, dirty paths, cursors, download jobs, Photos albums, test folders, or `SakuraAlbum Exports` folder. Also inspect SakuraAlbum and Nextcloud logs for warnings from the test window.

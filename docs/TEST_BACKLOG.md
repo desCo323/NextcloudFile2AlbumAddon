@@ -23,6 +23,7 @@ This backlog defines the next functional, security, usability, and readability c
 | PRE-04 | Secret scan | Token and test-password pattern scan | No secrets in source tree, package, git remote, or docs. | Ready |
 | PRE-05 | License consistency | README, `LICENSE.md`, metadata, store checklist | Preview license is visible; store blocker is explicit. | Ready |
 | PRE-06 | Browser smoke | `npm run test:browser` | Playwright launches Chromium and verifies basic SakuraAlbum UI styling without stored credentials. | Ready |
+| PRE-07 | Auth browser journey | `npm run test:browser:journey` in backup window | Real Nextcloud UI flow passes for `albentest` and screenshots are produced. | Ready |
 
 ## Functional live tests with `albentest`
 
@@ -100,6 +101,8 @@ This backlog defines the next functional, security, usability, and readability c
 | OPS-02 | Remove deprecated container aliases from request paths | Nextcloud logs level-0 deprecation notices for `OCP\\IServerContainer`/`OCP\\AppFramework\\IAppContainer` during SakuraAlbum UI polling. | P1 |
 | OPS-03 | Reduce lazy AppConfig/UserConfig debug noise | Debug logs can contain level-0 lazy-loading notices during status polling; this makes operational review noisier. | P2 |
 | OPS-04 | Track external Nextcloud storage/versioning warnings separately | The 1.0.7 event test exposed a non-SakuraAlbum `files_versions`/trashbin warning that should not be confused with SakuraAlbum health. | P2 |
+| OPS-05 | Investigate WebDAV MOVE PHP warnings | The full browser journey passed, but Nextcloud logged non-fatal `Array to string conversion` warnings during file/folder MOVE operations. Trace whether the file-event listener, AutoSync runner nudge, dirty-path query, or Nextcloud Photos/File handling binds an array value during DAV transactions. | P0 |
+| OPS-06 | Explain stale managed albums after folder rename | With `syncDeleteMissingManagedAlbums=false`, renamed folders intentionally preserve old generated albums until reset/cleanup. The UI should explain this and offer a safe cleanup preview for stale managed albums. | P1 |
 
 ## Next controlled test window proposal
 
@@ -113,6 +116,55 @@ This backlog defines the next functional, security, usability, and readability c
 8. Convert findings into issues or update tasks.
 
 ## Latest executed baseline
+
+Date: 2026-05-07 23:54 CEST
+
+Environment:
+
+- SakuraAlbum live app remained 1.0.10.
+- Nextcloud URL for browser tests: `https://chaosnet.me`.
+- Test user: `albentest`.
+- Backup before write browser journey: `/home/cloud/sakuraalbum-backups/sakuraalbum-user-journey-20260507-234343`.
+- Screenshot output: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-20260507-235215`.
+
+Executed:
+
+- Added `npm run test:browser:journey`.
+- Added `tests/Browser/user-journey.auth.spec.js`.
+- Live authenticated Playwright journey passed: login, source-folder configuration, folder picker, preview, first generation, file modification, file move/rename, folder rename, file delete, managed-album view, download-center view, reset preview, full account reset, and filesystem cleanup.
+- Produced 14 screenshots covering the main user-facing states and detailed output panels.
+
+Post-check:
+
+- `albentest` active managed albums: 0.
+- `albentest` dirty paths: 0.
+- `albentest` sync cursors: 0.
+- `albentest` download jobs: 0.
+- `albentest` Photos albums: 0.
+- `albentest` Photos album links: 0.
+- Test source folders and `SakuraAlbum Exports`: absent.
+- SakuraAlbum recent errors: 0.
+- SakuraAlbum recent warnings: 1 expected `auto_sync_missing_managed_album_refresh_queued` repair-test warning.
+- `bash scripts/self-check.sh` passed.
+- `npm run test:browser` passed with auth tests skipped when auth env is absent.
+
+Findings:
+
+- The app flow worked end to end in the browser.
+- Nextcloud logged non-fatal PHP warnings `Array to string conversion` during WebDAV MOVE/folder-rename operations; track as `OPS-05`.
+- After folder rename, old generated albums can remain visible when destructive cleanup of missing managed albums is disabled by admin policy; track as `OPS-06`.
+
+Covered backlog items:
+
+- `PRE-07`, `FUN-01`, `FUN-04`, `FUN-05`, `FUN-06`, `FUN-07`, `FUN-08`, `FUN-13`, `UX-01`, `UX-02`, `UX-03`, `UX-04`, `UX-05`, `UX-06`, `UX-07`.
+
+Next:
+
+- Investigate and fix `OPS-05`.
+- Add mobile/narrow viewport browser checks.
+- Add an explicit stale-managed-album cleanup explanation/preview.
+
+## Previous executed baseline
 
 Date: 2026-05-07 23:38 CEST
 

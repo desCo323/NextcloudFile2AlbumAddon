@@ -1,6 +1,48 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-07 19:35:46 CEST
+Datum: 2026-05-07 23:54:43 CEST
+
+Neueste operative Notiz (2026-05-07 23:54 CEST):
+- Benutzerauftrag: SakuraAlbum selbststaendig im echten Browser testen, inklusive Screenshots und typischer Benutzerszenarien wie Hinzufuegen, Aendern, Verschieben, Ordner-Umbenennen und Loeschen von Bildern/Ordnern.
+- Sicherheitsrahmen:
+  - Live-Test nur mit `albentest`.
+  - Frisches Backup vor Browser-Write-Test: `/home/cloud/sakuraalbum-backups/sakuraalbum-user-journey-20260507-234343`.
+  - DB-Dump-Hash: `4c1e387cf05ebd9e210930441f44df86d793ecbcf5c8f59c262b085c79f22bcb`.
+  - Restore-Prompt liegt in `/home/cloud/sakuraalbum-backups/sakuraalbum-user-journey-20260507-234343/RESTORE_PROMPT.txt`.
+- Neuer Browser-Journey-Test:
+  - Datei: `tests/Browser/user-journey.auth.spec.js`.
+  - Neues npm-Skript: `npm run test:browser:journey`.
+  - Zugangsdaten werden nur per Umgebungsvariablen gelesen; keine Storage-State-Datei, keine Traces, keine Videos.
+  - Test legt einen isolierten Quellordner unter `/Photos/SakuraAlbumBrowserJourney-...` an und entfernt ihn am Ende wieder.
+- Abgedeckte Szenarien im echten Nextcloud-Browser:
+  - Login als `albentest`.
+  - SakuraAlbum-Benutzereinstellungen laden.
+  - Quellordner konfigurieren.
+  - Ordnerregel `Alles in ein Album` fuer einen Unterordner.
+  - Ordnerregel `Ausschliessen` fuer einen Unterordner.
+  - Vorschau pruefen.
+  - Erstgenerierung ueber Queue/AutoSync-Service verarbeiten.
+  - Dateiinhalt aendern.
+  - Datei verschieben/umbenennen.
+  - Ordner verschieben/umbenennen.
+  - Datei loeschen.
+  - Verwaltete Alben anzeigen.
+  - Download-Center anzeigen.
+  - Konto-Reset-Vorschau anzeigen.
+  - Konto-Reset ausfuehren und Testdateien/Exports bereinigen.
+- Ergebnis:
+  - Live Playwright Journey gegen `https://chaosnet.me`: `1 passed (25.0s)`.
+  - Screenshot-Verzeichnis: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-20260507-235215`.
+  - Enthalten sind 14 PNGs: Start, konfigurierte Einstellungen, Folder-Picker, Vorschau, verwaltete Alben nach Erstellung, verwaltete Alben nach Dateioperationen, Download-Center, Reset-Vorschau und Zustand nach Reset.
+  - Nachkontrolle `albentest`: 0 aktive verwaltete Alben, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 Photos-Alben, 0 Photos-Albumlinks; Testordner und `/SakuraAlbum Exports` entfernt.
+  - SakuraAlbum-App-Logs zeigen erfolgreiche Auto-Sync-Verarbeitung fuer die getesteten Datei-/Ordneroperationen; keine aktuellen SakuraAlbum-Fehler. Eine Warnung `auto_sync_missing_managed_album_refresh_queued` ist ein bekannter Reparaturtest-Befund.
+  - `bash scripts/self-check.sh`: bestanden.
+  - `npm run test:browser`: bestanden; 1 normaler Chromium-Test, 3 Auth-Tests korrekt ohne Auth-Env uebersprungen.
+  - Eine unnoetige Cleanup-Warnung im Skip-Modus des Journey-Tests wurde korrigiert, damit nicht-authentifizierte Browser-Smokes sauber bleiben.
+- Befund fuer naechstes Haertungsupdate:
+  - Nextcloud-Log zeigte waehrend WebDAV-MOVE/Folder-Rename nicht-fatale PHP-Warnungen `Array to string conversion` in Doctrine/PDO bei DAV-Requests des Testordners.
+  - Funktional war der Test erfolgreich, aber der Warnpfad muss gezielt untersucht werden. Verdacht: File-Event-/AutoSync-Nudge oder Queue-/DB-Zugriff waehrend WebDAV-Rename-Transaktionen erzeugt einen nicht sauber gebundenen Array-Wert.
+  - Ebenfalls beobachtet: bei deaktivierter Admin-Option `syncDeleteMissingManagedAlbums` bleiben nach Ordnerumbenennung alte verwaltete Alben sichtbar, bis Reset oder sichere Bereinigung ausgefuehrt wird. Das ist datenbewahrend, braucht aber bessere UX-Erklaerung oder eine optionale Bereinigungsvorschau.
 
 Neueste operative Notiz (2026-05-07 23:38 CEST):
 - Benutzerauftrag: authentifizierte Playwright-Tests fuer den echten Nextcloud-Browserfluss mit `albentest` bauen.
