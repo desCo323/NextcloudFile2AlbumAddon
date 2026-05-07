@@ -2,7 +2,7 @@
   "name": "desco323/sakuraalbum",
   "description": "Create managed Nextcloud Photos albums from existing folders.",
   "type": "project",
-  "license": "AGPL-3.0-or-later",
+  "license": "proprietary",
   "autoload": {
     "psr-4": {
       "OCA\\SakuraAlbum\\": "lib/"

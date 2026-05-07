@@ -2,6 +2,9 @@
 
 ## 1.0.6
 
+- Added the preliminary non-commercial development and evaluation license in `LICENSE.md` and marked the current license as a blocker for public app-store release.
+- Expanded the GitHub project page with more use cases, additional Mermaid diagrams, manual installation, and manual update instructions.
+- Added `docs/TEST_BACKLOG.md` for functional, security, UI, usability, readability, and next-update regression testing.
 - Added operational health diagnostics that evaluate stale Auto-Sync locks, overdue queue work, stuck runs, failed cursors, failed exports, recent warning/error logs, missing managed Photos albums, and stale Nextcloud Cron state.
 - Diagnostic reports now log summarized health findings so recurring failures can be found from SakuraAlbum logs without manually interpreting every raw entry.
 - Added CSV downloads for user and admin diagnostic logs; each CSV export is also persisted in the SakuraAlbum AppData diagnostic folder for later server-side analysis.

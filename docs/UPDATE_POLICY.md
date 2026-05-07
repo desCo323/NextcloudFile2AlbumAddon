@@ -11,6 +11,19 @@ SakuraAlbum is treated as a production Nextcloud app. Every change must be safe 
 - Debug logs may contain operational context and must stay redacted before storage.
 - GitHub tokens, test passwords, backups, logs, exports, and production data must never be committed.
 
+## Release Licensing
+
+SakuraAlbum currently uses the preliminary non-commercial development and evaluation license in `LICENSE.md`. This license is intentionally not compatible with public Nextcloud App Store publication.
+
+Before any public store release:
+
+- replace or relicense the project under `AGPL-3.0-or-later` or another Nextcloud-compatible license,
+- align `LICENSE.md`, `composer.json`, `appinfo/info.xml`, README badges, changelogs, release notes, and store metadata,
+- re-run the full release and legal checklist,
+- document the license transition in `docs/SESSION_STATE.md`.
+
+Until that happens, release artifacts are development/evaluation previews and must not be advertised as app-store-ready.
+
 ## Versioning
 
 Use semantic versioning:
@@ -111,4 +124,3 @@ Every production-facing update must add a `docs/SESSION_STATE.md` note containin
 - live deployment result
 - test result
 - next safe step
-

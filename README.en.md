@@ -17,8 +17,10 @@
   <img alt="Nextcloud" src="https://img.shields.io/badge/Nextcloud-33-0082c9?logo=nextcloud&logoColor=white">
   <img alt="PHP" src="https://img.shields.io/badge/PHP-8.3%2B-777bb4?logo=php&logoColor=white">
   <img alt="Version" src="https://img.shields.io/badge/SakuraAlbum-1.0.6-dc4f7b">
-  <img alt="License" src="https://img.shields.io/badge/License-AGPL--3.0--or--later-2f855a">
+  <img alt="License" src="https://img.shields.io/badge/License-Preview%20Non--Commercial-b83280">
 </p>
+
+> **Preliminary license status:** SakuraAlbum is currently governed by the [Preliminary Development and Evaluation License](LICENSE.md). Commercial use, redistribution, and app-store distribution are not permitted without prior explicit written permission. Before a future Nextcloud App Store release, the project must be relicensed under AGPL-3.0-or-later or another compatible license and formally reviewed.
 
 ## The idea
 
@@ -35,6 +37,17 @@ SakuraAlbum bridges that gap. Users choose source folders, preview the resulting
 | Large libraries can create too many albums. | Depth, folder rules, and single-album mode control the structure. |
 | Cleanup is risky. | Deletion and reset actions are limited to albums clearly managed by SakuraAlbum. |
 | Troubleshooting needs manual log digging. | Health diagnostics and CSV exports show operational issues directly. |
+
+## Use cases
+
+| Situation | SakuraAlbum solution |
+| --- | --- |
+| Family archive with year and event folders | `/Photos/Family/2026/Birthday` becomes traceable albums without moving files. |
+| Years of phone uploads | Depth and folder rules keep album counts manageable. |
+| Pet, hobby, or project folders | A whole subtree can be maintained as a single album. |
+| Club or team photos | Admins control rollout, groups, quotas, and maintenance windows. |
+| Large photo exports | Albums are prepared in the background and split into ZIP parts for very large exports. |
+| Troubleshooting production servers | Debug logs, health findings, and CSV exports expose queue, Cron, cursor, and export issues. |
 
 ## Highlights
 
@@ -81,6 +94,45 @@ sequenceDiagram
     Cron->>Sakura: process within admin limits
     Sakura->>Photos: safely update managed albums
     Sakura->>Sakura: write logs, health data, and progress
+```
+
+## Folder rules in practice
+
+```mermaid
+flowchart TD
+    Root["/Photos"] --> A["2026"]
+    A --> B["Vacation"]
+    A --> C["Family"]
+    A --> D["Screenshots"]
+    B --> B1["Day 1"]
+    B --> B2["Day 2"]
+
+    Rule1["Default: depth 1"] -.-> A
+    Rule2["Rule: Vacation as one album"] -.-> B
+    Rule3["Rule: exclude Screenshots"] -.-> D
+
+    Out1["Album: Photos - 2026"] --> Result["Fewer, readable albums"]
+    Out2["Album: Vacation"] --> Result
+```
+
+## Technical overview
+
+```mermaid
+flowchart TB
+    UI["Personal and admin UI"] --> API["SakuraAlbum APIs"]
+    API --> Settings["SettingsService"]
+    API --> Planner["AlbumPlanService"]
+    API --> Diagnostics["DiagnosticReportService"]
+    Planner --> Photos["PhotosAlbumAdapter"]
+    Files["Nextcloud Files Events"] --> Auto["AutoSyncService"]
+    Auto --> Dirty["Dirty Queue"]
+    Cron["Nextcloud Cron"] --> Job["AutoSyncJob"]
+    Job --> Dirty
+    Job --> Sync["AlbumSyncService"]
+    Sync --> Photos
+    Sync --> Tracking["sakuraalbum_albums / runs / cursors"]
+    Diagnostics --> Logs["sakuraalbum_logs"]
+    Diagnostics --> Health["OperationalHealthService"]
 ```
 
 ## User experience
@@ -155,11 +207,74 @@ SakuraAlbum can prepare albums as ZIP files:
 | --- | --- |
 | Current development version | `1.0.6` |
 | Target platform | Nextcloud 33, PHP 8.3+ |
-| License | AGPL-3.0-or-later |
-| Store preparation | Metadata, docs, changelogs, checks, and release process are present |
+| License | Preliminary Development and Evaluation License, non-commercial |
+| Store preparation | Technical metadata, docs, changelogs, checks, and release process are present; license is currently a store blocker |
 | Production rule | Live updates require backup, preflight, and documented rollback |
 
 SakuraAlbum is developed as a production-oriented Nextcloud app. New versions should still be rolled out only through controlled backup and update windows.
+
+## Manual installation without the App Store
+
+SakuraAlbum is not yet intended as a regular Nextcloud App Store app. Manual installation should only happen on a system with a backup and rollback plan.
+
+1. Build or provide the package:
+
+```bash
+./scripts/build-artifact.sh
+```
+
+2. Extract it on the Nextcloud server so the directory is exactly named `sakuraalbum`:
+
+```bash
+sudo mkdir -p /var/www/nextcloud/apps/sakuraalbum
+sudo tar -xzf /path/to/sakuraalbum-1.0.6.tar.gz -C /var/www/nextcloud/apps
+sudo chown -R www-data:www-data /var/www/nextcloud/apps/sakuraalbum
+```
+
+3. Enable the app and verify Nextcloud:
+
+```bash
+sudo -u www-data php /var/www/nextcloud/occ app:enable sakuraalbum
+sudo -u www-data php /var/www/nextcloud/occ upgrade
+sudo -u www-data php /var/www/nextcloud/occ status
+```
+
+4. Then open SakuraAlbum in the admin settings:
+
+- enable `Global aktiv` only after a backup test window,
+- enable debug logging for tests,
+- use small limits and a test group where possible,
+- test first with `albentest` and isolated folders.
+
+## Installing updates
+
+Recommended update flow:
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant Repo as SakuraAlbum Repo
+    participant Backup
+    participant NC as Nextcloud
+
+    Admin->>Repo: review new version
+    Repo->>Repo: ./scripts/production-update.sh --preflight
+    Admin->>Backup: back up app directory and relevant DB data
+    Admin->>NC: briefly enable maintenance
+    Admin->>NC: sync new app files
+    Admin->>NC: run occ upgrade
+    Admin->>NC: disable maintenance and verify status
+    Admin->>NC: export diagnostics JSON and CSV
+```
+
+From the working tree:
+
+```bash
+./scripts/production-update.sh --preflight
+SAKURAALBUM_PRODUCTION_UPDATE=1 ./scripts/production-update.sh --deploy
+```
+
+The deploy script is intentionally guarded. It creates a backup of the live app directory before copying and prints a restore prompt. If something fails: copy the app backup back, reset ownership to `www-data:www-data`, verify `occ status`, and use the previous database backup if migrations were involved.
 
 ## Installation and checks
 
@@ -202,6 +317,7 @@ php occ sakuraalbum:delete-generated --user albentest --dry-run --all
 - [Developer notes](docs/DEVELOPER_NOTES.md)
 - [Privacy](docs/PRIVACY.md)
 - [Update policy](docs/UPDATE_POLICY.md)
+- [Test and UX backlog](docs/TEST_BACKLOG.md)
 - [Store release checklist](docs/STORE_RELEASE_CHECKLIST.md)
 - [Changelog](CHANGELOG.en.md)
 - [German README](README.md)
@@ -209,7 +325,7 @@ php occ sakuraalbum:delete-generated --user albentest --dry-run --all
 ## Roadmap
 
 - Optional email delivery for diagnostic reports.
-- Store submission after a fresh review of current Nextcloud and Photos APIs.
+- Store submission after a fresh review of current Nextcloud and Photos APIs and a formal relicense to a store-compatible license.
 - Wider Nextcloud version support after targeted tests.
 - UI screenshots and short demo graphics once the final production UI is stable on the target system.
 

@@ -45,7 +45,7 @@ if (mb_strlen((string)$info->summary) > 128) {
 	fail('App summary exceeds schema length');
 }
 if ((string)$info->licence !== 'AGPL-3.0-or-later') {
-	fail('App license must be AGPL-3.0-or-later');
+	fail('Nextcloud app metadata license must remain schema-compatible until formal store relicensing');
 }
 if ((string)$info->repository === '' || (string)$info->bugs === '' || (string)$info->website === '') {
 	fail('Repository, bugs, and website metadata are required');
@@ -80,6 +80,8 @@ if (!is_array($package) || ($package['version'] ?? '') !== $version) {
 
 foreach ([
 	'README.md',
+	'README.en.md',
+	'LICENSE.md',
 	'SECURITY.md',
 	'CHANGELOG.md',
 	'CHANGELOG.en.md',
@@ -94,6 +96,9 @@ foreach ([
 
 requireContains($root, 'CHANGELOG.md', "## {$version}");
 requireContains($root, 'CHANGELOG.en.md', "## {$version}");
+requireContains($root, 'LICENSE.md', 'Kommerzielle Nutzung verboten');
+requireContains($root, 'README.md', 'Vorlaeufige Entwicklungs- und Evaluierungslizenz');
+requireContains($root, 'README.en.md', 'Preliminary Development and Evaluation License');
 requireContains($root, 'docs/STORE_RELEASE_CHECKLIST.md', 'PhotosAlbumAdapter');
 requireContains($root, 'docs/PRIVACY.md', 'Future mail sending');
 

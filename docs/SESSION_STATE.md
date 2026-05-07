@@ -1,6 +1,30 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-07 19:17:18 CEST
+Datum: 2026-05-07 19:32:56 CEST
+
+Neueste operative Notiz (2026-05-07 19:32 CEST):
+- Benutzerauftrag: vorlaeufige nichtkommerzielle Lizenz einfuegen, GitHub-Seite weiter ausbauen, manuelle Installation/Updates erklaeren, Tests/UX-Backlog planen und mit Testnutzer erste Checks spielen.
+- Lizenz:
+  - Neue `LICENSE.md`: "SakuraAlbum Preliminary Development and Evaluation License"; deutsche Fassung ist massgeblich, englische Zusammenfassung enthalten.
+  - Kernaussagen: unfertige Entwicklungs-/Evaluierungsversion, keine kommerzielle Nutzung ohne schriftliche Erlaubnis, keine Weiterverbreitung ohne Erlaubnis, alle Rechte vorbehalten, keine Gewaehrleistung, Haftung soweit gesetzlich zulaessig ausgeschlossen.
+  - `composer.json` auf `proprietary` gesetzt.
+  - `appinfo/info.xml` behaelt technisch/schema-kompatibles `AGPL-3.0-or-later`, beschreibt aber den vorlaeufigen Lizenzstatus; offizielle Nextcloud-Dokumentation verlangt fuer App-Store-Verteilung AGPL-3.0-or-later oder kompatibel. Store-Release ist mit aktueller `LICENSE.md` blockiert, bis formal relicensed wurde.
+- GitHub-Seite/Dokumentation:
+  - `README.md` und `README.en.md` um Lizenzhinweis, Use Cases, Strukturregel-Diagramm, Architekturdiagramm, manuelle Installation ohne Store und Update-Ablauf erweitert.
+  - `docs/UPDATE_POLICY.md` und `docs/STORE_RELEASE_CHECKLIST.md` um Lizenz-/Store-Blocker ergaenzt.
+  - Neues `docs/TEST_BACKLOG.md`: Preflight, Funktions-, Sicherheits-, UX-/Lesbarkeits-Tests, UX-Verbesserungsbacklog, naechstes kontrolliertes Testfenster und Ergebnisvorlage.
+- Checks lokal:
+  - `./scripts/self-check.sh` erfolgreich, inkl. offizieller Nextcloud-XML-Schema-Pruefung.
+  - `git diff --check` erfolgreich.
+  - ASCII-Scan fuer geaenderte Doku erfolgreich.
+  - Secret-Scan auf GitHub-Token/Testpasswortmuster ohne Treffer.
+- Kontrollierter Live-Smoke mit `albentest`:
+  - Backup vor Test: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-license-doc-smoke-20260507-193126`.
+  - Restore-Prompt liegt in `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-license-doc-smoke-20260507-193126/RESTORE_PROMPT.txt`.
+  - Backup enthaelt Live-App, `occ`-Status/App-Liste, SakuraAlbum-Tabellen, `oc_appconfig`, `oc_preferences`, `oc_jobs`, SHA256SUMS; Checksum-Pruefung im Backup-Verzeichnis erfolgreich.
+  - Live-Smoke: isolierter Ordner `/Photos/SakuraAlbumV1Smoke`, 1 Testbild, Dry-run 1 Album/1 Link, Write 1 Album/1 Link, ZIP-Prepare 1 Datei/68 Bytes, Reset erfolgreich.
+  - Nachpruefung: Nextcloud gesund (`maintenance=false`, `needsDbUpgrade=false`), `albentest` hat 0 Photos-Alben, 0 Photos-Albumlinks, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 aktive SakuraAlbum-Alben; historische SakuraAlbum-Zeilen sind nur `deleted`.
+  - Abgedeckt: `FUN-01`, `FUN-11`, `FUN-13` baseline pass. Nicht abgedeckt: Browser-UX, mobile Layouts, Auto-Sync-Dateievents, CSV-Endpunkte und 1.0.6-spezifische UI-Health-Diagnose bis zum kontrollierten 1.0.6-Deploy.
 
 Neueste operative Notiz (2026-05-07 19:17 CEST):
 - Benutzerauftrag: pruefen, ob die SakuraAlbum-Debuglogs auf der Live-Installation arbeiten.

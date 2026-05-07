@@ -6,7 +6,9 @@ This checklist tracks the publication state for SakuraAlbum.
 
 - App id is lowercase ASCII and matches the archive root: `sakuraalbum`.
 - App name does not use `Nextcloud`.
-- License is `AGPL-3.0-or-later`.
+- Current repository license is the preliminary non-commercial development and evaluation license in `LICENSE.md`.
+- Store blocker: this preliminary license is not app-store-compatible. Before public Nextcloud App Store submission, replace or relicense the project under `AGPL-3.0-or-later` or another compatible license, then align `LICENSE.md`, `composer.json`, `appinfo/info.xml`, README badges, changelogs, and release metadata.
+- `appinfo/info.xml` currently keeps the schema-compatible app metadata license value required by current Nextcloud tooling, but this is not sufficient for publication while `LICENSE.md` remains non-commercial.
 - `bugs`, `website`, `repository`, `discussion`, and documentation links are present.
 - `CHANGELOG.md` exists for the app store.
 - `CHANGELOG.en.md` exists for user update notifications.
