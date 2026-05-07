@@ -117,25 +117,28 @@ This backlog defines the next functional, security, usability, and readability c
 
 ## Latest executed baseline
 
-Date: 2026-05-08 00:30 CEST
+Date: 2026-05-08 00:45 CEST
 
 Environment:
 
-- SakuraAlbum 1.0.12 deployed through `scripts/production-update.sh --deploy`.
-- Manual DB/app backup before deploy/test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1012-mobile-ux-test-20260508-002619`.
-- Production-update app backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.12-20260508-002638`.
+- SakuraAlbum 1.0.13 deployed through `scripts/production-update.sh --deploy`.
+- Manual DB/app backup before deploy/test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1013-wizard-preview-test-20260508-003743`.
+- Production-update app backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.13-20260508-003811`.
 - Nextcloud stayed healthy after deploy and tests: `maintenance=false`, `needsDbUpgrade=false`.
 - Test user: `albentest`.
-- Browser screenshot output: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1012-20260508-002758`.
+- Browser screenshot output: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1013-20260508-003945`.
 
 Executed:
 
-- Replaced source-folder and folder-rule tables with responsive rule cards.
-- Added a 390px mobile authenticated Playwright test that checks core actions and detects horizontal overflow for buttons, inputs, selects, textareas, and rule cards.
+- Added wizard-like `Visuelle Einrichtung` first-run guidance.
+- Added visual preview tree for source/rule effects.
+- Added README/README.en screenshot walkthrough using real browser-test screenshots under `docs/screenshots/`.
+- Extended authenticated browser tests for first-run guide and preview tree.
 - `bash scripts/production-update.sh --preflight` passed.
 - Live deployed `bash scripts/self-check.sh` passed.
 - Live authenticated settings tests passed: 3/3.
 - Live authenticated browser journey passed: 1/1.
+- Live smoke, security smoke, and regression helpers passed.
 
 Post-check:
 
@@ -146,17 +149,17 @@ Post-check:
 - `albentest` Photos albums: 0.
 - `albentest` Photos album links: 0.
 - Test source folders and `SakuraAlbum Exports`: absent.
-- SakuraAlbum recent errors/warnings: 0/0.
+- SakuraAlbum recent errors/warnings: 0/1; the warning is expected because the regression helper intentionally deletes a managed Photos album outside SakuraAlbum and verifies automatic repair.
 - Nextcloud log file was empty during the final check.
 
 Covered backlog items:
 
-- `UX-02`, `UX-03`, `UX-06`, `UX-09`, `UI-01` partial, `UI-02` partial, `PRE-07`.
+- `UX-01`, `UX-02`, `UX-03`, `UX-04`, `UX-06`, `UX-07`, `UX-09`, `UI-01` partial, `UI-02` partial, `UI-04`, `UI-10`, `PRE-07`.
 
 Next:
 
-- Validate the 1.0.13 first-run guide and visual preview tree in a controlled live test window.
 - Continue reducing normal-user cognitive load by moving rarely used advanced controls further away from the primary path.
+- Add an accessibility pass for keyboard/focus/screen-reader order and continue polishing long German help texts.
 
 ## Previous executed baseline
 

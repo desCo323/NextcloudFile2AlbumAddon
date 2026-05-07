@@ -1,17 +1,34 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-08 00:46:00 CEST
+Datum: 2026-05-08 00:45:00 CEST
 
-Neueste operative Notiz (2026-05-08 00:46 CEST):
-- Benutzerauftrag: groesseren Backlog-Block selbststaendig umsetzen, danach testen/debuggen und erst mit Backup live pruefen.
-- Umsetzung lokal als `1.0.13` begonnen:
+Neueste operative Notiz (2026-05-08 00:45 CEST):
+- Benutzerauftrag: groesseren Backlog-Block selbststaendig umsetzen, testen/debuggen, Backup beachten und GitHub-README mit Screenshots/Produktbeschreibung verbessern.
+- Umsetzung als `1.0.13`:
   - Neue Cache-Busting-Assets `admin-settings-1013.js` und `personal-settings-1013.js`.
   - Personal-UI bekommt eine wizard-aehnliche `Visuelle Einrichtung` mit den Schritten App, Quellen, Regeln, Vorschau und Hintergrund.
   - Vorschau/Sync-Ergebnis bekommen zusaetzlich zur Tabelle eine `Visuelle Vorschau` als gruppierte Baumansicht nach Quelle und Album.
   - Authentifizierte Browser-Tests pruefen Startfuehrung, mobile Lesbarkeit und visuelle Vorschau.
-- Sicherheitsrahmen:
-  - Noch kein Live-Deploy in diesem Block.
-  - Naechste Schritte: lokale Syntax-/Browser-/Self-Checks, Commit, Production-Preflight, frisches Backup, Deploy, Live-Tests nur mit `albentest`, Debuglog-Auswertung, Reset und Nachkontrolle.
+  - README.md und README.en.md wurden um eine Screenshot-Produktfuehrung erweitert: Einrichtung, Ordnerauswahl, visuelle Vorschau, verwaltete Alben, Download-Center und Reset-Vorschau.
+  - Screenshots liegen versioniert unter `docs/screenshots/`.
+- Lokale Checks:
+  - JS/PHP-Syntax, `git diff --check`: bestanden.
+  - `npm run test:browser`: bestanden; 1 normaler Chromium-Test, 4 Auth-Tests korrekt ohne Auth-Env uebersprungen.
+  - `bash scripts/self-check.sh`: bestanden.
+- Kontrolliertes Live-Testfenster `1.0.13`:
+  - Production-Preflight vor Deploy: bestanden; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.13.tar.gz`, SHA256 `f39edb5d62f1a2959f885709a3ef78a3728b050e889b18828068cc8943ada926`.
+  - Manuelles App-/DB-Backup vor Live-Test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1013-wizard-preview-test-20260508-003743`.
+  - Production-update App-Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.13-20260508-003811/app`.
+  - Deploy erfolgreich; SakuraAlbum live: `1.0.13`; Nextcloud danach `maintenance=false`, `needsDbUpgrade=false`.
+  - Live deployed self-check: bestanden.
+  - Live Auth-Settings-Tests gegen `https://chaosnet.me` mit `albentest`: 3/3 bestanden, inklusive 390px-Mobile-Viewport, Startfuehrung und Ueberlaufpruefung.
+  - Live Browser-Journey gegen `https://chaosnet.me` mit `albentest`: bestanden, `1 passed`.
+  - Screenshot-Verzeichnis Journey: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1013-20260508-003945`.
+  - Live-Smoke, Live-Security-Smoke und Live-Regression mit `albentest`: bestanden.
+  - Nachkontrolle `albentest`: 0 aktive verwaltete Alben, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 Photos-Alben, 0 Photos-Albumlinks; keine Testordner; `/SakuraAlbum Exports` abwesend.
+  - SakuraAlbum-App-Logs letzte 30 Minuten: 0 Fehler; 1 Warnung `auto_sync_missing_managed_album_refresh_queued`, erwartet durch den Regressionstest, der absichtlich ein verwaltetes Photos-Album ausserhalb der App loescht und den Wiederaufbau prueft.
+  - Nextcloud-Logdatei ist leer.
+  - Wiederherstellungsprompt: "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.13-20260508-003811/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind. Falls DB-Testdaten zurueckgesetzt werden muessen, liegt der Dump unter `/home/cloud/sakuraalbum-backups/sakuraalbum-1013-wizard-preview-test-20260508-003743/db-before-test.sql.gz`."
 
 Neueste operative Notiz (2026-05-08 00:24 CEST):
 - Benutzerauftrag: naechsten Backlog-Block umsetzen, besonders mobile/narrow Browser-UX und Quellordner-/Regelbedienung verbessern.

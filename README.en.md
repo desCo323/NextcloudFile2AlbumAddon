@@ -62,6 +62,46 @@ SakuraAlbum bridges that gap. Users choose source folders, preview the resulting
 | **Operational diagnostics** | Health checks detect stale locks, stuck runs, failed cursors, export failures, Cron issues, and recent warning/error logs. |
 | **CSV diagnostics** | Users and admins can download diagnostic CSV files; SakuraAlbum also keeps a server-side AppData copy. |
 
+## App walkthrough
+
+The screenshots below come from an automated Nextcloud browser test with the dedicated `albentest` account. They show the real flow: configure the app, pick folders, understand the preview, inspect managed albums, prepare exports, and reset safely.
+
+### 1. Guided setup
+
+![SakuraAlbum settings with guided setup](docs/screenshots/01-settings-start.png)
+
+The personal settings page guides users through activation, source folders, rules, preview, and background processing. The normal workflow stays visible; manual test tools are separated from the main path.
+
+### 2. Pick folders instead of typing paths
+
+![SakuraAlbum folder picker](docs/screenshots/02-folder-picker.png)
+
+Source folders and folder rules are selected from the user's Nextcloud file tree. This avoids typing mistakes and prevents many common path conflicts at the UI level.
+
+### 3. Visual preview before writes
+
+![SakuraAlbum visual album preview](docs/screenshots/03-visual-preview.png)
+
+The preview shows planned albums, media counts, source roots, and actions before SakuraAlbum writes anything. Users can quickly see whether depth, collapse rules, and exclusions produce the intended structure.
+
+### 4. Trace managed albums
+
+![SakuraAlbum managed albums](docs/screenshots/04-managed-albums.png)
+
+SakuraAlbum clearly separates its managed albums from regular Photos albums. Deletion and reset features operate only on albums SakuraAlbum can still identify and validate.
+
+### 5. Prepare large downloads
+
+![SakuraAlbum download center](docs/screenshots/05-download-center.png)
+
+Albums can be prepared as ZIP files. Large exports run in the background and are split into parts so the browser and server are not held by one long request.
+
+### 6. Safe account reset
+
+![SakuraAlbum reset preview](docs/screenshots/06-reset-preview.png)
+
+Dangerous actions first show a preview and require exact confirmation. Files remain untouched; SakuraAlbum removes only its own tracking data, queue rows, cursors, jobs, and clearly managed albums.
+
 ## How it works
 
 ```mermaid
@@ -330,7 +370,7 @@ php occ sakuraalbum:delete-generated --user albentest --dry-run --all
 - Optional email delivery for diagnostic reports.
 - Store submission after a fresh review of current Nextcloud and Photos APIs and a formal relicense to a store-compatible license.
 - Wider Nextcloud version support after targeted tests.
-- UI screenshots and short demo graphics once the final production UI is stable on the target system.
+- Short demo graphics and release images for a future App Store page.
 
 ## Project identity
 
