@@ -11,6 +11,7 @@ module.exports = defineConfig({
   reporter: [['list']],
   use: {
     baseURL: process.env.SAKURAALBUM_BASE_URL || 'http://127.0.0.1',
+    ignoreHTTPSErrors: process.env.SAKURAALBUM_IGNORE_HTTPS_ERRORS === '1',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

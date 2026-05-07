@@ -7,6 +7,7 @@
     "check": "bash scripts/self-check.sh",
     "build:artifact": "bash scripts/build-artifact.sh",
     "test:browser": "playwright test",
+    "test:browser:auth": "SAKURAALBUM_AUTH_TESTS=1 playwright test tests/Browser/authenticated-settings.auth.spec.js",
     "test:browser:headed": "playwright test --headed"
   },
   "devDependencies": {

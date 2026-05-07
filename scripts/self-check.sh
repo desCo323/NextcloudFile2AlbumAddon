@@ -11,7 +11,8 @@ done < <(find appinfo lib templates tests -name '*.php' -print0)
 echo "Checking JavaScript syntax"
 while IFS= read -r -d '' file; do
 	node --check "$file" >/dev/null
-done < <(find js -name '*.js' -print0)
+done < <(find js tests/Browser -name '*.js' -print0)
+node --check playwright.config.js >/dev/null
 
 echo "Checking app metadata XML"
 php -r '$xml = simplexml_load_file("appinfo/info.xml"); if (!$xml || (string)$xml->id !== "sakuraalbum" || (string)$xml->name !== "SakuraAlbum") { fwrite(STDERR, "Invalid appinfo/info.xml\n"); exit(1); }'

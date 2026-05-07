@@ -114,6 +114,46 @@ This backlog defines the next functional, security, usability, and readability c
 
 ## Latest executed baseline
 
+Date: 2026-05-07 23:38 CEST
+
+Environment:
+
+- SakuraAlbum live app remained 1.0.10; no deploy was required for this test-infrastructure update.
+- Nextcloud URL for browser tests: `https://chaosnet.me`.
+- Test user: `albentest`.
+- Authenticated browser credentials are provided only through environment variables and are not stored in the repository.
+
+Executed:
+
+- Added `npm run test:browser:auth`.
+- Added `tests/Browser/helpers/nextcloud-auth.js`.
+- Added `tests/Browser/authenticated-settings.auth.spec.js`.
+- Added `docs/BROWSER_TESTING.md`.
+- `npm run test:browser` passed with unauthenticated smoke and skipped auth tests.
+- Live authenticated Playwright run passed: login, personal SakuraAlbum settings load, danger button contrast, sync-status API read, folder picker open.
+- `bash scripts/self-check.sh` passed after adding Browser JS checks.
+
+Post-check:
+
+- `albentest` active managed albums: 0.
+- `albentest` dirty paths: 0.
+- `albentest` sync cursors: 0.
+- `albentest` download jobs: 0.
+- `albentest` Photos albums: 0.
+- SakuraAlbum recent errors in the last 15 minutes: 0.
+- Nextcloud log tail contained no SakuraAlbum-relevant level >= 2 entries.
+
+Covered backlog items:
+
+- `PRE-06`, `UX-01`, `UX-02`, `UX-03`, `UX-05`, `UI-11`.
+
+Next:
+
+- Add authenticated preview-only browser checks for folder-rule changes without writing.
+- Add mobile/narrow viewport browser checks.
+
+## Previous executed baseline
+
 Date: 2026-05-07 23:25 CEST
 
 Environment:

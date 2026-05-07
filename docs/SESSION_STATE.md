@@ -2,6 +2,26 @@
 
 Datum: 2026-05-07 19:35:46 CEST
 
+Neueste operative Notiz (2026-05-07 23:38 CEST):
+- Benutzerauftrag: authentifizierte Playwright-Tests fuer den echten Nextcloud-Browserfluss mit `albentest` bauen.
+- Umsetzung:
+  - Neues npm-Skript `npm run test:browser:auth`; es setzt nur `SAKURAALBUM_AUTH_TESTS=1`, Zugangsdaten muessen von aussen per Umgebungsvariablen kommen.
+  - `playwright.config.js` akzeptiert `SAKURAALBUM_BASE_URL` und optional `SAKURAALBUM_IGNORE_HTTPS_ERRORS=1`.
+  - Neuer Helper `tests/Browser/helpers/nextcloud-auth.js`: Login ueber `/login`, Pflichtpruefung fuer Benutzer/Passwort-Env, 2FA-Challenge als Fehler, keine gespeicherte Session-Datei.
+  - Neuer Test `tests/Browser/authenticated-settings.auth.spec.js`: oeffnet `/settings/user/sakuraalbum`, prueft SakuraAlbum-Root, Hauptaktionen, Danger-Button-Kontrast, liest den Live-Sync-Status per Browser-Fetch und oeffnet den Quellordner-Picker ohne Speichern.
+  - Auth-Tests verwenden `trace: off`, `screenshot: off`, `video: off`, damit keine lokalen Artefakte mit Session-/Login-Daten erzeugt werden.
+  - `scripts/self-check.sh` prueft nun auch JavaScript unter `tests/Browser` und `playwright.config.js`.
+  - Neue Anleitung `docs/BROWSER_TESTING.md`.
+- Tests:
+  - `npm run test:browser`: bestanden; 1 normaler Chromium-Test, 2 Auth-Tests korrekt ohne Auth-Env uebersprungen.
+  - Erster Auth-Lauf fand eine falsche Testannahme: API-Statusfeld heisst aktuell `queue`, nicht `autoSync`; Test korrigiert.
+  - Live Auth-Lauf gegen `https://chaosnet.me` mit `albentest`: 2/2 Tests bestanden.
+  - `bash scripts/self-check.sh`: bestanden.
+  - Nachkontrolle `albentest`: 0 aktive verwaltete Alben, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 Photos-Alben.
+  - SakuraAlbum-Logs letzte 15 Minuten: 0 Fehler; Nextcloud-Log-Tail: 0 SakuraAlbum-relevante Eintraege mit Level >= 2.
+  - Lokale Playwright-Artefakte `test-results`/`playwright-report` wurden entfernt.
+- Keine Live-App-Aenderung/kein Deploy noetig, da nur Testinfrastruktur und Dokumentation geaendert wurden. Live-App bleibt SakuraAlbum `1.0.10`.
+
 Neueste operative Notiz (2026-05-07 23:25 CEST):
 - Benutzerauftrag: Playwright installieren, damit SakuraAlbum kuenftig automatisiert im Browser/Headless-Browser getestet werden kann.
 - Umsetzung im Entwicklungsverzeichnis `/home/cloud/NextcloudFile2AlbumAddon-work/NextcloudFile2AlbumAddon`, danach kontrolliert als `1.0.10` auf die Live-App ausgerollt:
