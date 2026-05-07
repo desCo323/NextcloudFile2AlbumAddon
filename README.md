@@ -120,6 +120,22 @@ Do not enable this app on a production Nextcloud before a backup and restore pro
 
 During controlled tests, enable admin setting `debugMode` so preview requests, successes, warnings, and failures are stored with enough context for diagnosis.
 
+## Production updates
+
+SakuraAlbum is maintained as a production Nextcloud app. Versioned releases, hotfixes, database migrations, backups, deployment, rollback, and documentation requirements are defined in `docs/UPDATE_POLICY.md`.
+
+Run the production preflight before every release or live deployment:
+
+```bash
+./scripts/production-update.sh --preflight
+```
+
+Deploy mode is intentionally guarded and requires an explicit environment flag:
+
+```bash
+SAKURAALBUM_PRODUCTION_UPDATE=1 ./scripts/production-update.sh --deploy
+```
+
 ## Publication notes
 
 SakuraAlbum includes app-store metadata, changelogs, background-job declaration, documentation links, and a release checklist. Before a public app-store submission, re-review `PhotosAlbumAdapter` against the then-current Nextcloud and Photos APIs because it is the intentionally isolated Photos integration point.

@@ -305,3 +305,14 @@ Neueste operative Notiz (2026-05-07):
   - Nach Ruecksetzung: `occ status` meldet `maintenance: false` und `needsDbUpgrade: false`; `occ app:list` zeigt `sakuraalbum: 1.0.4`.
 - Wiederherstellungsprompt fuer Neustart:
   - "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-performance-105-20260507-123710/app` nach `/var/www/nextcloud/apps/sakuraalbum/` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind."
+
+Neueste operative Notiz (2026-05-07):
+- Projektregel ab jetzt: SakuraAlbum wird als produktiv genutzte Nextcloud-App behandelt. Jede Korrektur und Erweiterung laeuft ueber versionierte Updates, Backups, Preflight, kontrollierten Deploy und dokumentierten Rollback.
+- Neu angelegt:
+  - `docs/UPDATE_POLICY.md` mit Produktionsannahmen, Versionierung, Datenkompatibilitaet, verbotenen Update-Mustern, Standard-Release-Flow, Deploy-Guardrail, Rollback, Testpolitik und Dokumentationspflichten.
+  - `scripts/production-update.sh` als produktiver Update-Gatekeeper.
+- Verhalten des Update-Skripts:
+  - Standard: `./scripts/production-update.sh --preflight` prueft Versionen, App-Metadaten, Self-Check, Build-Artefakt, Token-Scan, sauberen Git-Stand und Nextcloud-Status.
+  - Deploy: `SAKURAALBUM_PRODUCTION_UPDATE=1 ./scripts/production-update.sh --deploy` ist absichtlich explizit, legt zuerst ein Backup an, synchronisiert die App, setzt Eigentümer, fuehrt bei Bedarf das Nextcloud-Upgrade aus und gibt einen Restore-Prompt aus.
+- README und Store-Release-Checkliste verweisen jetzt auf die Update-Policy und den Preflight.
+- Naechste sichere Regel: keine normalen Live-Hotfixes mehr ohne Version/Preflight; Hotfix ohne Version nur bei Produktionsrettung, mit Backup und anschliessender Aufnahme in den naechsten normalen Release.

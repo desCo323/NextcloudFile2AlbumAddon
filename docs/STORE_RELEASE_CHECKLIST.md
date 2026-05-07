@@ -31,6 +31,7 @@ This checklist tracks the publication state for SakuraAlbum.
 ## Packaging
 
 - Run `./scripts/self-check.sh`.
+- Run `./scripts/production-update.sh --preflight` before any production deployment or release tag.
 - Run `php -l scripts/live-smoke.php`.
 - Run `bash -n scripts/live-smoke.sh`.
 - Run `./scripts/build-artifact.sh`.
