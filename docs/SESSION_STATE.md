@@ -2,6 +2,14 @@
 
 Datum: 2026-05-07 19:35:46 CEST
 
+Neueste operative Notiz (2026-05-07 19:56 CEST):
+- Abschluss kontrolliertes Testfenster/Hotfix:
+  - Finaler Production-Preflight auf sauberem Git-Stand erfolgreich; Live-Nextcloud gesund und SakuraAlbum `1.0.7` installiert.
+  - Preflight-Artefaktlauf meldete `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.7.tar.gz` mit SHA256 `d586d100d4afd42590d1158e72d729913f0fcc3e8ed02cb051fabafecc27c68a`.
+  - Commits `665bc2a Fix info-level diagnostic log writes` und `f72f500 Document 1.0.7 live test results` wurden auf GitHub `main` gepusht.
+  - Secret-Scan vor Push ohne Treffer; `origin` weiterhin ohne eingebettetes Token.
+  - Nach einem Neustart direkt mit Live-App `1.0.7` weiterarbeiten; naechste sinnvolle Arbeit ist Browser-UX-Testfenster fuer Benutzeroberflaeche, Quellordner-/Regelbedienung und CSV-Download-Buttons.
+
 Neueste operative Notiz (2026-05-07 19:54 CEST):
 - Kontrolliertes Testfenster abgeschlossen und wegen gefundenem Logging-Bug auf Hotfix `1.0.7` erweitert.
 - Live-Status final:
