@@ -1,6 +1,8 @@
 /build/
 /vendor/
 /node_modules/
+/test-results/
+/playwright-report/
 /.phpunit.result.cache
 /.nextcloud-test-instance/
 *.log

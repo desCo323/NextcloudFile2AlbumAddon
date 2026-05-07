@@ -22,6 +22,7 @@ This backlog defines the next functional, security, usability, and readability c
 | PRE-03 | Production update | `./scripts/production-update.sh --preflight` | Package builds, worktree is clean, Nextcloud status is healthy. | Ready |
 | PRE-04 | Secret scan | Token and test-password pattern scan | No secrets in source tree, package, git remote, or docs. | Ready |
 | PRE-05 | License consistency | README, `LICENSE.md`, metadata, store checklist | Preview license is visible; store blocker is explicit. | Ready |
+| PRE-06 | Browser smoke | `npm run test:browser` | Playwright launches Chromium and verifies basic SakuraAlbum UI styling without stored credentials. | Ready |
 
 ## Functional live tests with `albentest`
 
@@ -112,6 +113,29 @@ This backlog defines the next functional, security, usability, and readability c
 8. Convert findings into issues or update tasks.
 
 ## Latest executed baseline
+
+Date: 2026-05-07 23:25 CEST
+
+Environment:
+
+- Playwright installed in the development workspace as `@playwright/test`.
+- Chromium/Headless Shell installed under `/home/cloud/.cache/ms-playwright`.
+- No browser-test credentials are stored in the repository.
+
+Executed:
+
+- Headless Chromium launch smoke passed with a local HTML page.
+- Added `tests/Browser/button-contrast.spec.js` for app-scoped button contrast checks.
+- Added npm scripts `test:browser` and `test:browser:headed`.
+- First browser run found a real 1.0.9 CSS specificity bug for danger buttons; fixed in the 1.0.10 worktree.
+- `npm run test:browser` passed after the fix.
+
+Next:
+
+- Commit the 1.0.10 tooling/style fix, run production preflight on a clean worktree, and deploy only through a controlled backup/update window.
+- Later add authenticated `albentest` browser tests using environment variables only.
+
+## Previous executed baseline
 
 Date: 2026-05-07 23:05 CEST
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.10
+
+- Installed Playwright browser testing in the development workspace and added a first Chromium smoke test for SakuraAlbum button contrast.
+- Fixed the CSS specificity of dangerous SakuraAlbum buttons so the high-contrast white text and red background win over generic app button styles in a real browser.
+- Versioned cache-busting assets as `admin-settings-1010` and `personal-settings-1010`.
+
 ## 1.0.9
 
 - Improved SakuraAlbum button readability across Nextcloud themes by adding app-scoped high-contrast styles for normal, primary, disabled, and dangerous buttons.

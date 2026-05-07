@@ -1,10 +1,15 @@
 {
   "name": "sakuraalbum",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "private": true,
   "description": "Nextcloud app for managed Photos albums from folders.",
   "scripts": {
     "check": "bash scripts/self-check.sh",
-    "build:artifact": "bash scripts/build-artifact.sh"
+    "build:artifact": "bash scripts/build-artifact.sh",
+    "test:browser": "playwright test",
+    "test:browser:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
   }
 }

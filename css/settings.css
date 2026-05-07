@@ -316,12 +316,18 @@
   transform: none;
 }
 
+.sakuraalbum-settings button.sakuraalbum-button-danger,
+.sakuraalbum-settings .button.sakuraalbum-button-danger,
 .sakuraalbum-button-danger {
   border-color: #8f1d15 !important;
   color: #ffffff !important;
   background: #b42318 !important;
 }
 
+.sakuraalbum-settings button.sakuraalbum-button-danger:hover,
+.sakuraalbum-settings button.sakuraalbum-button-danger:focus-visible,
+.sakuraalbum-settings .button.sakuraalbum-button-danger:hover,
+.sakuraalbum-settings .button.sakuraalbum-button-danger:focus-visible,
 .sakuraalbum-button-danger:hover,
 .sakuraalbum-button-danger:focus-visible {
   border-color: #71170f !important;

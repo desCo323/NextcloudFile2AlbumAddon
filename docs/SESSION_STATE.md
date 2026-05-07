@@ -2,6 +2,26 @@
 
 Datum: 2026-05-07 19:35:46 CEST
 
+Neueste operative Notiz (2026-05-07 23:25 CEST):
+- Benutzerauftrag: Playwright installieren, damit SakuraAlbum kuenftig automatisiert im Browser/Headless-Browser getestet werden kann.
+- Umsetzung im Entwicklungsverzeichnis `/home/cloud/NextcloudFile2AlbumAddon-work/NextcloudFile2AlbumAddon`; produktiv laeuft noch die zuletzt deployte App, bis ein kontrolliertes Updatefenster ausgefuehrt wird:
+  - `@playwright/test` als Dev-Abhaengigkeit installiert; npm Audit meldet 0 bekannte Schwachstellen.
+  - Chromium/Headless Shell fuer Playwright nach `/home/cloud/.cache/ms-playwright` installiert.
+  - Headless-Starttest erfolgreich: Browser startete und las eine Testseite mit `SakuraAlbum Playwright OK`.
+  - Neue npm-Skripte: `npm run test:browser` und `npm run test:browser:headed`.
+  - Neue Playwright-Konfiguration `playwright.config.js`; Zugangsdaten werden nicht gespeichert, Live-Tests sollen spaeter nur ueber Umgebungsvariablen wie `SAKURAALBUM_BASE_URL` laufen.
+  - Erster Browser-Smoke `tests/Browser/button-contrast.spec.js` prueft die SakuraAlbum-Buttonkontraste im echten Chromium.
+  - Der erste Browserlauf fand einen echten CSS-Spezifitaetsfehler: Danger-Buttons wurden trotz 1.0.9-CSS im Browser schwarz statt weiss gerendert.
+  - Fix vorbereitet als `1.0.10`: spezifischere Danger-Button-Regeln in `css/settings.css`, neue Cache-Busting-Assets `admin-settings-1010.js` und `personal-settings-1010.js`, Version/README/Changelog aktualisiert.
+- Checks im Arbeitsstand:
+  - `npm run test:browser`: bestanden, 1 Chromium-Test.
+  - `bash scripts/self-check.sh`: bestanden.
+  - `git diff --check`: bestanden.
+  - `npm audit --audit-level=moderate`: 0 bekannte Schwachstellen.
+  - `bash scripts/build-artifact.sh`: bestanden; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.10.tar.gz`, SHA256 `38dd74503d15b3740c71fdea81a7133389519e6606e965ffb6969531f2d92148`.
+  - Secret-Scan auf GitHub-PAT- und Testpasswortmuster: keine Treffer.
+- Noch offen in diesem Block: committen, Production-Preflight auf sauberem Git-Stand, GitHub-Sync und kontrolliertes Deploy/Testfenster fuer 1.0.10.
+
 Neueste operative Notiz (2026-05-07 20:00 CEST):
 - Benutzer-UX-Befund fuer spaeteres Update aufgenommen:
   - Buttontexte wie `Alle verwalteten pruefen` und `Konto-Reset pruefen` sind in der UI zu blass und kaum lesbar.
