@@ -16,7 +16,7 @@
 <p align="center">
   <img alt="Nextcloud" src="https://img.shields.io/badge/Nextcloud-33-0082c9?logo=nextcloud&logoColor=white">
   <img alt="PHP" src="https://img.shields.io/badge/PHP-8.3%2B-777bb4?logo=php&logoColor=white">
-  <img alt="Version" src="https://img.shields.io/badge/SakuraAlbum-1.0.7-dc4f7b">
+  <img alt="Version" src="https://img.shields.io/badge/SakuraAlbum-1.0.9-dc4f7b">
   <img alt="License" src="https://img.shields.io/badge/License-Preview%20Non--Commercial-b83280">
 </p>
 
