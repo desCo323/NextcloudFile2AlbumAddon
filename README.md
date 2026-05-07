@@ -20,7 +20,7 @@
   <img alt="License" src="https://img.shields.io/badge/License-Preview%20Non--Commercial-b83280">
 </p>
 
-> **Vorlaeufiger Lizenzstatus:** SakuraAlbum steht aktuell unter der [Vorlaeufigen Entwicklungs- und Evaluierungslizenz](LICENSE.md). Kommerzielle Nutzung, Weiterverbreitung und App-Store-Verteilung sind ohne ausdrueckliche schriftliche Erlaubnis nicht erlaubt. Fuer eine spaetere Nextcloud-App-Store-Veroeffentlichung muss die Lizenzierung auf AGPL-3.0-or-later oder eine kompatible Lizenz umgestellt und formal geprueft werden.
+> **Vorlaeufiger Lizenzstatus:** SakuraAlbum steht aktuell unter der [Vorlaeufigen Entwicklungs- und Evaluierungslizenz](LICENSE.md). Kommerzielle Nutzung, Weiterverbreitung und App-Store-Verteilung sind ohne ausdrueckliche schriftliche Erlaubnis nicht erlaubt. 
 
 ## Die Idee
 
