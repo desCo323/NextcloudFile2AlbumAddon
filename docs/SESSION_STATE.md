@@ -4,7 +4,7 @@ Datum: 2026-05-07 19:35:46 CEST
 
 Neueste operative Notiz (2026-05-07 23:25 CEST):
 - Benutzerauftrag: Playwright installieren, damit SakuraAlbum kuenftig automatisiert im Browser/Headless-Browser getestet werden kann.
-- Umsetzung im Entwicklungsverzeichnis `/home/cloud/NextcloudFile2AlbumAddon-work/NextcloudFile2AlbumAddon`; produktiv laeuft noch die zuletzt deployte App, bis ein kontrolliertes Updatefenster ausgefuehrt wird:
+- Umsetzung im Entwicklungsverzeichnis `/home/cloud/NextcloudFile2AlbumAddon-work/NextcloudFile2AlbumAddon`, danach kontrolliert als `1.0.10` auf die Live-App ausgerollt:
   - `@playwright/test` als Dev-Abhaengigkeit installiert; npm Audit meldet 0 bekannte Schwachstellen.
   - Chromium/Headless Shell fuer Playwright nach `/home/cloud/.cache/ms-playwright` installiert.
   - Headless-Starttest erfolgreich: Browser startete und las eine Testseite mit `SakuraAlbum Playwright OK`.
@@ -20,7 +20,22 @@ Neueste operative Notiz (2026-05-07 23:25 CEST):
   - `npm audit --audit-level=moderate`: 0 bekannte Schwachstellen.
   - `bash scripts/build-artifact.sh`: bestanden; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.10.tar.gz`, SHA256 `38dd74503d15b3740c71fdea81a7133389519e6606e965ffb6969531f2d92148`.
   - Secret-Scan auf GitHub-PAT- und Testpasswortmuster: keine Treffer.
-- Noch offen in diesem Block: committen, Production-Preflight auf sauberem Git-Stand, GitHub-Sync und kontrolliertes Deploy/Testfenster fuer 1.0.10.
+- Kontrolliertes Deploy/Testfenster `1.0.10`:
+  - Commit: `4532231 Add Playwright browser smoke tests`.
+  - Production-Preflight auf sauberem Git-Stand: bestanden; finales Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.10.tar.gz`, SHA256 `465f8e394d14269d0e75c3f5694a91017b246b2442aa3c87cbd8180d56a16201`.
+  - Manuelles App-/DB-Backup vor Deploy/Test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1010-playwright-test-20260507-232725`; DB-Dump SHA256 `734965148f951ff3dbf266d44d9c35a96c4addb78f193329a802634273ca0f76`.
+  - Production-update App-Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.10-20260507-232747/app`.
+  - Deploy erfolgreich; SakuraAlbum live: `1.0.10`; Nextcloud danach `maintenance=false`, `needsDbUpgrade=false`.
+  - Live deployed self-check: bestanden.
+  - Playwright/Chromium gegen live installierte CSS-Datei: Danger-Button normal `rgb(255,255,255)` auf `rgb(180,35,24)`, Hover `rgb(255,255,255)` auf `rgb(146,27,19)`.
+  - Live-Smoke mit `albentest`: Dry-run, Write, direkter ZIP-Check und Account-Reset erfolgreich.
+  - Live-Security-Smoke mit `albentest`: Pfad-Haertung, Exportlimit-Blockade, erlaubter Export, Diagnose-CSV und Reset erfolgreich.
+  - Live-Regression mit `albentest`: Ordnerregeln, Auto-Sync, fehlendes verwaltetes Album reparieren, Hintergrundexport und Reset erfolgreich.
+  - Nachkontrolle `albentest`: 0 aktive verwaltete Alben, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 Photos-Alben, 0 Photos-Albumlinks; Testordner und `/SakuraAlbum Exports` entfernt.
+  - SakuraAlbum-Logs letzte 30 Minuten: 0 Fehler; 2 Warnungen `auto_sync_missing_managed_album_refresh_queued`, beide erwartete Reparaturtests.
+  - Nextcloud-Log-Tail: 0 SakuraAlbum-relevante Eintraege mit Level >= 2; nur bekannte Level-0 Debug-/Deprecation-Hinweise aus Nextcloud.
+  - Wiederherstellungsprompt: "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.10-20260507-232747/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind. Falls DB-Testdaten zurueckgesetzt werden muessen, liegt der Dump unter `/home/cloud/sakuraalbum-backups/sakuraalbum-1010-playwright-test-20260507-232725/db-before-test.sql.gz`."
+- Noch offen in diesem Block: Dokumentations-Commit und GitHub-Sync.
 
 Neueste operative Notiz (2026-05-07 20:00 CEST):
 - Benutzer-UX-Befund fuer spaeteres Update aufgenommen:

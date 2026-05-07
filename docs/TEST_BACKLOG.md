@@ -120,6 +120,10 @@ Environment:
 
 - Playwright installed in the development workspace as `@playwright/test`.
 - Chromium/Headless Shell installed under `/home/cloud/.cache/ms-playwright`.
+- SakuraAlbum 1.0.10 deployed through `scripts/production-update.sh --deploy`.
+- Manual DB/app backup before deploy/test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1010-playwright-test-20260507-232725`.
+- Production-update app backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.10-20260507-232747`.
+- Nextcloud stayed healthy before and after testing: `maintenance=false`, `needsDbUpgrade=false`.
 - No browser-test credentials are stored in the repository.
 
 Executed:
@@ -129,11 +133,35 @@ Executed:
 - Added npm scripts `test:browser` and `test:browser:headed`.
 - First browser run found a real 1.0.9 CSS specificity bug for danger buttons; fixed in the 1.0.10 worktree.
 - `npm run test:browser` passed after the fix.
+- Production preflight passed on clean Git state.
+- Live deployed self-check passed.
+- Live Chromium check against `/var/www/nextcloud/apps/sakuraalbum/css/settings.css` confirmed danger button normal and hover contrast.
+- `scripts/live-smoke.php` covered dry-run, write, direct managed ZIP preparation, account reset, and cleanup.
+- `scripts/live-security-smoke.php` covered path hardening, background export file-limit blocking, background export success under limits, diagnostic CSV formula protection, and reset cleanup.
+- `scripts/live-regression-104.php` covered folder rules, Auto-Sync processing, missing managed album repair, background album export, downloadable ZIP part, and reset cleanup.
+
+Post-check:
+
+- `albentest` active managed albums: 0.
+- `albentest` dirty paths: 0.
+- `albentest` sync cursors: 0.
+- `albentest` download jobs: 0.
+- `albentest` Photos albums: 0.
+- `albentest` Photos album links: 0.
+- Test folders and `SakuraAlbum Exports`: absent.
+- SakuraAlbum recent errors in the last 30 minutes: 0.
+- Two warnings remained by design from missing-managed-album repair tests: `auto_sync_missing_managed_album_refresh_queued`.
+- Nextcloud log tail contained no SakuraAlbum-relevant level >= 2 entries.
+
+Covered backlog items:
+
+- `FUN-01`, `FUN-04`, `FUN-05`, `FUN-06`, `FUN-07`, `FUN-09`, `FUN-11`, `FUN-12`, `FUN-13`.
+- `SEC-01`, `SEC-04`, `SEC-08`, `SEC-11`, `SEC-12`, `SEC-13`.
+- `UI-11`, `PRE-06`.
 
 Next:
 
-- Commit the 1.0.10 tooling/style fix, run production preflight on a clean worktree, and deploy only through a controlled backup/update window.
-- Later add authenticated `albentest` browser tests using environment variables only.
+- Add authenticated `albentest` browser tests using environment variables only.
 
 ## Previous executed baseline
 
