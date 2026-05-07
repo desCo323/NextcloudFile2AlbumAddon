@@ -52,6 +52,19 @@ class ManagedAlbumController extends Controller {
 	}
 
 	#[NoAdminRequired]
+	public function dryRunDeleteStale(): JSONResponse {
+		try {
+			return new JSONResponse($this->managedAlbumDeletionService->dryRunDeleteStale($this->userId));
+		} catch (SyncSafetyException $e) {
+			return $this->safetyResponse($e);
+		} catch (\Throwable) {
+			return new JSONResponse([
+				'error' => 'managed_album_stale_delete_dry_run_failed',
+			], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	#[NoAdminRequired]
 	public function prepareDownload(): JSONResponse {
 		try {
 			return new JSONResponse($this->managedAlbumDownloadService->prepare(

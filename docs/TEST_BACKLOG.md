@@ -101,8 +101,8 @@ This backlog defines the next functional, security, usability, and readability c
 | OPS-02 | Remove deprecated container aliases from request paths | Nextcloud logs level-0 deprecation notices for `OCP\\IServerContainer`/`OCP\\AppFramework\\IAppContainer` during SakuraAlbum UI polling. | P1 |
 | OPS-03 | Reduce lazy AppConfig/UserConfig debug noise | Debug logs can contain level-0 lazy-loading notices during status polling; this makes operational review noisier. | P2 |
 | OPS-04 | Track external Nextcloud storage/versioning warnings separately | The 1.0.7 event test exposed a non-SakuraAlbum `files_versions`/trashbin warning that should not be confused with SakuraAlbum health. | P2 |
-| OPS-05 | Investigate WebDAV MOVE PHP warnings | The full browser journey passed, but Nextcloud logged non-fatal `Array to string conversion` warnings during file/folder MOVE operations. Trace whether the file-event listener, AutoSync runner nudge, dirty-path query, or Nextcloud Photos/File handling binds an array value during DAV transactions. | P0 |
-| OPS-06 | Explain stale managed albums after folder rename | With `syncDeleteMissingManagedAlbums=false`, renamed folders intentionally preserve old generated albums until reset/cleanup. The UI should explain this and offer a safe cleanup preview for stale managed albums. | P1 |
+| OPS-05 | Investigate WebDAV MOVE PHP warnings | The full browser journey passed, but Nextcloud logged non-fatal `Array to string conversion` warnings during file/folder MOVE operations. 1.0.11 simplifies the AutoSync runner nudge inside file events; retest with WebDAV MOVE after deploy. | P0 |
+| OPS-06 | Explain stale managed albums after folder rename | 1.0.11 adds a `Veraltete pruefen` cleanup preview that compares the current plan with SakuraAlbum tracking and deletes only after dry-run/fingerprint/confirmation. Retest after deploy. | P1 |
 
 ## Next controlled test window proposal
 
@@ -116,6 +116,48 @@ This backlog defines the next functional, security, usability, and readability c
 8. Convert findings into issues or update tasks.
 
 ## Latest executed baseline
+
+Date: 2026-05-08 00:18 CEST
+
+Environment:
+
+- SakuraAlbum 1.0.11 deployed through `scripts/production-update.sh --deploy`.
+- Manual DB/app backup before deploy/test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1011-stale-cleanup-test-20260508-001218`.
+- Production-update app backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.11-20260508-001238`.
+- Nextcloud stayed healthy after deploy and tests: `maintenance=false`, `needsDbUpgrade=false`.
+- Test user: `albentest`.
+- Browser screenshot output: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1011-20260508-001449`.
+
+Executed:
+
+- `bash scripts/production-update.sh --preflight` passed.
+- Live deployed `bash scripts/self-check.sh` passed.
+- `npm run test:browser` passed locally.
+- Live authenticated Playwright journey passed after adding polling for the immediate post-delete assertion.
+- Covered source setup, preview, first generation, file modification, file move, folder rename, file delete, stale-managed-album preview, stale-managed-album delete confirmation, download-center view, reset preview, and account reset.
+
+Post-check:
+
+- `albentest` active managed albums: 0.
+- `albentest` dirty paths: 0.
+- `albentest` sync cursors: 0.
+- `albentest` download jobs: 0.
+- `albentest` Photos albums: 0.
+- `albentest` Photos album links: 0.
+- Test source folders and `SakuraAlbum Exports`: absent.
+- SakuraAlbum recent errors/warnings: 0/0.
+- Nextcloud log file was empty during the final check; the previous WebDAV `Array to string conversion` warning did not recur.
+
+Covered backlog items:
+
+- `OPS-05`, `OPS-06`, `FUN-08`, `FUN-13`, `UX-06`, `PRE-07`.
+
+Next:
+
+- Add mobile/narrow viewport Playwright checks.
+- Improve the source/rule setup flow toward a simpler wizard-style UX.
+
+## Previous executed baseline
 
 Date: 2026-05-07 23:54 CEST
 

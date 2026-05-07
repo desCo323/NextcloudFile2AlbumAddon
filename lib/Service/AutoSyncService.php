@@ -818,9 +818,6 @@ class AutoSyncService {
 				$this->jobList->add(AutoSyncJob::class);
 			}
 			$runAfter = $now + max(self::AUTO_SYNC_NUDGE_DELAY_SECONDS, (int)($auto['debounceSeconds'] ?? 0) + 1);
-			if (method_exists($this->jobList, 'scheduleAfter')) {
-				$this->jobList->scheduleAfter(AutoSyncJob::class, $runAfter, null);
-			}
 			$this->forceAutoSyncRunnerToRunSoon($runAfter);
 			$this->logService->debug('auto_sync_runner_nudged', null, [
 				'runAfter' => $runAfter,
@@ -849,21 +846,6 @@ class AutoSyncService {
 	private function forceAutoSyncRunnerToRunSoon(int $runAfter): void {
 		if (!$this->jobList->has(AutoSyncJob::class, null)) {
 			return;
-		}
-
-		try {
-			if (method_exists($this->jobList, 'resetBackgroundJob')) {
-				$iterator = $this->jobList->getJobsIterator(AutoSyncJob::class, 1, 0);
-				foreach ($iterator as $job) {
-					if ($job instanceof AutoSyncJob) {
-						$this->jobList->resetBackgroundJob($job);
-						$this->jobList->scheduleAfter(AutoSyncJob::class, $runAfter, null);
-						break;
-					}
-				}
-			}
-		} catch (\Throwable) {
-			// Fallback to direct table update below.
 		}
 
 		$argumentHash = hash('sha256', json_encode(null));

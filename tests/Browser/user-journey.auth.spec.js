@@ -106,6 +106,22 @@ test.describe('SakuraAlbum full browser user journey @auth', () => {
     await shot(page, '06-managed-after-file-operations.png');
     await shotOutput(page, '06b-managed-after-file-operations-output.png');
 
+    await page.locator('#ska-managed-stale-preview').click();
+    await expect(page.locator('#ska-preview-output')).toContainText('Veraltete verwaltete Alben', { timeout: 15000 });
+    await shot(page, '06c-stale-managed-preview.png');
+    await shotOutput(page, '06d-stale-managed-preview-output.png');
+    page.once('dialog', async (dialog) => {
+      await dialog.accept('DELETE_MANAGED_ALBUMS');
+    });
+    await page.locator('#ska-delete-confirm').click();
+    await expect(page.locator('#ska-status')).toContainText('Loeschjob', { timeout: 15000 });
+    await expect
+      .poll(async () => {
+        const afterStaleCleanup = await managedAlbums(page);
+        return afterStaleCleanup.albums.some((album) => String(album.albumName).includes('People - Friends'));
+      }, { timeout: 10000 })
+      .toBe(false);
+
     await page.getByRole('button', { name: 'Album-Downloads' }).click();
     await expect(page.locator('#ska-preview-output')).toContainText('Album exportieren', { timeout: 15000 });
     await shot(page, '07-download-center.png');

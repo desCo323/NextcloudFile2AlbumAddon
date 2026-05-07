@@ -34,6 +34,8 @@ Administrators may also set low-load time windows and per-user quotas. If a quot
 
 `Verwaltete Alben` lists only albums that SakuraAlbum created or updated and still tracks. Deletion requires a preview and the exact confirmation text, and renamed or foreign albums are blocked.
 
+`Veraltete pruefen` is the safer cleanup after folder renames or changed folder rules. SakuraAlbum first builds the current album plan, compares it with the managed album tracking table, and only offers albums that are no longer planned. Media files are not deleted. The final cleanup still needs the exact `DELETE_MANAGED_ALBUMS` confirmation.
+
 Each listed managed album still has a direct `ZIP` action for small, clearly managed albums. SakuraAlbum first checks that the album still belongs to your account and fits the administrator's direct-download limits. If the album is too large, use `Album-Downloads` instead.
 
 `Album-Downloads` prepares SakuraAlbum-managed albums and normal Photos albums as background exports. The ZIP files are written into your Files area under `SakuraAlbum Exports`. Very large exports are split into part ZIP files from about 1 GiB upward, and the status table shows pending, running, failed, and ready jobs with a progress bar. If an album exceeds the administrator's background-export limits, SakuraAlbum explains the limit before starting the job.

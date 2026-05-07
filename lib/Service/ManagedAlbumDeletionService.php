@@ -14,6 +14,7 @@ class ManagedAlbumDeletionService {
 
 	public function __construct(
 		private readonly SettingsService $settingsService,
+		private readonly AlbumPlanService $albumPlanService,
 		private readonly PhotosAlbumAdapter $photosAlbumAdapter,
 		private readonly ManagedAlbumMapper $managedAlbumMapper,
 		private readonly SyncRunMapper $syncRunMapper,
@@ -41,6 +42,65 @@ class ManagedAlbumDeletionService {
 
 	public function dryRunDelete(string $userId, array $albumIds = [], bool $deleteAll = false): array {
 		return $this->executeDelete($userId, $albumIds, $deleteAll, '', '', false);
+	}
+
+	public function dryRunDeleteStale(string $userId): array {
+		$stale = $this->staleManagedAlbumIds($userId);
+		if (($stale['blocked'] ?? false) === true) {
+			return [
+				'runId' => null,
+				'mode' => 'delete_dry_run',
+				'status' => 'delete_dry_run_blocked',
+				'canDelete' => false,
+				'deleteBlockedReasons' => $stale['issues'],
+				'confirmationText' => self::DELETE_CONFIRMATION,
+				'planFingerprint' => '',
+				'summary' => [
+					'deleteAll' => false,
+					'staleOnly' => true,
+					'plannedAlbums' => 0,
+					'currentPlannedAlbums' => $stale['currentPlannedAlbums'],
+					'currentPlanTruncated' => $stale['currentPlanTruncated'],
+					'safetyIssueCount' => count($stale['issues']),
+					'deleteBlocked' => true,
+				],
+				'albums' => [],
+			];
+		}
+
+		if ($stale['albumIds'] === []) {
+			return [
+				'runId' => null,
+				'mode' => 'delete_dry_run',
+				'status' => 'delete_dry_run_completed',
+				'canDelete' => false,
+				'deleteBlockedReasons' => [
+					[
+						'code' => 'no_stale_managed_albums',
+						'message' => 'No stale SakuraAlbum-managed albums were found for the current settings.',
+					],
+				],
+				'confirmationText' => self::DELETE_CONFIRMATION,
+				'planFingerprint' => '',
+				'summary' => [
+					'deleteAll' => false,
+					'staleOnly' => true,
+					'totalActiveManagedAlbums' => $stale['totalActiveManagedAlbums'],
+					'plannedAlbums' => 0,
+					'currentPlannedAlbums' => $stale['currentPlannedAlbums'],
+					'currentPlanTruncated' => false,
+					'safetyIssueCount' => 1,
+					'deleteBlocked' => true,
+				],
+				'albums' => [],
+			];
+		}
+
+		$result = $this->executeDelete($userId, $stale['albumIds'], false, '', '', false);
+		$result['summary']['staleOnly'] = true;
+		$result['summary']['currentPlannedAlbums'] = $stale['currentPlannedAlbums'];
+		$result['summary']['totalActiveManagedAlbums'] = $stale['totalActiveManagedAlbums'];
+		return $result;
 	}
 
 	public function delete(string $userId, array $albumIds, bool $deleteAll, string $confirmation, string $planFingerprint): array {
@@ -260,6 +320,61 @@ class ManagedAlbumDeletionService {
 		];
 	}
 
+	private function staleManagedAlbumIds(string $userId): array {
+		$settings = $this->settingsService->getEffectiveUserSettings($userId);
+		$limits = $this->settingsService->getJobLimits();
+		$plan = $this->albumPlanService->buildExecutionPlan($userId, $settings, $limits);
+		$summary = $plan['summary'] ?? [];
+		$issues = [];
+		if (($summary['truncated'] ?? false) === true || ($summary['hasMore'] ?? false) === true) {
+			$issues[] = [
+				'code' => 'stale_cleanup_plan_truncated',
+				'message' => 'The current album plan was truncated by resource limits. Stale cleanup is blocked until a complete plan can be built.',
+			];
+		}
+		foreach (($plan['warnings'] ?? []) as $warning) {
+			$code = (string)($warning['code'] ?? '');
+			if (in_array($code, ['max_folders_reached', 'max_files_reached', 'storage_unavailable', 'user_folder_unavailable'], true)) {
+				$issues[] = [
+					'code' => 'stale_cleanup_blocking_warning',
+					'warningCode' => $code,
+				];
+			}
+		}
+		if ($issues !== []) {
+			return [
+				'blocked' => true,
+				'issues' => $issues,
+				'albumIds' => [],
+				'currentPlannedAlbums' => (int)($summary['plannedAlbums'] ?? 0),
+				'currentPlanTruncated' => true,
+			];
+		}
+
+		$currentTargets = [];
+		foreach (($plan['albums'] ?? []) as $album) {
+			$currentTargets[$this->targetPathKey((string)($album['targetPath'] ?? ''))] = true;
+		}
+
+		$maxAlbums = max(1, (int)$limits['maxAlbums']);
+		$active = $this->managedAlbumMapper->findActiveForUser($userId, $maxAlbums + 1);
+		$staleIds = [];
+		foreach (array_slice($active, 0, $maxAlbums) as $managedAlbum) {
+			if (!isset($currentTargets[$this->targetPathKey($managedAlbum->getTargetPath())])) {
+				$staleIds[] = (int)$managedAlbum->getId();
+			}
+		}
+
+		return [
+			'blocked' => false,
+			'issues' => [],
+			'albumIds' => $staleIds,
+			'totalActiveManagedAlbums' => $this->managedAlbumMapper->countActiveForUser($userId),
+			'currentPlannedAlbums' => (int)($summary['plannedAlbums'] ?? 0),
+			'currentPlanTruncated' => false,
+		];
+	}
+
 	private function buildDeletePlanEntry(ManagedAlbum $managedAlbum): array {
 		$entry = [
 			'_entity' => $managedAlbum,
@@ -440,10 +555,15 @@ class ManagedAlbumDeletionService {
 				'blockedAlbums' => (int)($plan['summary']['blockedAlbums'] ?? 0),
 				'missingSelections' => (int)($plan['summary']['missingSelections'] ?? 0),
 				'truncated' => (bool)($plan['summary']['truncated'] ?? false),
+				'staleOnly' => (bool)($plan['summary']['staleOnly'] ?? false),
 				'safetyIssueCount' => (int)($plan['summary']['safetyIssueCount'] ?? 0),
 			],
 			'albums' => $albums,
 		], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+	}
+
+	private function targetPathKey(string $path): string {
+		return PathHelper::displayPath($path);
 	}
 
 	private function publicManagedAlbum(ManagedAlbum $album): array {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.11
+
+- Added a safe stale-managed-album cleanup preview. Users can now check only SakuraAlbum-managed albums that are no longer part of the current folder plan, for example after folder renames or rule changes.
+- Kept destructive cleanup behind the existing dry-run, fresh fingerprint, ownership/name recheck, and exact `DELETE_MANAGED_ALBUMS` confirmation.
+- Simplified the Auto-Sync file-event job nudge so WebDAV create/move/delete requests avoid heavier Nextcloud background-job reset paths while still scheduling the SakuraAlbum job soon.
+- Versioned cache-busting assets as `admin-settings-1011` and `personal-settings-1011`.
+
 ## 1.0.10
 
 - Installed Playwright browser testing in the development workspace and added a first Chromium smoke test for SakuraAlbum button contrast.

@@ -48,6 +48,7 @@ return [
 		['name' => 'albumExport#create', 'url' => '/api/v1/albums/export', 'verb' => 'POST'],
 		['name' => 'albumExport#download', 'url' => '/api/v1/albums/export/download', 'verb' => 'GET'],
 		['name' => 'managedAlbum#dryRunDelete', 'url' => '/api/v1/albums/delete/dry-run', 'verb' => 'POST'],
+		['name' => 'managedAlbum#dryRunDeleteStale', 'url' => '/api/v1/albums/delete/stale/dry-run', 'verb' => 'POST'],
 		['name' => 'managedAlbum#delete', 'url' => '/api/v1/albums/delete', 'verb' => 'POST'],
 	],
 ];

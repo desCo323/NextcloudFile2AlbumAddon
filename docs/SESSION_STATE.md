@@ -1,6 +1,40 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-07 23:54:43 CEST
+Datum: 2026-05-08 00:04:45 CEST
+
+Neueste operative Notiz (2026-05-08 00:04 CEST):
+- Benutzerauftrag: Backlog weiter abarbeiten, App in grossen Bloecken verbessern und wiederholt aus Benutzersicht testen.
+- Aktueller Block:
+  - `OPS-05`: WebDAV-MOVE-Warnpfad haerten. Ansatz: AutoSync-Dateievent-Nudge verschlanken, damit WebDAV-Requests nur Dirty-Path schreiben und den vorhandenen AutoSyncJob per direktem, kleinem Jobs-Tabellenupdate einplanen. Interne Nextcloud-Job-Iterator-/Reset-Pfade sollen nicht mehr im Datei-Event laufen.
+  - `OPS-06`: UX fuer alte verwaltete Alben nach Ordnerumbenennung verbessern. Geplant ist eine sichere `Veraltete pruefen`-Vorschau, die aktuelle Zielpfade gegen vorhandene SakuraAlbum-Trackingdaten vergleicht und nur eindeutig nicht mehr geplante verwaltete Alben zum Loeschen anbietet.
+- Umsetzung lokal:
+  - Version auf `1.0.11` angehoben; neue Cache-Busting-Assets `admin-settings-1011.js` und `personal-settings-1011.js`.
+  - Neue Route `POST /api/v1/albums/delete/stale/dry-run`.
+  - `ManagedAlbumDeletionService::dryRunDeleteStale()` berechnet den aktuellen Albumplan und blockiert die Bereinigung, falls dieser Plan wegen Limits/Warnungen nicht vollstaendig ist.
+  - UI-Buttons `Veraltete pruefen` im Haupt-Danger-Bereich und in der verwalteten Albumliste.
+  - Authentifizierter Browser-Journey wurde erweitert: nach Ordnerumbenennung wird die veraltete Albumvorschau geprueft und mit `DELETE_MANAGED_ALBUMS` geloescht.
+- Lokale Checks bisher:
+  - PHP-Syntax fuer geaenderte Services/Controller: bestanden.
+  - JS-Syntax fuer neue Assets und Browser-Tests: bestanden.
+  - `npm run test:browser`: bestanden; Auth-Tests ohne Env uebersprungen.
+  - `bash scripts/self-check.sh`: bestanden.
+- Kontrolliertes Live-Testfenster `1.0.11`:
+  - Production-Preflight vor Deploy: bestanden; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.11.tar.gz`, SHA256 `7e3738ca7065ea570681e8e9a5425f5369350d74b1a6ee9f095107a4127bd4e3`.
+  - Manuelles App-/DB-Backup vor Live-Test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1011-stale-cleanup-test-20260508-001218`; DB-Dump SHA256 `e98f812c4dcb3a2838d4b672314c21bc62f10ed5680b03ebc351300057c97b29`.
+  - Production-update App-Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.11-20260508-001238/app`.
+  - Deploy erfolgreich; SakuraAlbum live: `1.0.11`; Nextcloud danach `maintenance=false`, `needsDbUpgrade=false`.
+  - Live deployed self-check: bestanden.
+  - Erster Browser-Journey fand keinen App-Fehler, aber eine zu harte Testannahme direkt nach dem Stale-Delete; Logs bestaetigten, dass `People - Friends` und `Events - Birthday` geloescht wurden. Test wurde auf kurzes Polling nach Schreibaktion korrigiert.
+  - Zweiter Live Browser-Journey gegen `https://chaosnet.me` mit `albentest`: bestanden, `1 passed`.
+  - Screenshot-Verzeichnis: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1011-20260508-001449`; enthaelt auch `06c-stale-managed-preview.png` und `06d-stale-managed-preview-output.png`.
+  - Nachkontrolle `albentest`: 0 aktive verwaltete Alben, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 Photos-Alben, 0 Photos-Albumlinks; keine Journey-Testordner; `/SakuraAlbum Exports` abwesend.
+  - SakuraAlbum-App-Logs letzte 30 Minuten: 0 Fehler, 0 Warnungen.
+  - Nextcloud-Logdatei `/var/www/nextcloud/data/nextcloud.log` ist leer; die vorherige WebDAV-MOVE-Warnung `Array to string conversion` trat im 1.0.11-Test nicht erneut auf.
+  - Wiederherstellungsprompt: "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.11-20260508-001238/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind. Falls DB-Testdaten zurueckgesetzt werden muessen, liegt der Dump unter `/home/cloud/sakuraalbum-backups/sakuraalbum-1011-stale-cleanup-test-20260508-001218/db-before-test.sql.gz`."
+- Sicherheitsrahmen:
+  - Noch kein Live-Deploy in diesem Block.
+  - Live-Tests spaeter wieder nur mit `albentest` und Backup.
+  - Destruktive Bereinigung bleibt an Dry-Run/Fingerprint/exakte Bestaetigung gebunden.
 
 Neueste operative Notiz (2026-05-07 23:54 CEST):
 - Benutzerauftrag: SakuraAlbum selbststaendig im echten Browser testen, inklusive Screenshots und typischer Benutzerszenarien wie Hinzufuegen, Aendern, Verschieben, Ordner-Umbenennen und Loeschen von Bildern/Ordnern.

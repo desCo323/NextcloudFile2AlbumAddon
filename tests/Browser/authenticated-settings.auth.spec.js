@@ -21,6 +21,7 @@ test.describe('SakuraAlbum authenticated personal settings @auth', () => {
     await expect(page.locator('.sakuraalbum-settings h2')).toHaveText('SakuraAlbum');
     await expect(page.getByRole('button', { name: 'Speichern und Hintergrundlauf vormerken' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Quellordner hinzufuegen' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Veraltete pruefen' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Konto-Reset pruefen' })).toBeVisible();
 
     const resetButton = page.locator('#ska-reset-preview');

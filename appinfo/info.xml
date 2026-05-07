@@ -11,7 +11,7 @@ The app is designed for safe migrations and repeatable synchronization: users ca
 
 This repository currently uses a preliminary non-commercial development and evaluation license documented in LICENSE.md. Before any public app-store release, licensing and metadata must be reviewed and aligned with the target store requirements.
 ]]></description>
-    <version>1.0.10</version>
+    <version>1.0.11</version>
     <licence>AGPL-3.0-or-later</licence>
     <author mail="desco323@users.noreply.github.com">desCo323</author>
     <namespace>SakuraAlbum</namespace>
