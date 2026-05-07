@@ -1,6 +1,16 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-07 19:32:56 CEST
+Datum: 2026-05-07 19:35:46 CEST
+
+Neueste operative Notiz (2026-05-07 19:35 CEST):
+- Nacharbeit zum Lizenz-/GitHub-/Testbacklog-Block:
+  - `./scripts/production-update.sh --preflight` erneut erfolgreich: PHP/JS-Syntax, `appinfo/info.xml` gegen offizielles Nextcloud-Schema, Sicherheits-Smokes, Nextcloud-Status und Artefaktbau gruen.
+  - Artefakt: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.6.tar.gz` mit gemeldetem Hash `0cb0ebe77558a7b63b763e8d493c7c4aceb967390f1eec60a375e1caefd72d6c`.
+  - Commit `0642009 Add preview license and test backlog` wurde auf GitHub `main` gepusht.
+  - Remote geprueft: `origin` ist weiterhin `https://github.com/desCo323/NextcloudFile2AlbumAddon.git` ohne eingebettetes Token.
+  - Remote-Head geprueft: `0642009512e5df80bcdf69e95a9e63c33a7de12e refs/heads/main`.
+  - Secret-Scan auf GitHub-Token/Testpasswortmuster ohne Treffer.
+  - Arbeitsbaum nach Push sauber.
 
 Neueste operative Notiz (2026-05-07 19:32 CEST):
 - Benutzerauftrag: vorlaeufige nichtkommerzielle Lizenz einfuegen, GitHub-Seite weiter ausbauen, manuelle Installation/Updates erklaeren, Tests/UX-Backlog planen und mit Testnutzer erste Checks spielen.
