@@ -12,8 +12,13 @@ Neueste operative Notiz (2026-05-07 19:13 CEST):
   - `./scripts/self-check.sh` erfolgreich.
   - `git diff --check` erfolgreich.
   - Secret-Scan auf GitHub-Token/Testpasswortmuster ohne Treffer.
+- GitHub:
+  - Commit `30a8fba Improve GitHub project page` wurde auf `main` gepusht.
+  - Repository-Beschreibung per GitHub API aktualisiert: "SakuraAlbum: Nextcloud app for automatically maintained Photos albums from folders, with previews, auto-sync, exports, and diagnostics."
+  - Topics gesetzt: `albums`, `automation`, `diagnostics`, `nextcloud`, `nextcloud-app`, `nextcloud-photos`, `photos`, `php`, `self-hosted`, `sakuraalbum`.
+  - `origin` enthaelt keinen Token; Secret-Scan bleibt ohne Treffer.
 - Naechster Schritt:
-  - README-Aenderungen committen und nach GitHub pushen; optional danach GitHub-Repository-Beschreibung/Topics passend zur neuen Projektseite aktualisieren.
+  - Bei Bedarf spaeter echte UI-Screenshots oder kurze Demo-Grafiken ergaenzen, sobald die Live-Version `1.0.6` kontrolliert ausgerollt und visuell geprueft wurde.
 
 Neueste operative Notiz (2026-05-07 19:01 CEST):
 - Benutzerauftrag: Debug-/Diagnose-Logging so erweitern, dass Fehler, haengende Verarbeitung, Queue-/Cron-/Cursor-/Export-Probleme und Betriebsstoerungen aus Logs sicher erkannt werden koennen; Logging in der aktuellen Live-Version aktiv halten; Logs fuer Tests immer nutzen und als CSV herunterladbar/serverseitig verfuegbar machen.
