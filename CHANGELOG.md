@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.13
+
+- Added a wizard-like `Visuelle Einrichtung` section to guide users through activation, source folders, rules, preview, and background processing.
+- Added a visual preview tree above the album table so users can understand how source folders, depth rules, single-album rules, and exclusions affect the generated album structure.
+- Extended authenticated browser tests to verify the new first-run guide, mobile layout, and visual preview output.
+- Versioned cache-busting assets as `admin-settings-1013` and `personal-settings-1013`.
+
 ## 1.0.12
 
 - Reworked the personal source-folder and folder-rule UI from wide tables into responsive rule cards.

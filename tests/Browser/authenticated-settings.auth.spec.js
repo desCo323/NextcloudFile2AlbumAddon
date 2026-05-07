@@ -71,6 +71,9 @@ test.describe('SakuraAlbum authenticated personal settings @auth', () => {
     const appRoot = page.locator('#sakuraalbum-personal-settings');
     await expect(appRoot).toBeVisible({ timeout: 30000 });
     await expect(page.locator('.sakuraalbum-rule-card-list').first()).toBeVisible();
+    await expect(page.getByText('Visuelle Einrichtung')).toBeVisible();
+    await expect(page.getByText('1 App')).toBeVisible();
+    await expect(page.getByText('2 Quellen')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Speichern und Hintergrundlauf vormerken' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Veraltete pruefen' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Konto-Reset pruefen' })).toBeVisible();
@@ -81,7 +84,7 @@ test.describe('SakuraAlbum authenticated personal settings @auth', () => {
         return [];
       }
       const viewportWidth = document.documentElement.clientWidth;
-      return Array.from(root.querySelectorAll('button, input, select, textarea, .sakuraalbum-rule-card'))
+      return Array.from(root.querySelectorAll('button, input, select, textarea, .sakuraalbum-rule-card, .sakuraalbum-first-run'))
         .map((element) => {
           const rect = element.getBoundingClientRect();
           return {

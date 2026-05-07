@@ -58,6 +58,8 @@ test.describe('SakuraAlbum full browser user journey @auth', () => {
 
     await page.getByRole('button', { name: 'Vorschau', exact: true }).click();
     await expect(page.locator('#ska-preview-output')).toContainText('Geplante Alben', { timeout: 15000 });
+    await expect(page.locator('#ska-preview-output')).toContainText('Visuelle Vorschau');
+    await expect(page.locator('.sakuraalbum-preview-tree')).toBeVisible();
     await shot(page, '04-preview.png');
     await shotOutput(page, '04b-preview-output.png');
 

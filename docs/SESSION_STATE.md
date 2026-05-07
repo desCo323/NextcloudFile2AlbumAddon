@@ -1,6 +1,17 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-08 00:24:44 CEST
+Datum: 2026-05-08 00:46:00 CEST
+
+Neueste operative Notiz (2026-05-08 00:46 CEST):
+- Benutzerauftrag: groesseren Backlog-Block selbststaendig umsetzen, danach testen/debuggen und erst mit Backup live pruefen.
+- Umsetzung lokal als `1.0.13` begonnen:
+  - Neue Cache-Busting-Assets `admin-settings-1013.js` und `personal-settings-1013.js`.
+  - Personal-UI bekommt eine wizard-aehnliche `Visuelle Einrichtung` mit den Schritten App, Quellen, Regeln, Vorschau und Hintergrund.
+  - Vorschau/Sync-Ergebnis bekommen zusaetzlich zur Tabelle eine `Visuelle Vorschau` als gruppierte Baumansicht nach Quelle und Album.
+  - Authentifizierte Browser-Tests pruefen Startfuehrung, mobile Lesbarkeit und visuelle Vorschau.
+- Sicherheitsrahmen:
+  - Noch kein Live-Deploy in diesem Block.
+  - Naechste Schritte: lokale Syntax-/Browser-/Self-Checks, Commit, Production-Preflight, frisches Backup, Deploy, Live-Tests nur mit `albentest`, Debuglog-Auswertung, Reset und Nachkontrolle.
 
 Neueste operative Notiz (2026-05-08 00:24 CEST):
 - Benutzerauftrag: naechsten Backlog-Block umsetzen, besonders mobile/narrow Browser-UX und Quellordner-/Regelbedienung verbessern.

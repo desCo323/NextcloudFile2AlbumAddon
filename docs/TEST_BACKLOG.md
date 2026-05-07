@@ -81,10 +81,10 @@ This backlog defines the next functional, security, usability, and readability c
 
 | ID | Improvement | Reason | Priority |
 | --- | --- | --- | --- |
-| UI-01 | Convert source folder setup into a step-by-step wizard | Current source/rule model is powerful but cognitively heavy. | P0 |
+| UI-01 | Convert source folder setup into a step-by-step wizard | 1.0.13 adds a first-run visual guide; continue testing whether normal users understand it without docs. | P0 |
 | UI-02 | Separate normal workflow from advanced test tools more strongly | Manual write/dry-run tools can confuse normal users. | P0 |
 | UI-03 | Add inline examples for album depth | Users often ask what depth means. | P0 |
-| UI-04 | Add visual preview tree | Tables explain results, but a tree would make folder rules easier to understand. | P1 |
+| UI-04 | Add visual preview tree | 1.0.13 adds a grouped preview tree above the album table; validate with real folder-rule scenarios. | P1 |
 | UI-05 | Improve empty states | "No albums yet" should tell the next safe action. | P1 |
 | UI-06 | Make danger zone more structured | Reset/delete actions should be visually isolated with plain-language consequences. | P1 |
 | UI-07 | Add status timeline | Pending, waiting for debounce, waiting for Cron, processing, complete should be shown as a sequence. | P1 |
@@ -155,8 +155,8 @@ Covered backlog items:
 
 Next:
 
-- Continue simplifying the first-run workflow into a clearer wizard-like path.
-- Add a visual preview tree for source/rule effects.
+- Validate the 1.0.13 first-run guide and visual preview tree in a controlled live test window.
+- Continue reducing normal-user cognitive load by moving rarely used advanced controls further away from the primary path.
 
 ## Previous executed baseline
 
