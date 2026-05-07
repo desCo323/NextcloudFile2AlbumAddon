@@ -19,7 +19,7 @@ Neueste operative Notiz (2026-05-07 19:01 CEST):
   - `node --check` fuer Admin-/Personal-JS erfolgreich.
   - `git diff --check` erfolgreich.
   - `./scripts/self-check.sh` erfolgreich.
-  - `./scripts/production-update.sh --preflight` erfolgreich; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.6.tar.gz`, SHA256 `53cc325a74c1ca0adbffcd9f6dcb3eed25a9deed9ef45b3f5008c7f15fbf923a`.
+  - `./scripts/production-update.sh --preflight` erfolgreich; Artefakt liegt unter `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.6.tar.gz`. Hash bei Bedarf direkt mit `sha256sum` neu pruefen, weil diese Sitzungsdatei selbst Teil des Artefakts ist.
 - GitHub:
   - Code-Commit `9eca259 Add operational diagnostic exports` wurde auf `main` gepusht.
   - `origin` enthaelt keinen Token, Secret-Scan auf GitHub-Tokenmuster bleibt ohne Treffer.
