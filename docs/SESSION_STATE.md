@@ -503,3 +503,15 @@ Validierung (2026-05-07 22:20 CEST):
 - `bash scripts/self-check.sh`: bestanden inkl. PHP-/JS-Syntax, App-Metadata-Schema, Smoke-Tests, Token-Scan, CSRF-Check, Fingerprint-Guards, Auto-Sync-Safety und neuen Security-Hardening-Checks.
 - `bash scripts/build-artifact.sh`: bestanden; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.8.tar.gz`, SHA256 `0d15cca4a75b033b3a13b0dfeca8e77cc8afcad951931d159e3c91ebf1de57e3`.
 - Kein produktiver Deploy ausgefuehrt; Live-Testfenster fuer 1.0.8 bleibt der naechste Schritt nach Commit/Push und Backup.
+
+Abschluss Sicherheitsblock (2026-05-07 22:28 CEST):
+- Commit erstellt: `04cd68b Harden SakuraAlbum security controls`.
+- `bash scripts/production-update.sh --preflight`: bestanden.
+  - Enthielt erneuten Self-Check, Build-Artefakt und Secret-Scan.
+  - Nextcloud-Status: `installed: true`, `version: 33.0.3.2`, `maintenance: false`, `needsDbUpgrade: false`.
+  - Preflight-Artefakt: `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.8.tar.gz`, SHA256 `694285607df9a1452d6984ac903fdac4e8deaa07785a3719e4f613ab0e9a6976`.
+- GitHub-Push auf `main` erfolgreich: `318d863..04cd68b`.
+- Nach Push geprueft:
+  - `git remote -v` enthaelt nur `https://github.com/desCo323/NextcloudFile2AlbumAddon.git`, kein Token.
+  - Secret-Scan nach GitHub-PAT-Mustern und Testpasswort-Muster fand keine Treffer.
+- Kein Live-Deploy ausgefuehrt; naechster sicherer Schritt ist ein kontrolliertes 1.0.8 Backup-/Deploy-/Smoke-Testfenster mit `albentest`.
