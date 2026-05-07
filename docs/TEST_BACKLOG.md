@@ -117,23 +117,24 @@ This backlog defines the next functional, security, usability, and readability c
 
 ## Latest executed baseline
 
-Date: 2026-05-08 00:45 CEST
+Date: 2026-05-08 01:02 CEST
 
 Environment:
 
-- SakuraAlbum 1.0.13 deployed through `scripts/production-update.sh --deploy`.
-- Manual DB/app backup before deploy/test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1013-wizard-preview-test-20260508-003743`.
-- Production-update app backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.13-20260508-003811`.
+- SakuraAlbum 1.0.14 deployed through `scripts/production-update.sh --deploy`.
+- Manual DB/app backup before deploy/test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1014-admin-a11y-test-20260508-005322`.
+- Production-update app backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.14-20260508-005345`.
 - Nextcloud stayed healthy after deploy and tests: `maintenance=false`, `needsDbUpgrade=false`.
 - Test user: `albentest`.
-- Browser screenshot output: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1013-20260508-003945`.
+- Browser screenshot output: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1014-20260508-005632`.
 
 Executed:
 
-- Added wizard-like `Visuelle Einrichtung` first-run guidance.
-- Added visual preview tree for source/rule effects.
-- Added README/README.en screenshot walkthrough using real browser-test screenshots under `docs/screenshots/`.
-- Extended authenticated browser tests for first-run guide and preview tree.
+- Added Admin-Cockpit overview for rollout, load protection, automation, and diagnostics.
+- Added clearer Auto-Sync status lanes for queue, Cron, maintenance window, and limits.
+- Added ARIA live status and focus movement for refreshed admin diagnostic output.
+- Added static Chromium accessibility/readability smoke for the admin cockpit.
+- Added marketing SVGs under `docs/marketing/` and embedded them in README.md and README.en.md.
 - `bash scripts/production-update.sh --preflight` passed.
 - Live deployed `bash scripts/self-check.sh` passed.
 - Live authenticated settings tests passed: 3/3.
@@ -149,17 +150,17 @@ Post-check:
 - `albentest` Photos albums: 0.
 - `albentest` Photos album links: 0.
 - Test source folders and `SakuraAlbum Exports`: absent.
-- SakuraAlbum recent errors/warnings: 0/1; the warning is expected because the regression helper intentionally deletes a managed Photos album outside SakuraAlbum and verifies automatic repair.
+- SakuraAlbum recent errors/warnings: 0/2; both warnings are expected repair-test warnings from regression helpers that intentionally delete managed Photos albums outside SakuraAlbum and verify automatic repair.
 - Nextcloud log file was empty during the final check.
 
 Covered backlog items:
 
-- `UX-01`, `UX-02`, `UX-03`, `UX-04`, `UX-06`, `UX-07`, `UX-09`, `UI-01` partial, `UI-02` partial, `UI-04`, `UI-10`, `PRE-07`.
+- `UX-01`, `UX-02`, `UX-03`, `UX-04`, `UX-06`, `UX-07`, `UX-09`, `UI-01` partial, `UI-02` partial, `UI-04`, `UI-09` partial, `UI-10`, `PRE-07`.
 
 Next:
 
 - Continue reducing normal-user cognitive load by moving rarely used advanced controls further away from the primary path.
-- Add an accessibility pass for keyboard/focus/screen-reader order and continue polishing long German help texts.
+- Continue full accessibility pass with real keyboard navigation on admin and personal pages.
 
 ## Previous executed baseline
 

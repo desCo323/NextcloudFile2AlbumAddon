@@ -3,14 +3,32 @@
 Datum: 2026-05-08 01:02:00 CEST
 
 Neueste operative Notiz (2026-05-08 01:02 CEST):
-- Benutzerauftrag: naechsten Block fuer finale Version umsetzen, Schwerpunkt Accessibility, Admin-UX und Update-Haertung.
-- Umsetzung lokal als `1.0.14` begonnen:
+- Benutzerauftrag: naechsten Block fuer finale Version umsetzen, Schwerpunkt Accessibility, Admin-UX und Update-Haertung; zusaetzlich besondere GitHub-Bilder und README-Beschreibung ergaenzen.
+- Umsetzung als `1.0.14`:
   - Neue Cache-Busting-Assets `admin-settings-1014.js` und `personal-settings-1014.js`.
   - Admin-UI bekommt ein `Admin-Cockpit` mit vier Betriebsbereichen: Freigabe, Lastschutz, Automatik, Diagnose.
   - Auto-Status-Ausgabe bekommt klare Status-Lanes fuer Queue, Cron, Wartungsfenster und Limits.
   - Admin-Status ist jetzt eine ARIA-Live-Region; dynamische Admin-Ausgaben sind als Region beschriftet und erhalten Fokus nach Aktualisierung.
   - Neue statische Browserpruefung fuer Admin-Cockpit-Lesbarkeit, ARIA-Attribute und mobile Ueberlaufkontrolle.
-- Noch nicht deployed. Naechste Schritte: Syntax/Self-check/Browser-Tests, Commit, Production-Preflight, frisches Backup, kontrolliertes Live-Testfenster mit `albentest`, Nachkontrolle und Push.
+  - Neue Marketing-Grafiken unter `docs/marketing/`: Hero, Workflow und Value-Overview. README.md und README.en.md binden diese Grafiken zusaetzlich zu den echten UI-Screenshots ein.
+- Lokale Checks:
+  - JS/PHP-Syntax, `git diff --check`: bestanden.
+  - `npm run test:browser`: bestanden; 2 normale Chromium-Tests, 4 Auth-Tests korrekt ohne Auth-Env uebersprungen.
+  - `bash scripts/self-check.sh`: bestanden.
+- Kontrolliertes Live-Testfenster `1.0.14`:
+  - Production-Preflight vor Deploy: bestanden; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.14.tar.gz`, SHA256 `88d3610064bc5e31d6868d43389ee0f921eed1be8b8176d635b765fd8502bf64`.
+  - Manuelles App-/DB-Backup vor Live-Test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1014-admin-a11y-test-20260508-005322`.
+  - Production-update App-Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.14-20260508-005345/app`.
+  - Deploy erfolgreich; SakuraAlbum live: `1.0.14`; Nextcloud danach `maintenance=false`, `needsDbUpgrade=false`.
+  - Live deployed self-check: bestanden.
+  - Live Auth-Settings-Tests gegen `https://chaosnet.me` mit `albentest`: 3/3 bestanden.
+  - Live Browser-Journey gegen `https://chaosnet.me` mit `albentest`: bestanden, `1 passed`.
+  - Screenshot-Verzeichnis Journey: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1014-20260508-005632`.
+  - Live-Smoke, Live-Security-Smoke und Live-Regression mit `albentest`: bestanden.
+  - Nachkontrolle `albentest`: 0 aktive verwaltete Alben, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 Photos-Alben, 0 Photos-Albumlinks; keine Testordner; `/SakuraAlbum Exports` abwesend.
+  - SakuraAlbum-App-Logs letzte 30 Minuten: 0 Fehler; 2 Warnungen `auto_sync_missing_managed_album_refresh_queued`, erwartet durch Regressionstests, die absichtlich verwaltete Photos-Alben ausserhalb der App loeschen und den Wiederaufbau pruefen.
+  - Nextcloud-Logdatei ist leer.
+  - Wiederherstellungsprompt: "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.14-20260508-005345/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind. Falls DB-Testdaten zurueckgesetzt werden muessen, liegt der Dump unter `/home/cloud/sakuraalbum-backups/sakuraalbum-1014-admin-a11y-test-20260508-005322/db-before-test.sql.gz`."
 
 Neueste operative Notiz (2026-05-08 00:45 CEST):
 - Benutzerauftrag: groesseren Backlog-Block selbststaendig umsetzen, testen/debuggen, Backup beachten und GitHub-README mit Screenshots/Produktbeschreibung verbessern.

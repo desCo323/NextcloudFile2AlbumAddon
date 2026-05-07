@@ -22,6 +22,8 @@
 
 > **Preliminary license status:** SakuraAlbum is currently governed by the [Preliminary Development and Evaluation License](LICENSE.md). Commercial use, redistribution, and app-store distribution are not permitted without prior explicit written permission. Before a future Nextcloud App Store release, the project must be relicensed under AGPL-3.0-or-later or another compatible license and formally reviewed.
 
+![SakuraAlbum hero](docs/marketing/hero.svg)
+
 ## The idea
 
 Many Nextcloud installations contain years of photo folders: family pictures, travel archives, projects, pets, events, scans, and phone uploads. The files are already there, but Nextcloud Photos albums are still often curated manually.
@@ -48,6 +50,8 @@ SakuraAlbum bridges that gap. Users choose source folders, preview the resulting
 | Club or team photos | Admins control rollout, groups, quotas, and maintenance windows. |
 | Large photo exports | Albums are prepared in the background and split into ZIP parts for very large exports. |
 | Troubleshooting production servers | Debug logs, health findings, and CSV exports expose queue, Cron, cursor, and export issues. |
+
+![SakuraAlbum value overview](docs/marketing/value.svg)
 
 ## Highlights
 
@@ -103,6 +107,8 @@ Albums can be prepared as ZIP files. Large exports run in the background and are
 Dangerous actions first show a preview and require exact confirmation. Files remain untouched; SakuraAlbum removes only its own tracking data, queue rows, cursors, jobs, and clearly managed albums.
 
 ## How it works
+
+![SakuraAlbum workflow](docs/marketing/workflow.svg)
 
 ```mermaid
 flowchart LR

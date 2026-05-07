@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
+  <title id="title">SakuraAlbum workflow</title>
+  <desc id="desc">A six step workflow from folder selection to background sync, diagnostics, and safe cleanup.</desc>
+  <rect width="1280" height="360" fill="#ffffff"/>
+  <text x="64" y="58" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#27252a">Vom Ordner zum gepflegten Album</text>
+  <text x="64" y="92" font-family="Arial, sans-serif" font-size="18" fill="#5c5961">SakuraAlbum trennt Benutzerentscheidung, Vorschau, Hintergrundarbeit und sichere Bereinigung.</text>
+  <g transform="translate(64 135)" font-family="Arial, sans-serif">
+    <g>
+      <rect width="150" height="126" rx="14" fill="#edf8f5" stroke="#2f7d72" stroke-width="3"/>
+      <text x="22" y="42" font-size="17" font-weight="700" fill="#2f7d72">1 Ordner</text>
+      <text x="22" y="72" font-size="14" fill="#47454a">Quellen aus</text>
+      <text x="22" y="94" font-size="14" fill="#47454a">Nextcloud waehlen</text>
+    </g>
+    <path d="M168 63 H218" stroke="#7357c8" stroke-width="5" stroke-linecap="round"/>
+    <path d="M208 50 L230 63 L208 76" fill="none" stroke="#7357c8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(245 0)">
+      <rect width="150" height="126" rx="14" fill="#fff0f4" stroke="#d94f70" stroke-width="3"/>
+      <text x="22" y="42" font-size="17" font-weight="700" fill="#d94f70">2 Regeln</text>
+      <text x="22" y="72" font-size="14" fill="#47454a">Tiefe, Ausnahmen,</text>
+      <text x="22" y="94" font-size="14" fill="#47454a">ein Album</text>
+    </g>
+    <path d="M413 63 H463" stroke="#7357c8" stroke-width="5" stroke-linecap="round"/>
+    <path d="M453 50 L475 63 L453 76" fill="none" stroke="#7357c8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(490 0)">
+      <rect width="150" height="126" rx="14" fill="#f2efff" stroke="#7357c8" stroke-width="3"/>
+      <text x="22" y="42" font-size="17" font-weight="700" fill="#7357c8">3 Vorschau</text>
+      <text x="22" y="72" font-size="14" fill="#47454a">Alben sehen,</text>
+      <text x="22" y="94" font-size="14" fill="#47454a">bevor etwas schreibt</text>
+    </g>
+    <path d="M658 63 H708" stroke="#7357c8" stroke-width="5" stroke-linecap="round"/>
+    <path d="M698 50 L720 63 L698 76" fill="none" stroke="#7357c8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(735 0)">
+      <rect width="150" height="126" rx="14" fill="#edf8f5" stroke="#2f7d72" stroke-width="3"/>
+      <text x="22" y="42" font-size="17" font-weight="700" fill="#2f7d72">4 Cron</text>
+      <text x="22" y="72" font-size="14" fill="#47454a">Debounce und</text>
+      <text x="22" y="94" font-size="14" fill="#47454a">Lastlimits</text>
+    </g>
+    <path d="M903 63 H953" stroke="#7357c8" stroke-width="5" stroke-linecap="round"/>
+    <path d="M943 50 L965 63 L943 76" fill="none" stroke="#7357c8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(980 0)">
+      <rect width="150" height="126" rx="14" fill="#fff7df" stroke="#bd8a00" stroke-width="3"/>
+      <text x="22" y="42" font-size="17" font-weight="700" fill="#8b6500">5 Diagnose</text>
+      <text x="22" y="72" font-size="14" fill="#47454a">Logs, CSV,</text>
+      <text x="22" y="94" font-size="14" fill="#47454a">Health-Checks</text>
+    </g>
+  </g>
+</svg>
