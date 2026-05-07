@@ -16,7 +16,7 @@
 <p align="center">
   <img alt="Nextcloud" src="https://img.shields.io/badge/Nextcloud-33-0082c9?logo=nextcloud&logoColor=white">
   <img alt="PHP" src="https://img.shields.io/badge/PHP-8.3%2B-777bb4?logo=php&logoColor=white">
-  <img alt="Version" src="https://img.shields.io/badge/SakuraAlbum-1.0.11-dc4f7b">
+  <img alt="Version" src="https://img.shields.io/badge/SakuraAlbum-1.0.12-dc4f7b">
   <img alt="License" src="https://img.shields.io/badge/License-Preview%20Non--Commercial-b83280">
 </p>
 
@@ -207,7 +207,7 @@ SakuraAlbum can prepare albums as ZIP files:
 
 | Area | State |
 | --- | --- |
-| Current development version | `1.0.11` |
+| Current development version | `1.0.12` |
 | Target platform | Nextcloud 33, PHP 8.3+ |
 | License | Preliminary Development and Evaluation License, non-commercial |
 | Store preparation | Technical metadata, docs, changelogs, checks, and release process are present; license is currently a store blocker |

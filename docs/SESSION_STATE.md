@@ -1,6 +1,33 @@
 # SakuraAlbum Session State
 
-Datum: 2026-05-08 00:04:45 CEST
+Datum: 2026-05-08 00:24:44 CEST
+
+Neueste operative Notiz (2026-05-08 00:24 CEST):
+- Benutzerauftrag: naechsten Backlog-Block umsetzen, besonders mobile/narrow Browser-UX und Quellordner-/Regelbedienung verbessern.
+- Umsetzung lokal als `1.0.12`:
+  - Quellordner und Ordner-Ausnahmen im Personal-UI von breiten Tabellen auf responsive Regelkarten umgebaut.
+  - Empty-States verstaendlicher gemacht: sie erklaeren, wann Admin-Vorgaben gelten und wann eine Ausnahme sinnvoll ist.
+  - Mobile CSS ergaenzt: Actions werden auf schmalen Viewports einspaltig, Regelkarten/Controls brechen sauber um, lange Pfade duerfen innerhalb der Karte umbrechen.
+  - Neue Cache-Busting-Assets `admin-settings-1012.js` und `personal-settings-1012.js`; Version/README/Changelog auf `1.0.12`.
+  - Authentifizierter Playwright-Test erweitert: 390px Mobile-Viewport prueft Sichtbarkeit wichtiger Aktionen und erkennt horizontale Ueberlaeufe in Buttons, Inputs, Selects und Regelkarten.
+- Noch nicht deployed. Naechster Schritt: Syntax/Self-check/Browser-Tests, danach Production-Preflight und erst dann kontrolliertes Live-Testfenster mit Backup.
+- Lokale Checks:
+  - JS/PHP-Syntax, `git diff --check`: bestanden.
+  - `npm run test:browser`: bestanden; 1 normaler Chromium-Test, 4 Auth-Tests korrekt ohne Auth-Env uebersprungen.
+  - `bash scripts/self-check.sh`: bestanden.
+- Kontrolliertes Live-Testfenster `1.0.12`:
+  - Production-Preflight vor Deploy: bestanden; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.12.tar.gz`, SHA256 `35d3625ea107d6059ee3351bfffc45d9496deb61693768f3d5e4cb2308194b69`.
+  - Manuelles App-/DB-Backup vor Live-Test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1012-mobile-ux-test-20260508-002619`; DB-Dump SHA256 `6c828795fd9ee63fe62b21760aca897feb8cd3d2195e1239c9e64728fe032786`.
+  - Production-update App-Backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.12-20260508-002638/app`.
+  - Deploy erfolgreich; SakuraAlbum live: `1.0.12`; Nextcloud danach `maintenance=false`, `needsDbUpgrade=false`.
+  - Live deployed self-check: bestanden.
+  - Live Auth-Settings-Tests gegen `https://chaosnet.me` mit `albentest`: 3/3 bestanden, inklusive 390px-Mobile-Viewport und Ueberlaufpruefung.
+  - Live Browser-Journey gegen `https://chaosnet.me` mit `albentest`: bestanden, `1 passed`.
+  - Screenshot-Verzeichnis Journey: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1012-20260508-002758`.
+  - Nachkontrolle `albentest`: 0 aktive verwaltete Alben, 0 Dirty-Paths, 0 Cursor, 0 Downloadjobs, 0 Photos-Alben, 0 Photos-Albumlinks; keine Journey-Testordner; `/SakuraAlbum Exports` abwesend.
+  - SakuraAlbum-App-Logs letzte 30 Minuten: 0 Fehler, 0 Warnungen.
+  - Nextcloud-Logdatei ist leer; keine neue WebDAV- oder SakuraAlbum-Warnung.
+  - Wiederherstellungsprompt: "Stelle SakuraAlbum aus `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.12-20260508-002638/app` nach `/var/www/nextcloud/apps/sakuraalbum` wieder her, setze Eigentümer `www-data:www-data`, pruefe danach `sudo -u www-data php /var/www/nextcloud/occ status` und stelle sicher, dass `maintenance: false` und `needsDbUpgrade: false` sind. Falls DB-Testdaten zurueckgesetzt werden muessen, liegt der Dump unter `/home/cloud/sakuraalbum-backups/sakuraalbum-1012-mobile-ux-test-20260508-002619/db-before-test.sql.gz`."
 
 Neueste operative Notiz (2026-05-08 00:04 CEST):
 - Benutzerauftrag: Backlog weiter abarbeiten, App in grossen Bloecken verbessern und wiederholt aus Benutzersicht testen.

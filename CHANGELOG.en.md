@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.12
+
+- Reworked the personal source-folder and folder-rule UI from wide tables into responsive rule cards.
+- Improved empty states and mobile button layout so source selection, folder exceptions, stale cleanup, downloads, and reset actions remain readable on narrow screens.
+- Added mobile/narrow Playwright checks for the settings UI.
+- Versioned cache-busting assets as `admin-settings-1012` and `personal-settings-1012`.
+
 ## 1.0.11
 
 - Added a safe stale-managed-album cleanup preview. Users can now check only SakuraAlbum-managed albums that are no longer part of the current folder plan, for example after folder renames or rule changes.

@@ -490,6 +490,73 @@
   min-width: 120px;
 }
 
+.sakuraalbum-rule-card-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.sakuraalbum-rule-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-main-background);
+}
+
+.sakuraalbum-rule-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.sakuraalbum-rule-card-path {
+  min-width: 0;
+}
+
+.sakuraalbum-rule-card-path strong,
+.sakuraalbum-rule-card-path span {
+  display: block;
+}
+
+.sakuraalbum-rule-card-path strong {
+  overflow-wrap: anywhere;
+}
+
+.sakuraalbum-rule-card-path span {
+  margin-top: 3px;
+  color: var(--color-text-maxcontrast);
+  font-size: 13px;
+}
+
+.sakuraalbum-rule-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) minmax(96px, 0.5fr) minmax(150px, 1fr) minmax(120px, 0.8fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.sakuraalbum-rule-controls label,
+.sakuraalbum-rule-controls span {
+  display: block;
+}
+
+.sakuraalbum-rule-controls label {
+  min-width: 0;
+  font-weight: 600;
+}
+
+.sakuraalbum-rule-controls span {
+  margin-bottom: 4px;
+}
+
+.sakuraalbum-rule-controls select,
+.sakuraalbum-rule-controls input {
+  width: 100%;
+  max-width: 100%;
+}
+
 .sakuraalbum-folder-browser {
   margin-top: 14px;
   padding-top: 14px;
@@ -586,6 +653,16 @@
   border-radius: 8px;
 }
 
+.sakuraalbum-empty strong,
+.sakuraalbum-empty span {
+  display: block;
+}
+
+.sakuraalbum-empty span {
+  margin-top: 4px;
+  color: var(--color-text-maxcontrast);
+}
+
 .sakuraalbum-warning {
   color: var(--color-error);
   margin: 8px 0;
@@ -650,5 +727,37 @@
 
   .sakuraalbum-automation-card {
     grid-template-columns: 1fr;
+  }
+
+  .sakuraalbum-settings {
+    max-width: 100%;
+  }
+
+  .sakuraalbum-actions,
+  .sakuraalbum-managed-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sakuraalbum-actions button,
+  .sakuraalbum-actions .button {
+    width: 100%;
+  }
+
+  .sakuraalbum-rule-card-head {
+    grid-template-columns: 1fr;
+  }
+
+  .sakuraalbum-rule-card-head .sakuraalbum-toggle,
+  .sakuraalbum-rule-card-head button {
+    width: 100%;
+  }
+
+  .sakuraalbum-rule-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .sakuraalbum-preview-table {
+    min-width: 620px;
   }
 }

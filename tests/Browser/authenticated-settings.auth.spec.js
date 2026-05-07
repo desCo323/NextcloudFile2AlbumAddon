@@ -62,4 +62,39 @@ test.describe('SakuraAlbum authenticated personal settings @auth', () => {
     await expect(page.getByRole('button', { name: 'Diesen Ordner verwenden' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Schliessen' })).toBeVisible();
   });
+
+  test('albentest settings stay readable on a narrow mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginNextcloud(page);
+    await page.goto('/settings/user/sakuraalbum', { waitUntil: 'domcontentloaded' });
+
+    const appRoot = page.locator('#sakuraalbum-personal-settings');
+    await expect(appRoot).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('.sakuraalbum-rule-card-list').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Speichern und Hintergrundlauf vormerken' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Veraltete pruefen' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Konto-Reset pruefen' })).toBeVisible();
+
+    const overflow = await page.evaluate(() => {
+      const root = document.querySelector('#sakuraalbum-personal-settings');
+      if (!root) {
+        return [];
+      }
+      const viewportWidth = document.documentElement.clientWidth;
+      return Array.from(root.querySelectorAll('button, input, select, textarea, .sakuraalbum-rule-card'))
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            tag: element.tagName,
+            text: element.textContent || element.getAttribute('title') || '',
+            left: rect.left,
+            right: rect.right,
+            width: rect.width,
+            viewportWidth,
+          };
+        })
+        .filter((entry) => entry.width > 0 && (entry.left < -1 || entry.right > viewportWidth + 1));
+    });
+    expect(overflow).toEqual([]);
+  });
 });

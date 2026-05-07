@@ -117,6 +117,49 @@ This backlog defines the next functional, security, usability, and readability c
 
 ## Latest executed baseline
 
+Date: 2026-05-08 00:30 CEST
+
+Environment:
+
+- SakuraAlbum 1.0.12 deployed through `scripts/production-update.sh --deploy`.
+- Manual DB/app backup before deploy/test: `/home/cloud/sakuraalbum-backups/sakuraalbum-1012-mobile-ux-test-20260508-002619`.
+- Production-update app backup: `/home/cloud/sakuraalbum-backups/sakuraalbum-pre-update-1.0.12-20260508-002638`.
+- Nextcloud stayed healthy after deploy and tests: `maintenance=false`, `needsDbUpgrade=false`.
+- Test user: `albentest`.
+- Browser screenshot output: `/home/cloud/NextcloudFile2AlbumAddon-work/browser-screenshots/user-journey-1012-20260508-002758`.
+
+Executed:
+
+- Replaced source-folder and folder-rule tables with responsive rule cards.
+- Added a 390px mobile authenticated Playwright test that checks core actions and detects horizontal overflow for buttons, inputs, selects, textareas, and rule cards.
+- `bash scripts/production-update.sh --preflight` passed.
+- Live deployed `bash scripts/self-check.sh` passed.
+- Live authenticated settings tests passed: 3/3.
+- Live authenticated browser journey passed: 1/1.
+
+Post-check:
+
+- `albentest` active managed albums: 0.
+- `albentest` dirty paths: 0.
+- `albentest` sync cursors: 0.
+- `albentest` download jobs: 0.
+- `albentest` Photos albums: 0.
+- `albentest` Photos album links: 0.
+- Test source folders and `SakuraAlbum Exports`: absent.
+- SakuraAlbum recent errors/warnings: 0/0.
+- Nextcloud log file was empty during the final check.
+
+Covered backlog items:
+
+- `UX-02`, `UX-03`, `UX-06`, `UX-09`, `UI-01` partial, `UI-02` partial, `PRE-07`.
+
+Next:
+
+- Continue simplifying the first-run workflow into a clearer wizard-like path.
+- Add a visual preview tree for source/rule effects.
+
+## Previous executed baseline
+
 Date: 2026-05-08 00:18 CEST
 
 Environment:
