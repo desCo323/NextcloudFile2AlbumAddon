@@ -173,6 +173,7 @@ SakuraAlbum ist defensiv gebaut:
 - Verwaltete Alben werden in SakuraAlbum-eigenen Tabellen verfolgt.
 - Datei-Events schreiben nie direkt in Photos-Alben.
 - Hintergrundjobs laufen nicht parallel und respektieren Admin-Limits.
+- Pfade, Diagnose-CSV-Dateien, Logs und Hintergrund-Exports haben harte serverseitige Grenzen.
 - Debug-Kontexte werden vor dem Speichern redigiert.
 - Diagnose-CSV bleibt serverseitig verfuegbar, damit Tests spaeter nachvollziehbar bleiben.
 
@@ -199,13 +200,14 @@ SakuraAlbum kann Alben als ZIP vorbereiten:
 - einzelne verwaltete Alben direkt, solange Admin-Limits eingehalten werden,
 - SakuraAlbum-verwaltete Alben und native Photos-Alben als Hintergrundjob,
 - grosse Exporte mit Teil-ZIP-Dateien ab 1 GiB,
+- separate Admin-Limits fuer direkte ZIP-Streams und Hintergrund-Exports,
 - Exportordner mit `.nomedia` und `.noimage`, damit erzeugte ZIPs nicht wieder in Album-Scans landen.
 
 ## Status
 
 | Bereich | Stand |
 | --- | --- |
-| Aktuelle Entwicklungsversion | `1.0.7` |
+| Aktuelle Entwicklungsversion | `1.0.8` |
 | Zielplattform | Nextcloud 33, PHP 8.3+ |
 | Lizenz | Vorlaeufige Entwicklungs- und Evaluierungslizenz, nichtkommerziell |
 | Store-Vorbereitung | Technische Metadaten, Docs, Changelogs, Checks und Release-Prozess vorhanden; Lizenz ist aktuell ein Store-Blocker |
@@ -316,6 +318,7 @@ php occ sakuraalbum:delete-generated --user albentest --dry-run --all
 - [Admin-Handbuch](docs/ADMIN_GUIDE.md)
 - [Entwicklernotizen](docs/DEVELOPER_NOTES.md)
 - [Datenschutz](docs/PRIVACY.md)
+- [Sicherheitsmodell](docs/SECURITY_MODEL.md)
 - [Update-Policy](docs/UPDATE_POLICY.md)
 - [Test- und UX-Backlog](docs/TEST_BACKLOG.md)
 - [Store-Release-Checkliste](docs/STORE_RELEASE_CHECKLIST.md)

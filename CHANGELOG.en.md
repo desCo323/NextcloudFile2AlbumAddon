@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.8
+
+- Hardened user path normalization with length, segment, nesting, traversal, NUL, and control-character guards.
+- Added separate admin limits for background album exports by file count and readable bytes, enforced both when queuing and when executing export jobs.
+- Reduced export-list load by sampling large Photos albums in the UI and performing exact size checks only when an export starts.
+- Added temporary-file cleanup for failed ZIP export jobs.
+- Hardened diagnostic CSV exports with server-side age/count retention, cell length caps, and spreadsheet-formula injection protection.
+- Added periodic SakuraAlbum log retention pruning using the configured debug retention period.
+- Changed preview debug logging to store only a compact settings summary instead of raw user-provided settings.
+- Documented the SakuraAlbum security model with concrete attack scenarios and added matching security backlog checks.
+
 ## 1.0.7
 
 - Fixed `info`-level SakuraAlbum diagnostic log writes on MySQL/MariaDB by ensuring the `level` field is always persisted and by adding a database default for existing installations.

@@ -29,6 +29,7 @@ echo "Running naming smoke tests"
 php tests/Smoke/NamingSmokeTest.php >/dev/null
 php tests/Smoke/ReleaseMetadataSmokeTest.php >/dev/null
 php tests/Smoke/UiSmokeTest.php >/dev/null
+php tests/Smoke/SecuritySmokeTest.php >/dev/null
 
 echo "Scanning for accidental GitHub personal access tokens"
 token_prefix="ghp"
@@ -118,6 +119,18 @@ if ! rg -n "diagnostics/logs\\.csv" appinfo/routes.php js/admin-settings.js js/p
 fi
 if ! rg -n "appdata://.*diagnostics/csv" lib/Service/DiagnosticCsvExportService.php >/dev/null; then
 	echo "Diagnostic CSV exports must persist a server-side AppData copy" >&2
+	exit 1
+fi
+if ! rg -n "MAX_STORED_CSV_FILES|csvCell|MAX_CSV_CELL_LENGTH" lib/Service/DiagnosticCsvExportService.php >/dev/null; then
+	echo "Diagnostic CSV export hardening is missing" >&2
+	exit 1
+fi
+if ! rg -n "deleteOlderThan" lib/Service/LogService.php lib/Db/AppLogMapper.php >/dev/null; then
+	echo "SakuraAlbum log retention pruning is missing" >&2
+	exit 1
+fi
+if ! rg -n "MAX_PATH_BYTES|MAX_SEGMENT_BYTES|MAX_PATH_SEGMENTS" lib/Service/PathHelper.php >/dev/null; then
+	echo "Path normalization hard limits are missing" >&2
 	exit 1
 fi
 if ! rg -n "pendingEventsSeen" lib/Service/AutoSyncService.php js/admin-settings.js >/dev/null; then
@@ -218,6 +231,14 @@ if ! rg -n "1073741824|PART_SIZE_BYTES" lib/Service/AlbumExportService.php js/pe
 fi
 if ! rg -n "maxDownloadFiles|maxDownloadBytes" lib/Service/SettingsService.php js/admin-settings.js >/dev/null; then
 	echo "Managed album download admin limits are missing" >&2
+	exit 1
+fi
+if ! rg -n "maxExportFiles|maxExportBytes|album_export_limit_exceeded" lib/Service/SettingsService.php lib/Service/AlbumExportService.php js/admin-settings.js js/personal-settings.js >/dev/null; then
+	echo "Background album export abuse limits are missing" >&2
+	exit 1
+fi
+if ! rg -n "SEC-11|SEC-12|SEC-13|SEC-14" docs/TEST_BACKLOG.md >/dev/null || [[ ! -f "docs/SECURITY_MODEL.md" ]]; then
+	echo "Security hardening documentation or backlog checks are missing" >&2
 	exit 1
 fi
 if ! rg -n "AccountResetService" lib/Service/AccountResetService.php lib/Controller/AccountResetController.php >/dev/null; then

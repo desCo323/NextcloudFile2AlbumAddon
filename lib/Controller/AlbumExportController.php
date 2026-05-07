@@ -85,7 +85,7 @@ class AlbumExportController extends Controller {
 			$response = new StreamResponse($handle);
 			$response->addHeader('Content-Type', 'application/zip');
 			$response->addHeader('Content-Length', (string)$file->getSize());
-			$response->addHeader('Content-Disposition', 'attachment; filename="' . rawurlencode((string)$part['name']) . '"');
+			$response->addHeader('Content-Disposition', $this->contentDisposition((string)$part['name']));
 
 			return $response;
 		} catch (SyncSafetyException $e) {
@@ -115,5 +115,16 @@ class AlbumExportController extends Controller {
 		$value = $this->request->getParam($key, $default);
 		$value = is_numeric($value) ? (int)$value : $default;
 		return max($min, min($max, $value));
+	}
+
+	private function contentDisposition(string $filename): string {
+		$fallback = preg_replace('/[^A-Za-z0-9._ -]+/', '_', $filename) ?? 'sakuraalbum-export.zip';
+		$fallback = trim($fallback, " ._\t\n\r\0\x0B");
+		if ($fallback === '') {
+			$fallback = 'sakuraalbum-export.zip';
+		}
+		$fallback = str_replace(['\\', '"'], '_', mb_substr($fallback, 0, 150));
+
+		return 'attachment; filename="' . $fallback . '"; filename*=UTF-8\'\'' . rawurlencode($filename);
 	}
 }

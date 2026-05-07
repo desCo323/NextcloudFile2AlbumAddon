@@ -30,7 +30,14 @@ Direct album ZIP downloads have separate admin limits:
 - `Download: Dateilimit` blocks direct ZIP streaming when an album contains too many files.
 - `Download: Bytelimit` blocks direct ZIP streaming when the readable album files are too large in total.
 
-These limits are checked before the direct ZIP response starts. Large user downloads should use `Album-Downloads`, which queues a background export and writes ZIP files into the user's Files area under `SakuraAlbum Exports`. Exports above 1 GiB are split into part ZIP files. Export folders contain `.nomedia` and `.noimage` marker files so broad SakuraAlbum source selections do not recursively ingest generated ZIPs.
+These limits are checked before the direct ZIP response starts.
+
+Background album exports have their own limits:
+
+- `Export: Dateilimit` blocks a background ZIP job when the Photos album has too many linked files.
+- `Export: Bytelimit` blocks a background ZIP job when the readable files exceed the configured byte budget.
+
+Large user downloads should use `Album-Downloads`, which queues a background export and writes ZIP files into the user's Files area under `SakuraAlbum Exports`. Exports above 1 GiB are split into part ZIP files. Export folders contain `.nomedia` and `.noimage` marker files so broad SakuraAlbum source selections do not recursively ingest generated ZIPs. Failed export jobs clean temporary files before marking the job failed.
 
 ## Load control
 

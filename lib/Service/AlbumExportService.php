@@ -21,6 +21,7 @@ class AlbumExportService {
 	private const OUTPUT_ROOT = 'SakuraAlbum Exports';
 	private const PART_SIZE_BYTES = 1073741824;
 	private const MAX_ACTIVE_JOBS_PER_USER = 3;
+	private const ALBUM_LIST_FILE_SAMPLE_LIMIT = 500;
 
 	public function __construct(
 		private readonly DownloadJobMapper $downloadJobMapper,
@@ -28,12 +29,14 @@ class AlbumExportService {
 		private readonly PhotosAlbumAdapter $photosAlbumAdapter,
 		private readonly IRootFolder $rootFolder,
 		private readonly IJobList $jobList,
+		private readonly SettingsService $settingsService,
 		private readonly LogService $logService,
 	) {
 	}
 
 	public function listDownloadableAlbums(string $userId, int $limit): array {
 		$limit = max(1, min(500, $limit));
+		$exportLimits = $this->settingsService->getExportLimits();
 		$managedByPhotosId = [];
 		foreach ($this->managedAlbumMapper->findActiveForUser($userId, 10000) as $managedAlbum) {
 			if ($managedAlbum->getPhotosAlbumId() !== null) {
@@ -45,8 +48,13 @@ class AlbumExportService {
 		foreach ($this->photosAlbumAdapter->listUserAlbums($userId, $limit) as $album) {
 			$albumId = (int)$album['id'];
 			$managedAlbum = $managedByPhotosId[$albumId] ?? null;
-			$fileIds = $this->photosAlbumAdapter->listAlbumFileIds($userId, $albumId);
-			$files = $this->photosAlbumAdapter->listAlbumFiles($userId, $albumId, 0);
+			$fileCount = $this->photosAlbumAdapter->countAlbumFiles($userId, $albumId);
+			$sampleLimit = min($fileCount, self::ALBUM_LIST_FILE_SAMPLE_LIMIT, (int)$exportLimits['maxFiles']);
+			$files = $sampleLimit > 0 ? $this->photosAlbumAdapter->listAlbumFiles($userId, $albumId, $sampleLimit) : [];
+			$exactFileSample = $fileCount <= $sampleLimit;
+			$totalBytes = $this->sumFileSizes($files);
+			$totalBytesExact = $exactFileSample;
+			$blockedReason = $this->exportBlockedReason($fileCount, $totalBytes, $totalBytesExact, $exportLimits);
 			$albums[] = [
 				'sourceType' => $managedAlbum instanceof ManagedAlbum ? self::SOURCE_MANAGED : self::SOURCE_PHOTOS,
 				'sourceId' => $managedAlbum instanceof ManagedAlbum ? (int)$managedAlbum->getId() : $albumId,
@@ -55,10 +63,16 @@ class AlbumExportService {
 				'location' => (string)($album['location'] ?? ''),
 				'managed' => $managedAlbum instanceof ManagedAlbum,
 				'managedId' => $managedAlbum instanceof ManagedAlbum ? (int)$managedAlbum->getId() : null,
-				'fileCount' => count($fileIds),
+				'fileCount' => $fileCount,
 				'readableFiles' => count($files),
-				'missingFiles' => max(0, count($fileIds) - count($files)),
-				'totalBytes' => $this->sumFileSizes($files),
+				'readableFilesExact' => $exactFileSample,
+				'missingFiles' => $exactFileSample ? max(0, $fileCount - count($files)) : 0,
+				'missingFilesExact' => $exactFileSample,
+				'totalBytes' => $totalBytes,
+				'totalBytesExact' => $totalBytesExact,
+				'sampledFiles' => count($files),
+				'exportAllowed' => $fileCount > 0 && $blockedReason === null,
+				'exportBlockedReason' => $blockedReason,
 			];
 		}
 
@@ -67,6 +81,7 @@ class AlbumExportService {
 			'limit' => $limit,
 			'truncated' => count($albums) >= $limit,
 			'partSizeBytes' => self::PART_SIZE_BYTES,
+			'limits' => $exportLimits,
 		];
 	}
 
@@ -81,7 +96,10 @@ class AlbumExportService {
 			);
 		}
 
-		$files = $this->photosAlbumAdapter->listAlbumFiles($userId, (int)$source['photosAlbumId'], 0);
+		$exportLimits = $this->settingsService->getExportLimits();
+		$fileCount = $this->photosAlbumAdapter->countAlbumFiles($userId, (int)$source['photosAlbumId']);
+		$this->assertExportFileCount($fileCount, $exportLimits);
+		$files = $this->photosAlbumAdapter->listAlbumFiles($userId, (int)$source['photosAlbumId'], $fileCount);
 		if ($files === []) {
 			throw new SyncSafetyException(
 				'album_export_empty',
@@ -89,6 +107,8 @@ class AlbumExportService {
 				409,
 			);
 		}
+		$totalBytes = $this->sumFileSizes($files);
+		$this->assertExportByteCount($totalBytes, $exportLimits);
 
 		$now = time();
 		$job = new DownloadJob();
@@ -98,7 +118,7 @@ class AlbumExportService {
 		$job->setAlbumName(mb_substr((string)$source['albumName'], 0, 255));
 		$job->setStatus('pending');
 		$job->setFileCount(count($files));
-		$job->setTotalBytes($this->sumFileSizes($files));
+		$job->setTotalBytes($totalBytes);
 		$job->setProcessedFiles(0);
 		$job->setProcessedBytes(0);
 		$job->setPartCount(0);
@@ -115,6 +135,7 @@ class AlbumExportService {
 				'albumName' => $job->getAlbumName(),
 				'fileCount' => $job->getFileCount(),
 				'totalBytes' => $job->getTotalBytes(),
+				'missingReadableFiles' => max(0, $fileCount - count($files)),
 			],
 		], 'Album export job was queued.');
 
@@ -215,21 +236,28 @@ class AlbumExportService {
 		}
 
 		$source = $this->resolveSource($job->getUserId(), $job->getSourceType(), $job->getSourceId());
-		$files = $this->photosAlbumAdapter->listAlbumFiles($job->getUserId(), (int)$source['photosAlbumId'], 0);
+		$exportLimits = $this->settingsService->getExportLimits();
+		$fileCount = $this->photosAlbumAdapter->countAlbumFiles($job->getUserId(), (int)$source['photosAlbumId']);
+		$this->assertExportFileCount($fileCount, $exportLimits);
+		$files = $this->photosAlbumAdapter->listAlbumFiles($job->getUserId(), (int)$source['photosAlbumId'], $fileCount);
 		if ($files === []) {
 			throw new \RuntimeException('Album has no readable files.');
 		}
+		$totalBytes = $this->sumFileSizes($files);
+		$this->assertExportByteCount($totalBytes, $exportLimits);
 		$this->logService->debug('album_export_job_started', $job->getUserId(), [
 			'jobId' => (int)$job->getId(),
 			'sourceType' => $job->getSourceType(),
 			'sourceId' => $job->getSourceId(),
 			'photosAlbumId' => (int)$source['photosAlbumId'],
 			'fileCount' => count($files),
+			'totalAlbumFileCount' => $fileCount,
+			'missingReadableFiles' => max(0, $fileCount - count($files)),
 		], 'Album export job started.');
 
 		$job->setAlbumName(mb_substr((string)$source['albumName'], 0, 255));
 		$job->setFileCount(count($files));
-		$job->setTotalBytes($this->sumFileSizes($files));
+		$job->setTotalBytes($totalBytes);
 		$job->setUpdatedAt(time());
 		$this->downloadJobMapper->update($job);
 
@@ -267,7 +295,9 @@ class AlbumExportService {
 			if (!$zip instanceof \ZipArchive || $tmpZip === null) {
 				return;
 			}
-			$zip->close();
+			$currentZip = $zip;
+			$zip = null;
+			$currentZip->close();
 			foreach ($tmpFiles as $tmpFile) {
 				if (is_string($tmpFile) && is_file($tmpFile)) {
 					@unlink($tmpFile);
@@ -304,46 +334,59 @@ class AlbumExportService {
 				'zipBytes' => $zipSize,
 				'uncompressedBytes' => $partBytes,
 			], 'Album export ZIP part was written to user files.');
-			$zip = null;
 			$tmpZip = null;
 			$tmpFiles = [];
 		};
 
-		$openPart();
 		$processedFiles = 0;
 		$processedBytes = 0;
-		foreach ($files as $file) {
-			$size = max(0, (int)$file->getSize());
-			if ($partBytes > 0 && $partBytes + $size > self::PART_SIZE_BYTES) {
-				$closePart();
-				$job = $this->downloadJobMapper->findById((int)$job->getId()) ?? $job;
-				$job->setPartCount(count($parts));
-				$job->setUpdatedAt(time());
-				$this->downloadJobMapper->update($job);
-				$openPart();
-			}
+		try {
+			$openPart();
+			foreach ($files as $file) {
+				$size = max(0, (int)$file->getSize());
+				if ($partBytes > 0 && $partBytes + $size > self::PART_SIZE_BYTES) {
+					$closePart();
+					$job = $this->downloadJobMapper->findById((int)$job->getId()) ?? $job;
+					$job->setPartCount(count($parts));
+					$job->setUpdatedAt(time());
+					$this->downloadJobMapper->update($job);
+					$openPart();
+				}
 
-			if (!$zip instanceof \ZipArchive) {
-				throw new \RuntimeException('ZIP archive is not open.');
+				if (!$zip instanceof \ZipArchive) {
+					throw new \RuntimeException('ZIP archive is not open.');
+				}
+				$tmpFile = $this->copyToTemporaryFile($file);
+				$tmpFiles[] = $tmpFile;
+				$internalName = $this->uniqueZipEntryName($file->getName(), $seenNames);
+				if (!$zip->addFile($tmpFile, $internalName)) {
+					throw new \RuntimeException('Could not add file to ZIP archive.');
+				}
+				$partBytes += $size;
+				$processedFiles++;
+				$processedBytes += $size;
+				if ($processedFiles % 10 === 0 || $processedFiles === count($files)) {
+					$job = $this->downloadJobMapper->findById((int)$job->getId()) ?? $job;
+					$job->setProcessedFiles($processedFiles);
+					$job->setProcessedBytes($processedBytes);
+					$job->setUpdatedAt(time());
+					$this->downloadJobMapper->update($job);
+				}
 			}
-			$tmpFile = $this->copyToTemporaryFile($file);
-			$tmpFiles[] = $tmpFile;
-			$internalName = $this->uniqueZipEntryName($file->getName(), $seenNames);
-			if (!$zip->addFile($tmpFile, $internalName)) {
-				throw new \RuntimeException('Could not add file to ZIP archive.');
+			$closePart();
+		} finally {
+			if ($zip instanceof \ZipArchive) {
+				$zip->close();
 			}
-			$partBytes += $size;
-			$processedFiles++;
-			$processedBytes += $size;
-			if ($processedFiles % 10 === 0 || $processedFiles === count($files)) {
-				$job = $this->downloadJobMapper->findById((int)$job->getId()) ?? $job;
-				$job->setProcessedFiles($processedFiles);
-				$job->setProcessedBytes($processedBytes);
-				$job->setUpdatedAt(time());
-				$this->downloadJobMapper->update($job);
+			foreach ($tmpFiles as $tmpFile) {
+				if (is_string($tmpFile) && is_file($tmpFile)) {
+					@unlink($tmpFile);
+				}
+			}
+			if (is_string($tmpZip) && is_file($tmpZip)) {
+				@unlink($tmpZip);
 			}
 		}
-		$closePart();
 
 		$job = $this->downloadJobMapper->findById((int)$job->getId()) ?? $job;
 		$job->setStatus('completed');
@@ -435,6 +478,52 @@ class AlbumExportService {
 		}
 
 		return $total;
+	}
+
+	private function exportBlockedReason(int $fileCount, int $knownBytes, bool $bytesExact, array $limits): ?string {
+		if ($fileCount > (int)$limits['maxFiles']) {
+			return 'max_export_files_exceeded';
+		}
+		if ($knownBytes > (int)$limits['maxBytes']) {
+			return 'max_export_bytes_exceeded';
+		}
+		if (!$bytesExact && $knownBytes > 0) {
+			return null;
+		}
+
+		return null;
+	}
+
+	private function assertExportFileCount(int $fileCount, array $limits): void {
+		$maxFiles = (int)$limits['maxFiles'];
+		if ($fileCount > $maxFiles) {
+			throw new SyncSafetyException(
+				'album_export_limit_exceeded',
+				'The selected album exceeds the administrator file limit for background exports.',
+				413,
+				[
+					'reason' => 'max_export_files_exceeded',
+					'fileCount' => $fileCount,
+					'maxFiles' => $maxFiles,
+				],
+			);
+		}
+	}
+
+	private function assertExportByteCount(int $totalBytes, array $limits): void {
+		$maxBytes = (int)$limits['maxBytes'];
+		if ($totalBytes > $maxBytes) {
+			throw new SyncSafetyException(
+				'album_export_limit_exceeded',
+				'The selected album exceeds the administrator byte limit for background exports.',
+				413,
+				[
+					'reason' => 'max_export_bytes_exceeded',
+					'totalBytes' => $totalBytes,
+					'maxBytes' => $maxBytes,
+				],
+			);
+		}
 	}
 
 	private function copyToTemporaryFile(File $file): string {

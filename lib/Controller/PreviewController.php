@@ -34,7 +34,7 @@ class PreviewController extends Controller {
 
 		$started = microtime(true);
 		$this->logService->debug('preview_requested', $this->userId, [
-			'requestSettings' => $settings,
+			'requestSummary' => $this->settingsSummary($settings),
 		]);
 		try {
 			$effectiveSettings = $this->settingsService->getEffectiveUserSettings($this->userId, $settings);
@@ -62,5 +62,20 @@ class PreviewController extends Controller {
 				'error' => 'preview_failed',
 			], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	private function settingsSummary(array $settings): array {
+		return [
+			'enabled' => (bool)($settings['enabled'] ?? false),
+			'sourceFolderCount' => is_array($settings['sourceFolders'] ?? null) ? count($settings['sourceFolders']) : 0,
+			'includePathCount' => is_array($settings['includePaths'] ?? null) ? count($settings['includePaths']) : 0,
+			'folderRuleCount' => is_array($settings['folderRules'] ?? null) ? count($settings['folderRules']) : 0,
+			'excludePatternCount' => is_array($settings['excludePatterns'] ?? null) ? count($settings['excludePatterns']) : 0,
+			'namingTemplate' => is_scalar($settings['namingTemplate'] ?? null) ? (string)$settings['namingTemplate'] : '',
+			'separatorLength' => is_scalar($settings['separator'] ?? null) ? mb_strlen((string)$settings['separator']) : 0,
+			'albumDepth' => is_numeric($settings['albumDepth'] ?? null) ? (int)$settings['albumDepth'] : null,
+			'includeImages' => (bool)($settings['includeImages'] ?? false),
+			'includeVideos' => (bool)($settings['includeVideos'] ?? false),
+		];
 	}
 }

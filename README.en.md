@@ -173,6 +173,7 @@ SakuraAlbum is built defensively:
 - managed albums are tracked in SakuraAlbum-owned database tables,
 - file events never write directly to Photos albums,
 - background jobs do not run in parallel and respect admin limits,
+- paths, diagnostic CSV files, logs, and background exports have hard server-side bounds,
 - debug context is redacted before storage,
 - diagnostic CSV exports remain available server-side for later analysis.
 
@@ -199,13 +200,14 @@ SakuraAlbum can prepare albums as ZIP files:
 - direct ZIP downloads for managed albums within admin limits,
 - background exports for SakuraAlbum-managed and native Photos albums,
 - part ZIP files for exports above 1 GiB,
+- separate admin limits for direct ZIP streams and background exports,
 - `.nomedia` and `.noimage` markers in export folders so generated ZIPs are not scanned back into albums.
 
 ## Status
 
 | Area | State |
 | --- | --- |
-| Current development version | `1.0.7` |
+| Current development version | `1.0.8` |
 | Target platform | Nextcloud 33, PHP 8.3+ |
 | License | Preliminary Development and Evaluation License, non-commercial |
 | Store preparation | Technical metadata, docs, changelogs, checks, and release process are present; license is currently a store blocker |
@@ -316,6 +318,7 @@ php occ sakuraalbum:delete-generated --user albentest --dry-run --all
 - [Admin guide](docs/ADMIN_GUIDE.md)
 - [Developer notes](docs/DEVELOPER_NOTES.md)
 - [Privacy](docs/PRIVACY.md)
+- [Security model](docs/SECURITY_MODEL.md)
 - [Update policy](docs/UPDATE_POLICY.md)
 - [Test and UX backlog](docs/TEST_BACKLOG.md)
 - [Store release checklist](docs/STORE_RELEASE_CHECKLIST.md)

@@ -55,6 +55,10 @@ This backlog defines the next functional, security, usability, and readability c
 | SEC-08 | Secret redaction | Diagnostic context with `token`, `password`, bearer strings | Stored logs contain redacted values only. | P0 |
 | SEC-09 | Quotas | Exceed album/media quotas | Write/chunk is blocked before Photos modification. | P1 |
 | SEC-10 | Maintenance window | Queue outside allowed window | Work waits; status explains window. | P1 |
+| SEC-11 | Path abuse hardening | Very long paths, long segments, control characters, too many segments | Requests are rejected during normalization and do not reach scans or logs as raw payload. | P0 |
+| SEC-12 | Export abuse limits | Queue native Photos album above background export file/byte limits | Job creation is blocked with `album_export_limit_exceeded`; no background job or ZIP files are created. | P0 |
+| SEC-13 | Diagnostic CSV abuse | Repeated CSV downloads plus formula-like log messages | Stored CSV copies are pruned by age/count and cells are safe for spreadsheet opening. | P1 |
+| SEC-14 | Log retention | Old debug logs beyond retention | Log table pruning removes stale rows without blocking new log writes. | P1 |
 
 ## Usability and readability tests
 

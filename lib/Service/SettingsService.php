@@ -28,6 +28,8 @@ class SettingsService {
 		'maxManagedFilesPerUser' => 0,
 		'maxDownloadFiles' => 1000,
 		'maxDownloadBytes' => 2147483648,
+		'maxExportFiles' => 100000,
+		'maxExportBytes' => 1099511627776,
 		'allowVideos' => false,
 		'jobIntervalMinutes' => 360,
 		'autoSyncMode' => 'file_events',
@@ -82,6 +84,8 @@ class SettingsService {
 			'maxManagedFilesPerUser' => $this->appConfig->getAppValueInt('maxManagedFilesPerUser', self::ADMIN_DEFAULTS['maxManagedFilesPerUser']),
 			'maxDownloadFiles' => $this->appConfig->getAppValueInt('maxDownloadFiles', self::ADMIN_DEFAULTS['maxDownloadFiles']),
 			'maxDownloadBytes' => $this->appConfig->getAppValueInt('maxDownloadBytes', self::ADMIN_DEFAULTS['maxDownloadBytes']),
+			'maxExportFiles' => $this->appConfig->getAppValueInt('maxExportFiles', self::ADMIN_DEFAULTS['maxExportFiles']),
+			'maxExportBytes' => $this->appConfig->getAppValueInt('maxExportBytes', self::ADMIN_DEFAULTS['maxExportBytes']),
 			'allowVideos' => $this->appConfig->getAppValueBool('allowVideos', self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->appConfig->getAppValueInt('jobIntervalMinutes', self::ADMIN_DEFAULTS['jobIntervalMinutes']),
 			'autoSyncMode' => $this->autoSyncMode($this->appConfig->getAppValueString('autoSyncMode', self::ADMIN_DEFAULTS['autoSyncMode'])),
@@ -116,6 +120,8 @@ class SettingsService {
 			'maxManagedFilesPerUser' => $this->intValue($input['maxManagedFilesPerUser'] ?? self::ADMIN_DEFAULTS['maxManagedFilesPerUser'], 0, 5000000),
 			'maxDownloadFiles' => $this->intValue($input['maxDownloadFiles'] ?? self::ADMIN_DEFAULTS['maxDownloadFiles'], 1, 100000),
 			'maxDownloadBytes' => $this->intValue($input['maxDownloadBytes'] ?? self::ADMIN_DEFAULTS['maxDownloadBytes'], 1048576, 2147483647),
+			'maxExportFiles' => $this->intValue($input['maxExportFiles'] ?? self::ADMIN_DEFAULTS['maxExportFiles'], 1, 1000000),
+			'maxExportBytes' => $this->intValue($input['maxExportBytes'] ?? self::ADMIN_DEFAULTS['maxExportBytes'], 1048576, 10995116277760),
 			'allowVideos' => $this->boolValue($input['allowVideos'] ?? self::ADMIN_DEFAULTS['allowVideos']),
 			'jobIntervalMinutes' => $this->intValue($input['jobIntervalMinutes'] ?? self::ADMIN_DEFAULTS['jobIntervalMinutes'], 5, 10080),
 			'autoSyncMode' => $this->autoSyncMode((string)($input['autoSyncMode'] ?? self::ADMIN_DEFAULTS['autoSyncMode'])),
@@ -147,6 +153,8 @@ class SettingsService {
 		$this->appConfig->setAppValueInt('maxManagedFilesPerUser', $settings['maxManagedFilesPerUser']);
 		$this->appConfig->setAppValueInt('maxDownloadFiles', $settings['maxDownloadFiles']);
 		$this->appConfig->setAppValueInt('maxDownloadBytes', $settings['maxDownloadBytes']);
+		$this->appConfig->setAppValueInt('maxExportFiles', $settings['maxExportFiles']);
+		$this->appConfig->setAppValueInt('maxExportBytes', $settings['maxExportBytes']);
 		$this->appConfig->setAppValueBool('allowVideos', $settings['allowVideos']);
 		$this->appConfig->setAppValueInt('jobIntervalMinutes', $settings['jobIntervalMinutes']);
 		$this->appConfig->setAppValueString('autoSyncMode', $settings['autoSyncMode']);
@@ -247,6 +255,8 @@ class SettingsService {
 			'maxManagedFilesPerUser' => $admin['maxManagedFilesPerUser'],
 			'maxDownloadFiles' => $admin['maxDownloadFiles'],
 			'maxDownloadBytes' => $admin['maxDownloadBytes'],
+			'maxExportFiles' => $admin['maxExportFiles'],
+			'maxExportBytes' => $admin['maxExportBytes'],
 		];
 	}
 
@@ -310,6 +320,14 @@ class SettingsService {
 			'windowActive' => $window['active'],
 			'windowReason' => $window['reason'],
 			'nextWindowAt' => $window['nextWindowAt'],
+		];
+	}
+
+	public function getExportLimits(): array {
+		$admin = $this->getAdminSettings();
+		return [
+			'maxFiles' => $admin['maxExportFiles'],
+			'maxBytes' => $admin['maxExportBytes'],
 		];
 	}
 

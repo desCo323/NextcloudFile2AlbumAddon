@@ -17,10 +17,15 @@ Open a private report with the repository owner for security-sensitive issues. D
 - Managed deletion re-checks Photos album id, owner, and current name before deleting.
 - Controllers keep the framework default CSRF protection enabled.
 - SakuraAlbum admin settings do not read or write Nextcloud's reserved app activation key `enabled`.
+- User paths are normalized centrally and reject traversal, NUL/control characters, excessive length, excessive segment length, and excessive nesting.
 - Debug context is sanitized for common secrets before it is stored, and debug stack traces do not include function arguments.
+- Preview debug logging stores only a compact settings summary, not raw user-provided paths and patterns.
+- Diagnostic CSV exports are retained server-side only with age/count limits, cell length caps, and spreadsheet-formula injection protection.
+- App logs are periodically pruned according to the configured retention period.
 - Duplicate Photos album links are treated as idempotent only after SakuraAlbum confirms the exact album/file/owner link already exists.
 - File-event handling queues dirty paths only; scans and Photos writes happen later in a non-parallel background job.
 - Automatic sync is bounded by admin-controlled debounce, cron interval, user count, runtime, queued event count, folder count, file count, and album count.
+- Background album exports are bounded by separate admin-controlled file and byte limits and clean temporary files after failed runs.
 - Admins can restrict SakuraAlbum rollout to selected Nextcloud groups; users outside the allowed groups cannot queue or write generated albums.
 - Optional per-user managed album/media quotas are checked server-side before writes and background chunks.
 - Optional Auto-Sync maintenance windows prevent queue processing outside configured low-load hours.
@@ -34,3 +39,5 @@ Open a private report with the repository owner for security-sensitive issues. D
 - External error-report email sending from the UI.
 - Store signing and formal Nextcloud app-store submission.
 - Public API re-review for the isolated Photos album integration adapter.
+
+More detail is documented in `docs/SECURITY_MODEL.md`.

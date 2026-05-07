@@ -107,32 +107,38 @@ class PhotosAlbumAdapter {
 	/**
 	 * @return int[]
 	 */
-	public function listAlbumFileIds(string $userId, int $albumId): array {
-		$album = $this->albumMapper->get($albumId);
-		if ($album === null) {
-			throw new \RuntimeException('Photos album no longer exists.');
-		}
-		if ($album->getUserId() !== $userId) {
-			throw new \RuntimeException('Photos album owner does not match current user.');
-		}
+	public function listAlbumFileIds(string $userId, int $albumId, int $limit = 0): array {
+		$this->assertAlbumOwnedByUser($userId, $albumId);
 
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('file_id')
 			->from('photos_albums_files')
 			->where($qb->expr()->eq('album_id', $qb->createNamedParameter($albumId, IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->eq('owner', $qb->createNamedParameter($userId)));
+		if ($limit > 0) {
+			$qb->setMaxResults($limit);
+		}
 
 		return array_values(array_unique(array_map('intval', $qb->executeQuery()->fetchFirstColumn())));
+	}
+
+	public function countAlbumFiles(string $userId, int $albumId): int {
+		$this->assertAlbumOwnedByUser($userId, $albumId);
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*'))
+			->from('photos_albums_files')
+			->where($qb->expr()->eq('album_id', $qb->createNamedParameter($albumId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('owner', $qb->createNamedParameter($userId)));
+
+		return (int)$qb->executeQuery()->fetchOne();
 	}
 
 	/**
 	 * @return File[]
 	 */
 	public function listAlbumFiles(string $userId, int $albumId, int $limit): array {
-		$fileIds = $this->listAlbumFileIds($userId, $albumId);
-		if ($limit > 0 && count($fileIds) > $limit) {
-			$fileIds = array_slice($fileIds, 0, $limit);
-		}
+		$fileIds = $this->listAlbumFileIds($userId, $albumId, $limit);
 
 		$userFolder = $this->rootFolder->getUserFolder($userId);
 		$files = [];
@@ -162,6 +168,16 @@ class PhotosAlbumAdapter {
 			->setMaxResults(1);
 
 		return (int)$qb->executeQuery()->fetchOne() > 0;
+	}
+
+	private function assertAlbumOwnedByUser(string $userId, int $albumId): void {
+		$album = $this->albumMapper->get($albumId);
+		if ($album === null) {
+			throw new \RuntimeException('Photos album no longer exists.');
+		}
+		if ($album->getUserId() !== $userId) {
+			throw new \RuntimeException('Photos album owner does not match current user.');
+		}
 	}
 
 	private function albumInfoToArray(AlbumInfo $album): array {

@@ -7,9 +7,15 @@ namespace OCA\SakuraAlbum\Service;
 use OCA\SakuraAlbum\AppInfo\Application;
 use OCP\Files\IAppData;
 use OCP\Files\NotFoundException;
+use OCP\Files\SimpleFS\ISimpleFile;
 use OCP\Files\SimpleFS\ISimpleFolder;
 
 class DiagnosticCsvExportService {
+	private const MAX_STORED_CSV_FILES = 50;
+	private const MAX_STORED_CSV_AGE_SECONDS = 1209600;
+	private const MAX_CSV_CELL_LENGTH = 20000;
+	private const MAX_CSV_MESSAGE_LENGTH = 2000;
+
 	public function __construct(
 		private readonly DiagnosticReportService $diagnosticReportService,
 		private readonly IAppData $appData,
@@ -40,6 +46,10 @@ class DiagnosticCsvExportService {
 			$folder->getFile($filename)->delete();
 		}
 		$folder->newFile($filename, $csv);
+		try {
+			$this->pruneStoredCsv($folder);
+		} catch (\Throwable) {
+		}
 
 		return [
 			'filename' => $filename,
@@ -192,17 +202,17 @@ class DiagnosticCsvExportService {
 	private function writeRow(mixed $stream, array $row): void {
 		$createdAt = (int)($row['created_at_unix'] ?? time());
 		fputcsv($stream, [
-			(string)($row['row_type'] ?? ''),
+			$this->csvCell((string)($row['row_type'] ?? '')),
 			gmdate('c', $createdAt),
 			$createdAt,
-			(string)($row['scope'] ?? ''),
-			(string)($row['level'] ?? ''),
-			(string)($row['event'] ?? ''),
-			($row['user_id'] ?? null) !== null ? (string)$row['user_id'] : '',
+			$this->csvCell((string)($row['scope'] ?? '')),
+			$this->csvCell((string)($row['level'] ?? '')),
+			$this->csvCell((string)($row['event'] ?? '')),
+			$this->csvCell(($row['user_id'] ?? null) !== null ? (string)$row['user_id'] : ''),
 			($row['run_id'] ?? null) !== null ? (string)$row['run_id'] : '',
-			(string)($row['status'] ?? ''),
-			(string)($row['message'] ?? ''),
-			(string)($row['context_json'] ?? ''),
+			$this->csvCell((string)($row['status'] ?? '')),
+			$this->csvCell((string)($row['message'] ?? ''), self::MAX_CSV_MESSAGE_LENGTH),
+			$this->csvCell((string)($row['context_json'] ?? ''), self::MAX_CSV_CELL_LENGTH),
 		]);
 	}
 
@@ -243,5 +253,50 @@ class DiagnosticCsvExportService {
 
 	private function limit(int $value, int $min, int $max): int {
 		return max($min, min($max, $value));
+	}
+
+	private function csvCell(string $value, int $maxLength = 512): string {
+		$value = str_replace("\0", '', $value);
+		$value = mb_substr($value, 0, max(1, min(self::MAX_CSV_CELL_LENGTH, $maxLength)));
+		if ($value !== '' && preg_match('/^[=\-+@\t\r\n]/', $value) === 1) {
+			return '\'' . $value;
+		}
+
+		return $value;
+	}
+
+	private function pruneStoredCsv(ISimpleFolder $folder): void {
+		$now = time();
+		$files = [];
+		foreach ($folder->getDirectoryListing() as $node) {
+			if (!$node instanceof ISimpleFile) {
+				continue;
+			}
+			$name = $node->getName();
+			if (!str_starts_with($name, 'sakuraalbum-') || !str_ends_with($name, '.csv')) {
+				continue;
+			}
+			$mtime = $node->getMTime();
+			if ($mtime < $now - self::MAX_STORED_CSV_AGE_SECONDS) {
+				try {
+					$node->delete();
+				} catch (\Throwable) {
+				}
+				continue;
+			}
+			$files[] = [
+				'name' => $name,
+				'mtime' => $mtime,
+				'file' => $node,
+			];
+		}
+
+		usort($files, static fn (array $left, array $right): int => $right['mtime'] <=> $left['mtime']);
+		foreach (array_slice($files, self::MAX_STORED_CSV_FILES) as $entry) {
+			try {
+				$entry['file']->delete();
+			} catch (\Throwable) {
+			}
+		}
 	}
 }

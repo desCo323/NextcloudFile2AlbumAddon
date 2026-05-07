@@ -34,6 +34,7 @@ foreach ([
 	'Gruppen laden',
 	'Rollout: erlaubte Gruppen',
 	'Benutzerquote: Alben',
+	'Export: Dateilimit',
 	'Auto: Wartungsfenster Start',
 	'Auto-Status laden',
 	'Faellige Jobs jetzt verarbeiten',

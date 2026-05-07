@@ -89,6 +89,7 @@ foreach ([
 	'docs/ADMIN_GUIDE.md',
 	'docs/DEVELOPER_NOTES.md',
 	'docs/PRIVACY.md',
+	'docs/SECURITY_MODEL.md',
 	'docs/STORE_RELEASE_CHECKLIST.md',
 ] as $path) {
 	requireFile($root, $path);
@@ -101,6 +102,7 @@ requireContains($root, 'README.md', 'Vorlaeufige Entwicklungs- und Evaluierungsl
 requireContains($root, 'README.en.md', 'Preliminary Development and Evaluation License');
 requireContains($root, 'docs/STORE_RELEASE_CHECKLIST.md', 'PhotosAlbumAdapter');
 requireContains($root, 'docs/PRIVACY.md', 'Future mail sending');
+requireContains($root, 'docs/SECURITY_MODEL.md', 'Attack scenarios and mitigations');
 
 $suffix = str_replace('.', '', $version);
 requireContains($root, 'lib/Settings/Admin.php', "admin-settings-{$suffix}");

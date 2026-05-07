@@ -466,3 +466,40 @@ Neueste operative Notiz (2026-05-07):
   - Deploy: `SAKURAALBUM_PRODUCTION_UPDATE=1 ./scripts/production-update.sh --deploy` ist absichtlich explizit, legt zuerst ein Backup an, synchronisiert die App, setzt Eigentümer, fuehrt bei Bedarf das Nextcloud-Upgrade aus und gibt einen Restore-Prompt aus.
 - README und Store-Release-Checkliste verweisen jetzt auf die Update-Policy und den Preflight.
 - Naechste sichere Regel: keine normalen Live-Hotfixes mehr ohne Version/Preflight; Hotfix ohne Version nur bei Produktionsrettung, mit Backup und anschliessender Aufnahme in den naechsten normalen Release.
+
+Neueste operative Notiz (2026-05-07 22:06 CEST):
+- Auftrag: Sicherheitspruefung und Haertung gegen missbraeuchliche Requests, Ressourcenangriffe und Diagnose-/Log-Missbrauch, ohne bestehende SakuraAlbum-Funktionen zu beschaedigen.
+- Bisherige Audit-Befunde:
+  - Controller deaktivieren CSRF nicht; Admin-Routen nutzen `AuthorizedAdminSetting`, persoenliche Routen verwenden die authentifizierte Benutzer-ID.
+  - Kritische Schreib-/Loeschoperationen besitzen weiterhin exakte Bestaetigung und serverseitig gespeicherte Dry-Run-Fingerprints.
+  - Haertungspotenzial besteht bei sehr langen Request-Pfaden, unbegrenzter serverseitiger Diagnose-CSV-Ablage, zu detailreichem Preview-Debug-Kontext und grossen Hintergrund-Albumexporten.
+- Geplanter Patchblock:
+  - Pfadnormalisierung mit Laengen-/Segmentgrenzen.
+  - Diagnose-CSV mit Zellgroessenbegrenzung und AppData-Aufbewahrungsgrenze.
+  - Hintergrund-Exports mit separaten Admin-Limits fuer Datei- und Bytezahl, plus besserer Tempfile-Bereinigung bei Fehlern.
+  - Preview-Logging nur noch mit Zusammenfassung statt rohem Settings-Payload.
+  - Sicherheitskonzept und konkrete Angriffsszenarien in der Dokumentation/Backlog festhalten.
+- Kein Live-Deploy/Testfenster gestartet; produktive Nextcloud-Instanz wird in diesem Patchblock nicht veraendert.
+
+Fortschritt (2026-05-07 22:15 CEST):
+- Code-Haertung umgesetzt im Arbeitsstand 1.0.8:
+  - `PathHelper` blockiert nun zu lange Pfade, zu lange Segmente, zu tiefe Pfade, Kontrollzeichen, NUL und Traversal.
+  - `DiagnosticCsvExportService` begrenzt CSV-Zellen, schuetzt vor Spreadsheet-Formel-Injection und entfernt alte/ueberzaehlige AppData-CSV-Kopien.
+  - `LogService` loescht periodisch alte SakuraAlbum-App-Logs gemaess `debugRetentionDays`.
+  - `PreviewController` loggt nur noch eine Settings-Zusammenfassung.
+  - `SettingsService`/Admin-UI haben neue Hintergrund-Exportlimits `maxExportFiles` und `maxExportBytes`.
+  - `AlbumExportService` prueft Exportlimits vor Queue und erneut vor Ausfuehrung, sampled grosse Albumlisten und bereinigt Tempfiles bei Fehlern.
+  - `AlbumExportController` setzt sichere `Content-Disposition`-Header mit ASCII-Fallback und UTF-8-Dateiname.
+- Dokumentation ergaenzt:
+  - `docs/SECURITY_MODEL.md` mit Sicherheitsprinzipien und Angriffsszenarien.
+  - `SECURITY.md`, README, Admin-/User-Guide und `docs/TEST_BACKLOG.md` aktualisiert.
+- Version vorbereitet: `appinfo/info.xml`, `package.json`, Settings-Assets auf `1.0.8`; neue JS-Assets `admin-settings-108.js` und `personal-settings-108.js`.
+- Noch offen in diesem Block: Syntax-/Self-Check, Build-Artefakt, Token-Scan, ggf. Preflight; kein Live-Deploy ohne kontrolliertes Backup-Testfenster.
+
+Validierung (2026-05-07 22:20 CEST):
+- Neuer Smoke-Test `tests/Smoke/SecuritySmokeTest.php` prueft die Pfad-Haertung gegen Traversal, NUL, Kontrollzeichen, zu lange Segmente, zu viele Segmente und zu lange Pfade.
+- Der Smoke-Test fand zuerst eine echte Reihenfolge-Luecke: `trim()` haette fuehrende NUL-/Kontrollzeichen im Segment entfernt. `PathHelper` prueft Kontrollzeichen jetzt vor dem Trimmen des Pfads.
+- `git diff --check`: bestanden.
+- `bash scripts/self-check.sh`: bestanden inkl. PHP-/JS-Syntax, App-Metadata-Schema, Smoke-Tests, Token-Scan, CSRF-Check, Fingerprint-Guards, Auto-Sync-Safety und neuen Security-Hardening-Checks.
+- `bash scripts/build-artifact.sh`: bestanden; Artefakt `/home/cloud/NextcloudFile2AlbumAddon-work/artifacts/sakuraalbum-1.0.8.tar.gz`, SHA256 `0d15cca4a75b033b3a13b0dfeca8e77cc8afcad951931d159e3c91ebf1de57e3`.
+- Kein produktiver Deploy ausgefuehrt; Live-Testfenster fuer 1.0.8 bleibt der naechste Schritt nach Commit/Push und Backup.

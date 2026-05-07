@@ -11,6 +11,8 @@ use OCP\AppFramework\Services\IAppConfig;
 use Psr\Log\LoggerInterface;
 
 class LogService {
+	private const LOG_RETENTION_CHECK_INTERVAL_SECONDS = 3600;
+
 	private const SENSITIVE_KEYS = [
 		'password',
 		'passwd',
@@ -131,6 +133,14 @@ class LogService {
 				'exception' => $e,
 			]);
 		}
+		try {
+			$this->cleanupOldLogsIfDue();
+		} catch (\Throwable $e) {
+			$this->serverLogger->warning('SakuraAlbum failed to prune old app logs', [
+				'app' => Application::APP_ID,
+				'exception' => $e,
+			]);
+		}
 
 		if (in_array($level, ['warning', 'error'], true)) {
 			$this->serverLogger->{$level}('SakuraAlbum ' . $event . ($message !== '' ? ': ' . $message : ''), [
@@ -147,6 +157,18 @@ class LogService {
 
 	private function maxContextLength(): int {
 		return max(1000, min(100000, $this->appConfig->getAppValueInt('debugMaxContextLength', 8000)));
+	}
+
+	private function cleanupOldLogsIfDue(): void {
+		$now = time();
+		$lastCleanupAt = $this->appConfig->getAppValueInt('lastLogRetentionAt', 0);
+		if ($lastCleanupAt > $now - self::LOG_RETENTION_CHECK_INTERVAL_SECONDS) {
+			return;
+		}
+
+		$this->appConfig->setAppValueInt('lastLogRetentionAt', $now);
+		$retentionDays = max(1, min(365, $this->appConfig->getAppValueInt('debugRetentionDays', 14)));
+		$this->logMapper->deleteOlderThan($now - ($retentionDays * 86400));
 	}
 
 	private function normalizeLevel(string $level): string {
